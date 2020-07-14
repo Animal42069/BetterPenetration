@@ -58,3 +58,7 @@ sysinfo.txt
 # Crashlytics generated file
 crashlytics-build.properties
 
+/AI_BetterPenetration/bin/Debug
+/AI_BetterPenetration/obj
+/HS2_BetterPenetration/bin/Debug
+/HS2_BetterPenetration/obj
