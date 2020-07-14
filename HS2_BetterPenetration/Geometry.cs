@@ -71,7 +71,7 @@ namespace HS2_BetterPenetration
                     }
                 }
             }
-            bExtendPlaneBeyondStart = bExtendPlaneBeyondStartReturn; 
+            bExtendPlaneBeyondStart = bExtendPlaneBeyondStartReturn;
             return newLineEnd;
         }
     }

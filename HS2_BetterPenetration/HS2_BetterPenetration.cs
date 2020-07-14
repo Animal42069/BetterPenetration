@@ -15,11 +15,11 @@ namespace HS2_BetterPenetration
     [BepInProcess("HoneySelect2")]
     public class HS2_BetterPenetration : BaseUnityPlugin
     {
-        public const string VERSION = "1.0.1.0";
+        public const string VERSION = "2.0.0.0";
 
         private static Harmony harmony;
 
-   //     private static ConfigEntry<float> _dan109Length;
+        //     private static ConfigEntry<float> _dan109Length;
         private static ConfigEntry<float>[] _dan_length = new ConfigEntry<float>[2];
         private static ConfigEntry<float>[] _dan_girth = new ConfigEntry<float>[2];
         private static ConfigEntry<float>[] _dan_sack_size = new ConfigEntry<float>[2];
@@ -61,31 +61,30 @@ namespace HS2_BetterPenetration
         private static readonly bool[] frontHPointsInward = { false, false, false, false };
         private static readonly bool[] backHPointsInward = { false, false, true, true };
 
-   //     private static readonly string[] swappedListF = { "ai3p_01", "h2_mf2_03", "h2_mf2_04", "h2_mf2_05" };
+        //     private static readonly string[] swappedListF = { "ai3p_01", "h2_mf2_03", "h2_mf2_04", "h2_mf2_05" };
 
         private void Awake()
         {
             for (int index = 0; index < _dan_length.Length; index++)
             {
-                _dan_length[index] = Config.Bind<float>("Male " + (index + 1) + " Options", "Length of Penis", 1.8f, "Set the length of the penis.  Apparent Length is about 0.2 larget than this, depending on uncensor.  2.0 is about 8 inches or 20 cm.");
-                _dan_collider_headlength[index] = Config.Bind<float>("Male " + (index + 1) + " Options", "Length of the Collider Head", 0.2f, "Distance from the center of the head bone to the tip, used for collision purposes.");
-                _dan_collider_radius[index] = Config.Bind<float>("Male " + (index + 1) + " Options", "Radius of the Collider", 0.2f, "Rasius of the shaft collider.");
-                _dan_girth[index] = Config.Bind<float>("Male " + (index + 1) + " Options", "Girth of Penis", 1.0f, "Set the scale of the circumference of the penis.");
-                _dan_sack_size[index] = Config.Bind<float>("Male " + (index + 1) + " Options", "Scale of the sack", 1.0f, "Set the scale (size) of the sack");
-                _dan_softness[index] = Config.Bind<float>("Male " + (index + 1) + " Options", "Softness of the penis", 0.1f, "Set the softness of the penis.  A value of 0 means maximum hardness, the penis will remain the same length at all times.  A value greater than 0 will cause the penis to begin to telescope after penetration.  A small value can make it appear there is friction during penetration.");
+                _dan_collider_headlength[index] = Config.Bind<float>("Male " + (index + 1) + " Options", "Collider: Length of Head", 0.2f, "Distance from the center of the head bone to the tip, used for collision purposes.");
+                _dan_collider_radius[index] = Config.Bind<float>("Male " + (index + 1) + " Options", "Collider: Radius of Shaft", 0.25f, "Radius of the shaft collider.");
+                _dan_length[index] = Config.Bind<float>("Male " + (index + 1) + " Options", "Penis: Length", 1.8f, "Set the length of the penis.  Apparent Length is about 0.2 larget than this, depending on uncensor.  2.0 is about 8 inches or 20 cm.");
+                _dan_girth[index] = Config.Bind<float>("Male " + (index + 1) + " Options", "Penis: Girth", 1.0f, "Set the scale of the circumference of the penis.");
+                _dan_softness[index] = Config.Bind<float>("Male " + (index + 1) + " Options", "Penis: Softness", 0.1f, "Set the softness of the penis.  A value of 0 means maximum hardness, the penis will remain the same length at all times.  A value greater than 0 will cause the penis to begin to telescope after penetration.  A small value can make it appear there is friction during penetration.");
+                _dan_sack_size[index] = Config.Bind<float>("Male " + (index + 1) + " Options", "Sack: Size", 1.0f, "Set the scale (size) of the sack");
             }
 
-            _use_telescope_method = Config.Bind<bool>("Female Options", "Use Telescope Method", false, "Use an alternate method of telescoping the penis to prevent clipping instead of repositioning it.");
             _clipping_depth = Config.Bind<float>("Female Options", "Clipping Depth", 0.25f, "Set how close to body surface to limit penis for clipping purposes. Smaller values will result in more clipping through the body, larger values will make the shaft wander further away from the intended penetration point.");
-            _kokanForwardOffset = Config.Bind<float>("Female Options", "Vagina Target Forward Offset", -0.035f, "Forward offset of the vagina target");
-            _kokanUpOffset = Config.Bind<float>("Female Options", "Vagina Target Vertical Offset", 0.0f, "Vertical offset of the vagina target");
-            _headForwardOffset = Config.Bind<float>("Female Options", "Mouth Target Forward Offset", 0.0f, "Forward offset of the vagina target");
-            _headUpOffset = Config.Bind<float>("Female Options", "Mouth Target Vertical Offset", 0.025f, "Vertical offset of the mouth target");
             for (int index = 0; index < frontOffsets.Length; index++)
-                _front_collision_point_offset.Add(Config.Bind<float>("Female Options", "Front Collision Offset " + index, frontOffsets[index], "Individual offset on colision point, to improve clipping"));
+                _front_collision_point_offset.Add(Config.Bind<float>("Female Options", "Clipping Offset: Front Collision " + index, frontOffsets[index], "Individual offset on colision point, to improve clipping"));
             for (int index = 0; index < backOffsets.Length; index++)
-                _back_collision_point_offset.Add(Config.Bind<float>("Female Options", "Back Collision Offset " + index, backOffsets[index], "Individual offset on colision point, to improve clipping"));
-
+                _back_collision_point_offset.Add(Config.Bind<float>("Female Options", "Clipping Offset: Back Collision " + index, backOffsets[index], "Individual offset on colision point, to improve clipping"));
+            _kokanForwardOffset = Config.Bind<float>("Female Options", "Target Offset: Vagina Vertical", -0.035f, "Vertical offset of the vagina target");
+            _kokanUpOffset = Config.Bind<float>("Female Options", "Target Offset: Vagina Depth", 0.0f, "Depth offset of the vagina target");
+            _headForwardOffset = Config.Bind<float>("Female Options", "Target Offset: Mouth Depth", 0.0f, "Depth offset of the mouth target");
+            _headUpOffset = Config.Bind<float>("Female Options", "Target Offset: Mouth Vertical", 0.025f, "Vertical offset of the mouth target");
+            _use_telescope_method = Config.Bind<bool>("Female Options", "Use Telescope Method", false, "Use an alternate method of telescoping the penis to prevent clipping instead of repositioning it.");
 
             for (int index = 0; index < _dan_length.Length; index++)
             {
@@ -156,7 +155,7 @@ namespace HS2_BetterPenetration
 
         [HarmonyPostfix, HarmonyPatch(typeof(H_Lookat_dan), "setInfo")]
         private static void HScene_ChangeMotion(H_Lookat_dan __instance, System.Text.StringBuilder ___assetName)
-        {  
+        {
             if (!inHScene || __instance == null)
                 return;
 
@@ -182,18 +181,18 @@ namespace HS2_BetterPenetration
                 targetF[maleNum] = __instance.numFemale;
                 if (targetF[maleNum] >= constrainPoints.Length)
                     targetF[maleNum] = 0;
-   /*             if (constrainPoints.Length > 1)
-                {
-                    foreach (string position in swappedListF)
-                    {
-                        if (position == ___assetName.ToString())
-                        {
-                            Console.WriteLine("Swapping Girls ");
-                            targetF[maleNum] = 1;
-                            break;
-                        }
-                    }
-                }*/
+                /*             if (constrainPoints.Length > 1)
+                             {
+                                 foreach (string position in swappedListF)
+                                 {
+                                     if (position == ___assetName.ToString())
+                                     {
+                                         Console.WriteLine("Swapping Girls ");
+                                         targetF[maleNum] = 1;
+                                         break;
+                                     }
+                                 }
+                             }*/
             }
 
             referenceLookAtTarget[maleNum] = danPoints[maleNum].danEnd;
@@ -313,7 +312,7 @@ namespace HS2_BetterPenetration
 
                 foreach (DynamicBone db in female.GetComponentsInChildren<DynamicBone>().Where(x => x.name.Contains("cf_J_Vagina")))
                 {
-                    
+
 
                     if (db != null)
                     {
@@ -457,13 +456,12 @@ namespace HS2_BetterPenetration
                         if (index == 1)
                             bConstrainPastNearSide = hPlane.GetSide(adjustedDanPos);
 
-                        if (_use_telescope_method.Value == true)
-                            bConstrainPastNearSide = false;
-
-                        Vector3 constrainedDanPos = Geometry.ConstrainLineToHitPlane(dan101_pos, adjustedDanPos, danLength, frontHitPoints[index-1], frontHitPoints[index], hPlane, ref bConstrainPastNearSide, out float constainedAngle, out float hitDistance);
+                        Vector3 constrainedDanPos = Geometry.ConstrainLineToHitPlane(dan101_pos, adjustedDanPos, danLength, frontHitPoints[index - 1], frontHitPoints[index], hPlane, ref bConstrainPastNearSide, out float constainedAngle, out float hitDistance);
 
                         if (_use_telescope_method.Value == true)
                         {
+                            bConstrainPastNearSide = false;
+
                             if (hitDistance > 0 && hitDistance < danLength)
                             {
                                 danLength = hitDistance;
@@ -487,13 +485,12 @@ namespace HS2_BetterPenetration
                         if (index == 1)
                             bConstrainPastNearSide = hPlane.GetSide(adjustedDanPos);
 
-                        if (_use_telescope_method.Value == true)
-                            bConstrainPastNearSide = false;
-
                         Vector3 constrainedDanPos = Geometry.ConstrainLineToHitPlane(dan101_pos, adjustedDanPos, danLength, backHitPoints[index - 1], backHitPoints[index], hPlane, ref bConstrainPastNearSide, out float constainedAngle, out float hitDistance);
 
                         if (_use_telescope_method.Value == true)
                         {
+                            bConstrainPastNearSide = false;
+
                             if (hitDistance > 0 && hitDistance < danLength)
                             {
                                 danLength = hitDistance;
