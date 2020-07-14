@@ -1,4 +1,4 @@
-# AI_BetterPenetration
+# BetterPenetration
 This plugin seeks to solve to "telescoping" issue that occurs in HScenes in AI Shoujo and Honey Select 2.  It also adds some additional features to overall improve the HScene experience.  This plugin does not work for studio.
 
 # Features
