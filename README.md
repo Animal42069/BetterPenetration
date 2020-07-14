@@ -18,3 +18,7 @@ This plugin does not work for studio.  I have a few ideas on how to make somethi
 Male uncensor requires a shaft bone and a head bone, which most uncensors have.<br>
 No special female uncensors are needed, but if you use Roy12's vagina uncensor it will utilize the dynamic bones if they are present.<br>
 The mod works by keeping track of certain bones on the girl and using that information to set boundaries. Any character made in the game will have these bones. If somehow these bones aren't present then it will revert to default behavior. The mod tries to place the head inside the girl at a position that pierces the original target (vagina, anus, mouth). Due to sizes, lengths, angles and different positions this isn't always possible. It is recommended to use Mantas' BetterHScenes to adjust the characters in the scene to make the geometry involved more favorable
+
+#Installation
+Requires BepInEx<br>
+Copy the dll to your install directory /BepInEx/plugins
