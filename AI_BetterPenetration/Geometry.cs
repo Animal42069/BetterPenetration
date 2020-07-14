@@ -23,11 +23,10 @@ namespace AI_BetterPenetration
             return (radians * 180 / Math.PI);
         }
 
-        public static Vector3 ConstrainLineToHitPlane(Vector3 lineStart, Vector3 lineEnd, float lineLength, Vector3 hitPlaneStart, Vector3 hitPlaneEnd, Plane hitPlane, ref bool bExtendPlaneBeyondStart, out float angleLineToNewLine, out float hitPlaneDistance)
+        public static Vector3 ConstrainLineToHitPlane(Vector3 lineStart, Vector3 lineEnd, float lineLength, Vector3 hitPlaneStart, Vector3 hitPlaneEnd, Plane hitPlane, ref bool bExtendPlaneBeyondStart, out float angleLineToNewLine)
         {
             Vector3 newLineEnd = lineEnd;
             angleLineToNewLine = 0;
-            hitPlaneDistance = 0;
             bool bExtendPlaneBeyondStartReturn = false;
 
             if (hitPlane.GetSide(lineEnd) || bExtendPlaneBeyondStart)
@@ -41,7 +40,6 @@ namespace AI_BetterPenetration
                     castToSegment(hitPoint, hitPlaneEnd, hitPlaneStart, out float normDistAlongSegment);
                     if (normDistAlongSegment > 0 && (normDistAlongSegment < 1 || bExtendPlaneBeyondStart))
                     {
-                        hitPlaneDistance = hitDistance;
 
                         Vector3 lineVector = Vector3.Normalize(lineEnd - lineStart);
                         Vector3 hitVector = Vector3.Normalize(hitPlaneEnd - hitPlaneStart);
