@@ -3,8 +3,7 @@ This plugin seeks to solve to "telescoping" issue that occurs in HScenes in AI S
 
 # Features
 Replaces the default "telescoping" behavior by allowing the head to move past the point of penetration.<br>
-Two methods to reposition the head of the penis.  The first will maintain penis length, but change rotation to find a spot that doesn't clip.<br>
-The second method will telescope the penis just enough to prevent clipping.<br>
+The head will reposition to maintain length, optionally you can allow the penis to begin to telescope after it has penetrated by a specified percentage<br>
 Works for vaginal, anal, and oral penetraion.<br>
 Maintain proper rotation of the penis, no more spinning shafts during certain positions.<br>
 Adjust the length and girth of penis.<br>
