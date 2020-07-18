@@ -23,50 +23,66 @@ namespace AI_BetterPenetration
             return (radians * 180 / Math.PI);
         }
 
-        public static Vector3 ConstrainLineToHitPlane(Vector3 lineStart, Vector3 lineEnd, float lineLength, Vector3 hitPlaneStart, Vector3 hitPlaneEnd, Plane hitPlane, ref bool bExtendPlaneBeyondStart, out float angleLineToNewLine, out float hitPlaneDistance)
+        public static Vector3 ConstrainLineToHitPlane(Vector3 lineStart, Vector3 lineEnd, float lineLength, float minLineLength, Vector3 hitPlaneStart, Vector3 hitPlaneEnd, Plane hitPlane, bool bExtendPlaneBeyondEnd, ref bool bExtendPlaneBeyondStart, out float angleLineToNewLine, out bool bHitPointFound)
         {
             Vector3 newLineEnd = lineEnd;
-            angleLineToNewLine = 0;
-            hitPlaneDistance = 0;
             bool bExtendPlaneBeyondStartReturn = false;
+            bHitPointFound = false;
+            angleLineToNewLine = 0;
 
             if (hitPlane.GetSide(lineEnd) || bExtendPlaneBeyondStart)
             {
-                Ray lineRay = new Ray(lineStart, Vector3.Normalize(lineEnd - lineStart));
+                Vector3 lineVector = Vector3.Normalize(lineEnd - lineStart);
+                Ray lineRay = new Ray(lineStart, Vector3.Normalize(lineVector));
                 bool lineHitPlane = hitPlane.Raycast(lineRay, out float hitDistance);
 
-                if (lineHitPlane && (hitDistance < lineLength || bExtendPlaneBeyondStart))
+                if (lineHitPlane && (hitDistance <= lineLength))
                 {
                     Vector3 hitPoint = lineRay.GetPoint(hitDistance);
                     castToSegment(hitPoint, hitPlaneEnd, hitPlaneStart, out float normDistAlongSegment);
-                    if (normDistAlongSegment > 0 && (normDistAlongSegment < 1 || bExtendPlaneBeyondStart))
+                    if (normDistAlongSegment >= 0 || bExtendPlaneBeyondEnd)
                     {
-                        hitPlaneDistance = hitDistance;
-
-                        Vector3 lineVector = Vector3.Normalize(lineEnd - lineStart);
-                        Vector3 hitVector = Vector3.Normalize(hitPlaneEnd - hitPlaneStart);
-                        Vector3 planeVector = Vector3.Normalize(Vector3.Cross(lineVector, hitPlane.normal));
-                        Vector3 linePlaneForwardVector = Vector3.Normalize(Vector3.Cross(hitPlane.normal, planeVector));
-
-                        if (Vector3.Magnitude(linePlaneForwardVector + hitVector) < Vector3.Magnitude(linePlaneForwardVector - hitVector))
-                            linePlaneForwardVector = -linePlaneForwardVector;
-
-
-                        float angleLineToPlane = Vector3.Angle(lineVector, -linePlaneForwardVector);
-
-                        angleLineToPlane = (float)DegToRad(angleLineToPlane);
-                        float angleNewLineToPlane = (float)Math.Asin(hitDistance * Math.Sin(angleLineToPlane) / lineLength);
-                        angleLineToNewLine = (float)Math.PI - angleLineToPlane - angleNewLineToPlane;
-                        float distanceAlongPlane = (float)(lineLength * Math.Sin(angleLineToNewLine) / Math.Sin(angleLineToPlane));
-                        newLineEnd = hitPoint + distanceAlongPlane * linePlaneForwardVector;
-                        angleLineToNewLine = Vector3.Angle(newLineEnd - lineStart, lineVector);
-
-                        Vector3 maxLineVector = Geometry.castToSegment(hitPlaneEnd, newLineEnd, lineEnd, out normDistAlongSegment);
-                        if (normDistAlongSegment > 0 && normDistAlongSegment < 1)
+                        if (hitDistance >= minLineLength)
                         {
-                            newLineEnd = new Ray(lineStart, Vector3.Normalize(maxLineVector - lineStart)).GetPoint(lineLength);
-                            angleLineToNewLine = Vector3.Angle(newLineEnd - lineStart, lineVector);
-                            bExtendPlaneBeyondStartReturn = true;
+                            newLineEnd = hitPoint;
+                            bHitPointFound = true;
+                        }
+                        else
+                        {
+                            lineLength = minLineLength;
+                            if (normDistAlongSegment < 1 || bExtendPlaneBeyondStart)
+                            {
+                                Vector3 hitVector = Vector3.Normalize(hitPlaneEnd - hitPlaneStart);
+                                Vector3 planeVector = Vector3.Normalize(Vector3.Cross(lineVector, hitPlane.normal));
+                                Vector3 linePlaneForwardVector = hitVector;
+
+                                float angleLineToPlane = (float)DegToRad(Vector3.Angle(lineVector, -linePlaneForwardVector));
+                                float angleNewLineToPlane = (float)Math.Asin(hitDistance * Math.Sin(angleLineToPlane) / lineLength);
+                                angleLineToNewLine = (float)Math.PI - angleLineToPlane - angleNewLineToPlane;
+                                float distanceAlongPlane = (float)(lineLength * Math.Sin(angleLineToNewLine) / Math.Sin(angleLineToPlane));
+                                newLineEnd = hitPoint + distanceAlongPlane * linePlaneForwardVector;
+                                angleLineToNewLine = (float)RadToDeg(angleLineToNewLine);
+                                bHitPointFound = true;
+
+                                if (!bExtendPlaneBeyondEnd)
+                                {
+                                    float angleNewLineEndToPlaneLine = Vector3.Angle(newLineEnd - hitPlaneEnd, -hitVector);
+                                    if (angleNewLineEndToPlaneLine > 90)
+                                    {
+                                        Vector3 newHitPoint;
+                                        angleNewLineEndToPlaneLine -= 90;
+
+                                        float angleHitPlaneEndToHitPlaneVector = Vector3.Angle(hitPlaneEnd - hitPoint, linePlaneForwardVector);
+                                        float distanceNewLineEndToHitPlaneEnd = Vector3.Distance(newLineEnd, hitPlaneEnd);
+                                        float distanceNewLineEndToMax = (float)(distanceNewLineEndToHitPlaneEnd * Math.Sin(DegToRad(angleNewLineEndToPlaneLine)) / Math.Sin(DegToRad(angleHitPlaneEndToHitPlaneVector)));
+                                        newHitPoint = hitPoint + (distanceAlongPlane - distanceNewLineEndToHitPlaneEnd) * linePlaneForwardVector;
+                                        newLineEnd = new Ray(lineStart, Vector3.Normalize(newHitPoint - lineStart)).GetPoint(lineLength);
+                                        angleLineToNewLine = Vector3.Angle(newLineEnd - lineStart, lineVector);
+                                        bExtendPlaneBeyondStartReturn = true;
+                                        bHitPointFound = false;
+                                    }
+                                }
+                            }
                         }
                     }
                 }
