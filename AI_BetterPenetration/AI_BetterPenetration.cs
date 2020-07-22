@@ -14,7 +14,7 @@ namespace AI_BetterPenetration
     [BepInPlugin("animal42069.aibetterpenetration", "AI Better Penetration", VERSION)]
     public class AI_BetterPenetration : BaseUnityPlugin
     {
-        public const string VERSION = "2.0.0.0";
+        public const string VERSION = "2.0.2.0";
 
         private static ConfigEntry<float> _dan_length;
         private static ConfigEntry<float> _dan_girth;
@@ -48,17 +48,17 @@ namespace AI_BetterPenetration
         private static ConstrainPoints constrainPoints;
         private static H_Lookat_dan lookat_Dan;
 
-        private static readonly float[] frontOffsets = { -0.08f, -0.15f, -0.08f, -0.65f };
-        private static readonly float[] backOffsets = { 0.15f, 0.1f, 0.0f, 0.0f };
+        private static readonly float[] frontOffsets = { 0.05f, 0.05f, 0f, -0.65f };
+        private static readonly float[] backOffsets = { -0.15f, /*0.1f,*/ 0.05f, 0.05f };
         private static readonly string[] frontHPointsList = { "cf_J_sk_00_02", "k_f_kosi03_03", "N_Waist_f", "k_f_spine03_03" };
-        private static readonly string[] backHPointsList = { "cf_J_sk_04_02", "cf_J_sk_04_01", "N_Waist_b", "N_Back" };
+        private static readonly string[] backHPointsList = { "cf_J_sk_04_02",/* "cf_J_sk_04_01",*/ "N_Waist_b", "N_Back" };
         private static readonly bool[] frontHPointsInward = { false, false, false, false };
-        private static readonly bool[] backHPointsInward = { false, false, true, true };
+        private static readonly bool[] backHPointsInward = { false, /*false,*/ true, true };
 
         private void Awake()
         {
             _dan_collider_headlength = Config.Bind<float>("Male Options", "Collider: Length of Head", 0.2f, "Distance from the center of the head bone to the tip, used for collision purposes.");
-            _dan_collider_radius = Config.Bind<float>("Male Options", "Collider: Radius of Shaft", 0.25f, "Rasius of the shaft collider.");
+            _dan_collider_radius = Config.Bind<float>("Male Options", "Collider: Radius of Shaft", 0.25f, "Radius of the shaft collider.");
             _dan_length = Config.Bind<float>("Male Options", "Penis: Length", 1.8f, "Set the length of the penis.  Apparent Length is about 0.2 larget than this, depending on uncensor.  2.0 is about 8 inches or 20 cm.");
             _dan_girth = Config.Bind<float>("Male Options", "Penis: Girth", 1.0f, "Set the scale of the circumference of the penis.");
             _dan_softness = Config.Bind<float>("Male Options", "Penis: Softness", 0.1f, "Set the softness of the penis.  A value of 0 means maximum hardness, the penis will remain the same length at all times.  A value greater than 0 will cause the penis to begin to telescope after penetration.  A small value can make it appear there is friction during penetration.");
@@ -70,9 +70,9 @@ namespace AI_BetterPenetration
                 _front_collision_point_offset.Add(Config.Bind<float>("Female Options", "Clipping Offset: Front Collision " + index, frontOffsets[index], "Individual offset on colision point, to improve clipping"));
             for (int index = 0; index < backOffsets.Length; index++)
                 _back_collision_point_offset.Add(Config.Bind<float>("Female Options", "Clipping Offset: Back Collision " + index, backOffsets[index], "Individual offset on colision point, to improve clipping"));
-            _kokanForwardOffset = Config.Bind<float>("Female Options", "Target Offset: Vagina Vertical", -0.035f, "Vertical offset of the vagina target");
-            _kokanUpOffset = Config.Bind<float>("Female Options", "Target Offset: Vagina Depth", 0.0f, "Depth offset of the vagina target");
-            _headForwardOffset = Config.Bind<float>("Female Options", "Target Offset: Mouth Depth", 0.0f, "Depth offset of the mouth target");
+            _kokanForwardOffset = Config.Bind<float>("Female Options", "Target Offset: Vagina Vertical", -0.025f, "Vertical offset of the vagina target");
+            _kokanUpOffset = Config.Bind<float>("Female Options", "Target Offset: Vagina Depth", -0.05f, "Depth offset of the vagina target");
+            _headForwardOffset = Config.Bind<float>("Female Options", "Target Offset: Mouth Depth", 0.1f, "Depth offset of the mouth target");
             _headUpOffset = Config.Bind<float>("Female Options", "Target Offset: Mouth Vertical", 0.025f, "Vertical offset of the mouth target");
 
             _dan_length.SettingChanged += delegate
@@ -171,7 +171,6 @@ namespace AI_BetterPenetration
         [HarmonyPostfix, HarmonyPatch(typeof(HScene), "SetStartVoice")]
         public static void AddPColliders(HScene __instance)
         {
-            inHScene = true;
             male_list = __instance.GetMales().Where(male => male != null).ToArray();
             fem_list = __instance.GetFemales().Where(female => female != null).ToArray();
 
@@ -269,6 +268,7 @@ namespace AI_BetterPenetration
                     kokanBones = dbList;
                 }
             }
+            inHScene = true;
             Console.WriteLine("AddColliders done.");
         }
 
@@ -349,13 +349,6 @@ namespace AI_BetterPenetration
                             backHitPoints.Add(constrainPoints.backConstrainPoints[index].position + (_clipping_depth.Value + _back_collision_point_offset[index].Value) * constrainPoints.backConstrainPoints[index].forward);
                     }
 
-                    for (int index = 0; index < constrainPoints.frontConstrainPoints.Count; index++)
-                        Console.WriteLine("frontHitPoints " + index + ": " + frontHitPoints[index].x + " , " + frontHitPoints[index].y + " , " + frontHitPoints[index].z);
-
-                    for (int index = 0; index < constrainPoints.backConstrainPoints.Count; index++)
-                        Console.WriteLine("backHitPoints " + index + ": " + backHitPoints[index].x + " , " + backHitPoints[index].y + " , " + backHitPoints[index].z);
-
-
                     float danLength = _dan_length.Value;
                     Plane kokanPlane = new Plane(danPoints.danStart.forward, lookTarget);
 
@@ -372,12 +365,6 @@ namespace AI_BetterPenetration
                     if (minDanLength > danLength)
                         minDanLength = danLength;
                     bool bConstrainPastNearSide = false;
-
-                    Console.WriteLine("dan101_pos " + dan101_pos.x + " , " + dan101_pos.y + " , " + dan101_pos.z);
-                    Console.WriteLine("lookTarget " + lookTarget.x + " , " + lookTarget.y + " , " + lookTarget.z);
-                    Console.WriteLine("dan109_pos " + dan109_pos.x + " , " + dan109_pos.y + " , " + dan109_pos.z);
-                    Console.WriteLine("danLength " + danLength);
-                    Console.WriteLine("minDanLength " + minDanLength);
                     bool bConstrainPastFarSide = false;
                     Vector3 frontAdjustedPos = dan109_pos;
                     float frontAdjustedAngle = 0;
@@ -399,6 +386,7 @@ namespace AI_BetterPenetration
 
                         if (index == constrainPoints.frontConstrainPoints.Count - 1)
                             bConstrainPastFarSide = true;
+
                         Vector3 adjustedDanPos = Geometry.ConstrainLineToHitPlane(dan101_pos, frontAdjustedPos, danLength, minDanLength, frontHitPoints[index - 1], frontHitPoints[index], hPlane, bConstrainPastFarSide, ref bConstrainPastNearSide, out float adjustedAngle, out bool bHitPointFound);
                             frontAdjustedAngle += adjustedAngle;
                             frontAdjustedPos = adjustedDanPos;
@@ -427,12 +415,13 @@ namespace AI_BetterPenetration
 
                         if (index == constrainPoints.backConstrainPoints.Count - 1)
                             bConstrainPastFarSide = true;
+
                         Vector3 adjustedDanPos = Geometry.ConstrainLineToHitPlane(dan101_pos, backAdjustedPos, danLength, minDanLength, backHitPoints[index - 1], backHitPoints[index], hPlane, bConstrainPastFarSide, ref bConstrainPastNearSide, out float adjustedAngle, out bool bHitPointFound);
                         backAdjustedAngle += adjustedAngle;
                             backAdjustedPos = adjustedDanPos;
                         if (bHitPointFound)
                             break;
-                   }
+                    }
 
                         dan109_pos = backAdjustedPos;
                 }

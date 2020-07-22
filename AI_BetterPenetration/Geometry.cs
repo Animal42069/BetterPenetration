@@ -55,7 +55,6 @@ namespace AI_BetterPenetration
                                 Vector3 hitVector = Vector3.Normalize(hitPlaneEnd - hitPlaneStart);
                                 Vector3 planeVector = Vector3.Normalize(Vector3.Cross(lineVector, hitPlane.normal));
                                 Vector3 linePlaneForwardVector = hitVector;
-
                                 float angleLineToPlane = (float)DegToRad(Vector3.Angle(lineVector, -linePlaneForwardVector));
                                 float angleNewLineToPlane = (float)Math.Asin(hitDistance * Math.Sin(angleLineToPlane) / lineLength);
                                 angleLineToNewLine = (float)Math.PI - angleLineToPlane - angleNewLineToPlane;

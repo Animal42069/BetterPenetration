@@ -8,7 +8,7 @@ namespace AI_BetterPenetration
         public Transform danEnd;
         public Transform danTop;
 
-        public DanPoints(Transform start, Transform end, Transform top)
+        public DanPoints(Transform start,Transform end, Transform top)
         {
             danStart = start;
             danEnd = end;

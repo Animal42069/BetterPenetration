@@ -15,7 +15,7 @@ namespace HS2_BetterPenetration
     [BepInProcess("HoneySelect2")]
     public class HS2_BetterPenetration : BaseUnityPlugin
     {
-        public const string VERSION = "2.0.1.0";
+        public const string VERSION = "2.0.2.0";
 
         private static Harmony harmony;
 
@@ -53,12 +53,12 @@ namespace HS2_BetterPenetration
         private static ConstrainPoints[] constrainPoints;
         private static H_Lookat_dan lookat_Dan;
 
-        private static readonly float[] frontOffsets = { -0.08f, -0.15f, -0.08f, -0.65f };
-        private static readonly float[] backOffsets = { 0.15f, 0.1f, 0.0f, 0.0f };
+        private static readonly float[] frontOffsets = { 0.05f, 0.05f, 0f, -0.65f };
+        private static readonly float[] backOffsets = { -0.15f, /*0.1f,*/ 0.05f, 0.05f };
         private static readonly string[] frontHPointsList = { "cf_J_sk_00_02", "k_f_kosi03_03", "N_Waist_f", "k_f_spine03_03" };
-        private static readonly string[] backHPointsList = { "cf_J_sk_04_02", "cf_J_sk_04_01", "N_Waist_b", "N_Back" };
+        private static readonly string[] backHPointsList = { "cf_J_sk_04_02",/* "cf_J_sk_04_01",*/ "N_Waist_b", "N_Back" };
         private static readonly bool[] frontHPointsInward = { false, false, false, false };
-        private static readonly bool[] backHPointsInward = { false, false, true, true };
+        private static readonly bool[] backHPointsInward = { false, /*false,*/ true, true };
 
         private void Awake()
         {
@@ -78,10 +78,10 @@ namespace HS2_BetterPenetration
                 _front_collision_point_offset.Add(Config.Bind<float>("Female Options", "Clipping Offset: Front Collision " + index, frontOffsets[index], "Individual offset on colision point, to improve clipping"));
             for (int index = 0; index < backOffsets.Length; index++)
                 _back_collision_point_offset.Add(Config.Bind<float>("Female Options", "Clipping Offset: Back Collision " + index, backOffsets[index], "Individual offset on colision point, to improve clipping"));
-            _kokanForwardOffset = Config.Bind<float>("Female Options", "Target Offset: Vagina Vertical", -0.035f, "Vertical offset of the vagina target");
-            _kokanUpOffset = Config.Bind<float>("Female Options", "Target Offset: Vagina Depth", 0.0f, "Depth offset of the vagina target");
-            _headForwardOffset = Config.Bind<float>("Female Options", "Target Offset: Mouth Depth", 0.0f, "Depth offset of the mouth target");
-            _headUpOffset = Config.Bind<float>("Female Options", "Target Offset: Mouth Vertical", 0.035f, "Vertical offset of the mouth target");
+            _kokanForwardOffset = Config.Bind<float>("Female Options", "Target Offset: Vagina Vertical", -0.025f, "Vertical offset of the vagina target");
+            _kokanUpOffset = Config.Bind<float>("Female Options", "Target Offset: Vagina Depth", -0.05f, "Depth offset of the vagina target");
+            _headForwardOffset = Config.Bind<float>("Female Options", "Target Offset: Mouth Depth", 0.1f, "Depth offset of the mouth target");
+            _headUpOffset = Config.Bind<float>("Female Options", "Target Offset: Mouth Vertical", 0.025f, "Vertical offset of the mouth target");
 
             for (int index = 0; index < _dan_length.Length; index++)
             {
@@ -424,9 +424,7 @@ namespace HS2_BetterPenetration
                     tDan101ToTarget = danLength / distDan101ToTarget;
                     dan109_pos = Vector3.LerpUnclamped(dan101_pos, lookTarget, tDan101ToTarget);
 
-
-
-                    float minDanLength = distDan101ToTarget + (danLength * (1 - _allow_telescope_percent[maleIndex].Value));
+                   float minDanLength = distDan101ToTarget + (danLength * (1 - _allow_telescope_percent[maleIndex].Value));
                     if (minDanLength > danLength)
                         minDanLength = danLength;
                     bool bConstrainPastNearSide = false;

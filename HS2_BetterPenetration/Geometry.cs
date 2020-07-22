@@ -50,7 +50,6 @@ namespace HS2_BetterPenetration
                         else
                         {
                             lineLength = minLineLength;
- 
                             if (normDistAlongSegment < 1 || bExtendPlaneBeyondStart)
                             {
                                 Vector3 hitVector = Vector3.Normalize(hitPlaneEnd - hitPlaneStart);
