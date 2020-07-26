@@ -16,6 +16,13 @@ namespace HS2_BetterPenetration
     public class HS2_BetterPenetration : BaseUnityPlugin
     {
         public const string VERSION = "2.0.2.0";
+        private const string head_target = "k_f_head_00";
+        private const string chest_target = "k_f_spine03_00";
+        private const string kokan_target = "k_f_kokan_00";
+        private const string ana_target = "k_f_ana_00";
+        private const string dan_base = "cm_J_dan101_00";
+        private const string dan_head = "cm_J_dan109_00";
+        private const string dan_sack = "cm_J_dan_f_top";
 
         private static Harmony harmony;
 
@@ -25,7 +32,11 @@ namespace HS2_BetterPenetration
         private static ConfigEntry<float>[] _dan_softness = new ConfigEntry<float>[2];
         private static ConfigEntry<float>[] _dan_collider_headlength = new ConfigEntry<float>[2];
         private static ConfigEntry<float>[] _dan_collider_radius = new ConfigEntry<float>[2];
+        private static ConfigEntry<float>[] _dan_move_limit = new ConfigEntry<float>[2];
+        private static ConfigEntry<float>[] _dan_angle_limit = new ConfigEntry<float>[2];
+        
         private static ConfigEntry<float>[] _allow_telescope_percent = new ConfigEntry<float>[2];
+        private static ConfigEntry<bool>[] _force_telescope = new ConfigEntry<bool>[2];
 
         private static ConfigEntry<float> _clipping_depth;
         private static ConfigEntry<float> _kokanForwardOffset;
@@ -47,18 +58,26 @@ namespace HS2_BetterPenetration
         private static DanPoints[] danPoints;
         private static bool[] bDanPenetration = new bool[2] { false, false };
         private static Transform[] referenceLookAtTarget;
+        private static float[] lastDanAngle = new float[2] { 0, 0 };
+        private static float[] lastDanLength = new float[2] { 0, 0 };
+        private static Vector3[] lastDanForwardVector = new Vector3[2] { new Vector3(0, 0, 0), new Vector3(0, 0, 0) };
+        private static Quaternion[] lastDanRotation = new Quaternion[2] { new Quaternion(0, 0, 0, 0), new Quaternion(0, 0, 0, 0) };
+        private static Vector3[] lastDan109Position = new Vector3[2] { new Vector3(0, 0, 0), new Vector3(0, 0, 0) };
+        private static float[] lastDan101TargetDistance = new float[2] { 0, 0 };
 
         private static bool[] bHPointsFound = new bool[2] { false, false };
         private static int[] targetF = new int[2] { 0, 0 };
         private static ConstrainPoints[] constrainPoints;
         private static H_Lookat_dan lookat_Dan;
 
-        private static readonly float[] frontOffsets = { 0.05f, 0.05f, 0f, -0.65f };
-        private static readonly float[] backOffsets = { -0.15f, /*0.1f,*/ 0.05f, 0.05f };
-        private static readonly string[] frontHPointsList = { "cf_J_sk_00_02", "k_f_kosi03_03", "N_Waist_f", "k_f_spine03_03" };
-        private static readonly string[] backHPointsList = { "cf_J_sk_04_02",/* "cf_J_sk_04_01",*/ "N_Waist_b", "N_Back" };
-        private static readonly bool[] frontHPointsInward = { false, false, false, false };
-        private static readonly bool[] backHPointsInward = { false, /*false,*/ true, true };
+        private static readonly float[] frontOffsets = { -0.35f, 0.1f,/* -0.2f,*/ 0f, -0.65f };
+        private static readonly float[] backOffsets = { -0.35f , 0.1f, /*0.1f,*/ 0.05f, 0.05f };
+        private static readonly string[] frontHPointsList = { kokan_target, "cf_J_sk_00_02", /*"k_f_kosi03_03",*/ "N_Waist_f", "k_f_spine03_03" };
+        private static readonly string[] backHPointsList = { ana_target, "cf_J_sk_04_02",/* "cf_J_sk_04_01",*/ "N_Waist_b", "N_Back" };
+        private static readonly bool[] frontHPointsInward = { false, false,/* false,*/ false, false };
+        private static readonly bool[] backHPointsInward = { false, false, /*false,*/ true, true };
+
+        private static float lastAdjustTime = 0;
 
         private void Awake()
         {
@@ -70,6 +89,9 @@ namespace HS2_BetterPenetration
                 _dan_girth[index] = Config.Bind<float>("Male " + (index + 1) + " Options", "Penis: Girth", 1.0f, "Set the scale of the circumference of the penis.");
                 _dan_softness[index] = Config.Bind<float>("Male " + (index + 1) + " Options", "Penis: Softness", 0.1f, "Set the softness of the penis.  A value of 0 means maximum hardness, the penis will remain the same length at all times.  A value greater than 0 will cause the penis to begin to telescope after penetration.  A small value can make it appear there is friction during penetration.");
                 _allow_telescope_percent[index] = Config.Bind<float>("Male " + (index + 1) + " Options", "Penis: Telescope Threshold", 0.4f, "Allow the penis to begin telescoping after it has penetrated a certain amount. 0 = never telescope, 0.5 = allow telescoping after the halfway point, 1 = always allow telescoping.");
+                _force_telescope[index] = Config.Bind<bool>("Male " + (index + 1) + " Options", "Penis: Telescope Always", false, "Force the penis to always telescope at the threshold point, instead of only doing it when it prevents clipping.");
+                _dan_move_limit[index] = Config.Bind<float>("Male " + (index + 1) + " Options", "Penis: Telescope Limiter", 3.6f, "Sets a limit for how fast the penis can change length, preventing the penis from suddenly changing length when it hits a new collision point.  Maximum amount the penis can grow/shrink per second, at an insertion rate of 1 per second.  Scales to insertion rate.");
+                _dan_angle_limit[index] = Config.Bind<float>("Male " + (index + 1) + " Options", "Penis: Angle Limiter", 60.0f, "Maximum angle the penis rotate per second.");
                 _dan_sack_size[index] = Config.Bind<float>("Male " + (index + 1) + " Options", "Sack: Size", 1.0f, "Set the scale (size) of the sack");
             }
 
@@ -80,7 +102,7 @@ namespace HS2_BetterPenetration
                 _back_collision_point_offset.Add(Config.Bind<float>("Female Options", "Clipping Offset: Back Collision " + index, backOffsets[index], "Individual offset on colision point, to improve clipping"));
             _kokanForwardOffset = Config.Bind<float>("Female Options", "Target Offset: Vagina Vertical", -0.025f, "Vertical offset of the vagina target");
             _kokanUpOffset = Config.Bind<float>("Female Options", "Target Offset: Vagina Depth", -0.05f, "Depth offset of the vagina target");
-            _headForwardOffset = Config.Bind<float>("Female Options", "Target Offset: Mouth Depth", 0.1f, "Depth offset of the mouth target");
+            _headForwardOffset = Config.Bind<float>("Female Options", "Target Offset: Mouth Depth", 0.05f, "Depth offset of the mouth target");
             _headUpOffset = Config.Bind<float>("Female Options", "Target Offset: Mouth Vertical", 0.025f, "Vertical offset of the mouth target");
 
             for (int index = 0; index < _dan_length.Length; index++)
@@ -153,6 +175,7 @@ namespace HS2_BetterPenetration
         [HarmonyPostfix, HarmonyPatch(typeof(H_Lookat_dan), "setInfo")]
         private static void HScene_ChangeMotion(H_Lookat_dan __instance, System.Text.StringBuilder ___assetName)
         {
+
             if (!inHScene || __instance == null)
                 return;
 
@@ -181,11 +204,18 @@ namespace HS2_BetterPenetration
            }
 
             referenceLookAtTarget[maleNum] = danPoints[maleNum].danEnd;
+            lastDan109Position[maleNum] = danPoints[maleNum].danEnd.position;
+            lastDanRotation[maleNum] = danPoints[maleNum].danEnd.rotation;
+            lastDanForwardVector[maleNum] = danPoints[maleNum].danEnd.position - danPoints[maleNum].danStart.position;
+            lastDanLength[maleNum] = _dan_length[maleNum].Value;
+            lastDanAngle[maleNum] = 0;
+
             bDanPenetration[maleNum] = false;
-            if (__instance.transLookAtNull != null && __instance.transLookAtNull.name != "k_f_spine03_00" && __instance.strPlayMotion.Contains("Idle") == false && __instance.strPlayMotion.Contains("OUT") == false)
+            if (__instance.transLookAtNull != null && __instance.transLookAtNull.name != chest_target && __instance.strPlayMotion.Contains("Idle") == false && __instance.strPlayMotion.Contains("OUT") == false)
             {
                 bDanPenetration[maleNum] = true;
                 referenceLookAtTarget[maleNum] = __instance.transLookAtNull;
+                lastDan101TargetDistance[maleNum] = Vector3.Distance(referenceLookAtTarget[maleNum].position, danPoints[maleNum].danStart.position);
             }
 
             SetDanTarget(__instance, maleNum);
@@ -197,19 +227,39 @@ namespace HS2_BetterPenetration
             if (!inHScene)
                 return;
 
+            float adjustTime = Time.time;
+            float timeSinceLastAdjust = adjustTime - lastAdjustTime ;
+            lastAdjustTime = adjustTime;
+
             for (int male = 0; male < bDansFound.Length; male++)
             {
-                if (bDansFound[male])
+                if (timeSinceLastAdjust < 0.0001)
                 {
-                    danPoints[male].danStart.localScale = new Vector3(_dan_girth[male].Value, _dan_girth[male].Value, 1);
-                    danPoints[male].danTop.localScale = new Vector3(_dan_sack_size[male].Value, _dan_sack_size[male].Value, _dan_sack_size[male].Value);
-
-                    if (bHPointsFound[targetF[male]])
-                        SetDanTarget(__instance, male);
+                    danPoints[male].danStart.rotation = lastDanRotation[male];
+                    danPoints[male].danEnd.SetPositionAndRotation(lastDan109Position[male], lastDanRotation[male]);
                 }
+                else
+                {
+                    Console.WriteLine("Time since last adjust " + timeSinceLastAdjust);
+                    if (bDansFound[male])
+                    {
+                        danPoints[male].danStart.localScale = new Vector3(_dan_girth[male].Value, _dan_girth[male].Value, 1);
+                        danPoints[male].danTop.localScale = new Vector3(_dan_sack_size[male].Value, _dan_sack_size[male].Value, _dan_sack_size[male].Value);
 
-                if (!b2MAnimation)
-                    return;
+                        if (bHPointsFound[targetF[male]])
+                        {
+                            float maxDanSizeAdjust = _dan_move_limit[male].Value * timeSinceLastAdjust;
+                            float maxDanAngleAdjust = _dan_angle_limit[male].Value * timeSinceLastAdjust;
+
+                            Console.WriteLine("maxDanSizeAdjust " + maxDanSizeAdjust + " , maxDanAngleAdjust " + maxDanAngleAdjust);
+
+                            SetDanTarget(__instance, male, maxDanSizeAdjust, maxDanAngleAdjust);
+                        }
+                    }
+
+                    if (!b2MAnimation)
+                        return;
+                }
             }
         }
 
@@ -256,9 +306,16 @@ namespace HS2_BetterPenetration
                     danCollider[maleIndex].m_Radius = _dan_collider_radius[maleIndex].Value;
                     danCollider[maleIndex].m_Height = _dan_length[maleIndex].Value + (_dan_collider_headlength[maleIndex].Value * 2);
                     danPoints[maleIndex].danTop.localScale = new Vector3(_dan_sack_size[maleIndex].Value, _dan_sack_size[maleIndex].Value, _dan_sack_size[maleIndex].Value);
+
+                    lastDan109Position[maleIndex] = danPoints[maleIndex].danEnd.position;
+                    lastDanRotation[maleIndex] = danPoints[maleIndex].danEnd.rotation;
+                    lastDanForwardVector[maleIndex] = danPoints[maleIndex].danEnd.position - danPoints[maleIndex].danStart.position;
+                    lastDanLength[maleIndex] = _dan_length[maleIndex].Value;
+                    lastDanAngle[maleIndex] = 0;
                 }
 
                 referenceLookAtTarget[maleIndex] = dan101;
+                lastDan101TargetDistance[maleIndex] = Vector3.Distance(referenceLookAtTarget[maleIndex].position, danPoints[maleIndex].danStart.position);
                 Console.WriteLine("bDansFound " + bDansFound[maleIndex]);
                 maleIndex++;
             }
@@ -277,7 +334,7 @@ namespace HS2_BetterPenetration
                 for (int index = 0; index < backHPointsList.Length; index++)
                     backHPoints.Add(female.GetComponentsInChildren<Transform>().Where(x => x.name.Contains(backHPointsList[index])).FirstOrDefault());
 
-                hPointBackOfHead = female.GetComponentsInChildren<Transform>().Where(x => x.name.Contains("k_f_head_03")).FirstOrDefault();
+                hPointBackOfHead = female.GetComponentsInChildren<Transform>().Where(x => x.name.Contains("cf_J_head")).FirstOrDefault();
 
                 if (frontHPoints.Count == frontHPointsList.Length && backHPoints.Count == backHPointsList.Length && hPointBackOfHead != null)
                 {
@@ -367,7 +424,7 @@ namespace HS2_BetterPenetration
             }
         }
 
-        private static void SetDanTarget(H_Lookat_dan __instance, int maleIndex)
+        private static void SetDanTarget(H_Lookat_dan __instance, int maleIndex, float maxLengthAdjust = 10000, float maxAngleAdjust = 10000)
         {
             if (!bDansFound[maleIndex] || referenceLookAtTarget == null || referenceLookAtTarget.Length <= maleIndex)
                 return;
@@ -378,9 +435,9 @@ namespace HS2_BetterPenetration
             Vector3 dan101_pos = danPoints[maleIndex].danStart.position;
             Vector3 lookTarget = referenceLookAtTarget[maleIndex].position;
 
-            if (referenceLookAtTarget[maleIndex].name == "k_f_kokan_00")
+            if (referenceLookAtTarget[maleIndex].name == kokan_target)
                 lookTarget = lookTarget + (referenceLookAtTarget[maleIndex].forward * _kokanForwardOffset.Value) + (referenceLookAtTarget[maleIndex].up * _kokanUpOffset.Value);
-            if (referenceLookAtTarget[maleIndex].name == "k_f_head_00")
+            if (referenceLookAtTarget[maleIndex].name == head_target)
                 lookTarget = lookTarget + (referenceLookAtTarget[maleIndex].forward * _headForwardOffset.Value) + (referenceLookAtTarget[maleIndex].up * _headUpOffset.Value);
 
             float distDan101ToTarget = Vector3.Distance(dan101_pos, lookTarget);
@@ -392,7 +449,11 @@ namespace HS2_BetterPenetration
 
             if (bDanPenetration[maleIndex])
             {
-                if (referenceLookAtTarget[maleIndex].name == "k_f_kokan_00" || referenceLookAtTarget[maleIndex].name == "k_f_ana_00")
+                // scale to insertions per second, one full insertion is the movement of the dan in and out.
+                maxLengthAdjust *= ((distDan101ToTarget - lastDan101TargetDistance[maleIndex]) * 2 * _dan_length[maleIndex].Value) * Time.deltaTime;
+                Console.WriteLine("maxLengthAdjust scaled to " + maxLengthAdjust);
+
+                if (referenceLookAtTarget[maleIndex].name == kokan_target || referenceLookAtTarget[maleIndex].name == ana_target)
                 {
                     List<Vector3> frontHitPoints = new List<Vector3>();
                     List<Vector3> backHitPoints = new List<Vector3>();
@@ -412,6 +473,12 @@ namespace HS2_BetterPenetration
                             backHitPoints.Add(constrainPoints[targetF[maleIndex]].backConstrainPoints[index].position + (_clipping_depth.Value + _back_collision_point_offset[index].Value) * constrainPoints[targetF[maleIndex]].backConstrainPoints[index].forward);
                     }
 
+                    for (int index = 0; index < constrainPoints[maleIndex].frontConstrainPoints.Count; index++)
+                        Console.WriteLine("frontHitPoints" + index + ": " + frontHitPoints[index].x + " , " + frontHitPoints[index].y + " , " + frontHitPoints[index].z);
+
+                    for (int index = 0; index < constrainPoints[maleIndex].backConstrainPoints.Count; index++)
+                        Console.WriteLine("backHitPoints" + index + ": " + backHitPoints[index].x + " , " + backHitPoints[index].y + " , " + backHitPoints[index].z);
+
                     float danLength = _dan_length[maleIndex].Value;
                     Plane kokanPlane = new Plane(danPoints[maleIndex].danStart.forward, lookTarget);
 
@@ -421,74 +488,127 @@ namespace HS2_BetterPenetration
                     if (kokanPlane.GetSide(dan101_pos))
                         danLength = _dan_length[maleIndex].Value * (1 - _dan_softness[maleIndex].Value);
 
+                    float minDanLength = distDan101ToTarget + (danLength * (1 - _allow_telescope_percent[maleIndex].Value));
+                    bool bConstrainPastNearSide = true;
+
+                    Console.WriteLine("LastDanLength " + lastDanLength[maleIndex]);
+
+                    if (minDanLength < lastDanLength[maleIndex] - maxLengthAdjust)
+                        minDanLength = lastDanLength[maleIndex] - maxLengthAdjust;
+
+                    if (danLength > lastDanLength[maleIndex] + maxLengthAdjust)
+                        danLength = lastDanLength[maleIndex] + maxLengthAdjust;
+
+                    if (minDanLength > danLength)
+                        minDanLength = danLength;
+
+                    if (_force_telescope[maleIndex].Value)
+                        danLength = minDanLength;
+
                     tDan101ToTarget = danLength / distDan101ToTarget;
                     dan109_pos = Vector3.LerpUnclamped(dan101_pos, lookTarget, tDan101ToTarget);
 
-                   float minDanLength = distDan101ToTarget + (danLength * (1 - _allow_telescope_percent[maleIndex].Value));
-                    if (minDanLength > danLength)
-                        minDanLength = danLength;
-                    bool bConstrainPastNearSide = false;
+
+                    Console.WriteLine("dan101_pos " + dan101_pos.x + " , " + dan101_pos.y + " , " + dan101_pos.z);
+                    Console.WriteLine("lookTarget " + lookTarget.x + " , " + lookTarget.y + " , " + lookTarget.z);
+                    Console.WriteLine("dan109_pos " + dan109_pos.x + " , " + dan109_pos.y + " , " + dan109_pos.z);
+                    Console.WriteLine("danLength " + danLength);
+                    Console.WriteLine("minDanLength " + minDanLength);
+
                     bool bConstrainPastFarSide = false;
-                    Vector3 frontAdjustedPos = dan109_pos;
-                    float frontAdjustedAngle = 0;
-                    for (int index = 1; index < constrainPoints[targetF[maleIndex]].frontConstrainPoints.Count; index++)
-                    {
-                        Vector3 planeRightVectorStart = constrainPoints[targetF[maleIndex]].frontConstrainPoints[index - 1].right;
-                        Vector3 planeRightVectorEnd = constrainPoints[targetF[maleIndex]].frontConstrainPoints[index].right;
-                        if (frontHPointsInward[index - 1])
-                            planeRightVectorStart = -planeRightVectorStart;
-                        if (frontHPointsInward[index])
-                            planeRightVectorEnd = -planeRightVectorEnd;
+                    Vector3 adjustedDanPos = dan109_pos;
 
-                        Vector3 planeRightVector = Vector3.Normalize(planeRightVectorStart + planeRightVectorEnd);
+                        for (int index = 1; index < constrainPoints[targetF[maleIndex]].frontConstrainPoints.Count; index++)
+                        {
+                            Vector3 firstVectorRight = constrainPoints[targetF[maleIndex]].frontConstrainPoints[index - 1].right;
+                            Vector3 firstVectorUp = constrainPoints[targetF[maleIndex]].frontConstrainPoints[index - 1].forward;
+                            Vector3 secondVectorRight = constrainPoints[targetF[maleIndex]].frontConstrainPoints[index].right;
+                            Vector3 secondVectorUp = constrainPoints[targetF[maleIndex]].frontConstrainPoints[index].forward;
 
-                        Plane hPlane = new Plane(Vector3.Normalize(Vector3.Cross(planeRightVector, frontHitPoints[index] - frontHitPoints[index - 1])), Vector3.Lerp(frontHitPoints[index - 1], frontHitPoints[index], 0.5f));
+                            if (frontHPointsInward[index - 1])
+                            {
+                                firstVectorRight = -firstVectorRight;
+                                firstVectorUp = -firstVectorUp;
+                            }
 
-                        if (index == 1)
-                            bConstrainPastNearSide = hPlane.GetSide(frontAdjustedPos);
+                            if (frontHPointsInward[index])
+                            {
+                                secondVectorRight = -secondVectorRight;
+                                secondVectorUp = -secondVectorUp;
+                            }
 
-                        if (index == constrainPoints[targetF[maleIndex]].frontConstrainPoints.Count - 1)
-                            bConstrainPastFarSide = true;
+                            TwistedPlane hPlane = new TwistedPlane(frontHitPoints[index - 1], firstVectorRight, firstVectorUp, frontHitPoints[index], secondVectorRight, secondVectorUp);
 
-                        Vector3 adjustedDanPos = Geometry.ConstrainLineToHitPlane(dan101_pos, frontAdjustedPos, danLength, minDanLength, frontHitPoints[index - 1], frontHitPoints[index], hPlane, bConstrainPastFarSide, ref bConstrainPastNearSide, out float adjustedAngle, out bool bHitPointFound);
-                            frontAdjustedAngle += adjustedAngle;
-                            frontAdjustedPos = adjustedDanPos;
-                        if (bHitPointFound)
-                            break;
-                    }
+                            if (index == constrainPoints[targetF[maleIndex]].frontConstrainPoints.Count - 1)
+                                bConstrainPastFarSide = true;
+
+                            Console.WriteLine("hPlane.firstOrigin" + index + ": " + hPlane.firstOrigin.x + " , " + hPlane.firstOrigin.y + " , " + hPlane.firstOrigin.z);
+                            Console.WriteLine("hPlane.firstVector" + index + ": " + hPlane.firstVector.x + " , " + hPlane.firstVector.y + " , " + hPlane.firstVector.z);
+                            Console.WriteLine("hPlane.firstUpVector" + index + ": " + hPlane.firstUpVector.x + " , " + hPlane.firstUpVector.y + " , " + hPlane.firstUpVector.z);
+                            Console.WriteLine("hPlane.secondOrigin" + index + ": " + hPlane.secondOrigin.x + " , " + hPlane.secondOrigin.y + " , " + hPlane.secondOrigin.z);
+                            Console.WriteLine("hPlane.secondVector" + index + ": " + hPlane.secondVector.x + " , " + hPlane.secondVector.y + " , " + hPlane.secondVector.z);
+                            Console.WriteLine("hPlane.secondUpVector" + index + ": " + hPlane.secondUpVector.x + " , " + hPlane.secondUpVector.y + " , " + hPlane.secondUpVector.z);
+                            Console.WriteLine("bConstrainPastNearSideF" + index + ": " + bConstrainPastNearSide);
+                            Console.WriteLine("bConstrainPastFarSide" + index + ": " + bConstrainPastFarSide);
+                            adjustedDanPos = hPlane.ConstrainLineToTwistedPlane(dan101_pos, adjustedDanPos, ref danLength, minDanLength, ref bConstrainPastNearSide, bConstrainPastFarSide, out bool bHitPointFound);
+
+                            Console.WriteLine("adjustedDanPosF" + index + ": " + adjustedDanPos.x + " , " + adjustedDanPos.y + " , " + adjustedDanPos.z);
+                            Console.WriteLine("newDistanceF" + index + ": " + danLength);
+
+
+                            if (bHitPointFound)
+                                break;
+                        }
 
                     bConstrainPastFarSide = false;
-                    Vector3 backAdjustedPos = frontAdjustedPos;
-                    float backAdjustedAngle = 0;
-                    for (int index = 1; index < constrainPoints[targetF[maleIndex]].backConstrainPoints.Count; index++)
-                    {
-                        Vector3 planeRightVectorStart = constrainPoints[targetF[maleIndex]].backConstrainPoints[index - 1].right;
-                        Vector3 planeRightVectorEnd = constrainPoints[targetF[maleIndex]].backConstrainPoints[index].right;
-                        if (backHPointsInward[index - 1])
-                            planeRightVectorStart = -planeRightVectorStart;
-                        if (backHPointsInward[index])
-                            planeRightVectorEnd = -planeRightVectorEnd;
+                    bConstrainPastNearSide = true;
 
-                        Vector3 planeRightVector = Vector3.Normalize(planeRightVectorStart + planeRightVectorEnd);
-       
-                        Plane hPlane = new Plane(Vector3.Normalize(Vector3.Cross(-planeRightVector, backHitPoints[index] - backHitPoints[index - 1])), Vector3.Lerp(backHitPoints[index - 1], backHitPoints[index], 0.5f));
+                        for (int index = 1; index < constrainPoints[targetF[maleIndex]].backConstrainPoints.Count; index++)
+                        {
+                            Vector3 firstVectorRight = constrainPoints[targetF[maleIndex]].backConstrainPoints[index - 1].right;
+                            Vector3 firstVectorUp = constrainPoints[targetF[maleIndex]].backConstrainPoints[index - 1].forward;
+                            Vector3 secondVectorRight = constrainPoints[targetF[maleIndex]].backConstrainPoints[index].right;
+                            Vector3 secondVectorUp = constrainPoints[targetF[maleIndex]].backConstrainPoints[index].forward;
 
-                        if (index == 1)
-                            bConstrainPastNearSide = hPlane.GetSide(backAdjustedPos);
+                            if (!backHPointsInward[index - 1])
+                            {
+                                firstVectorRight = -firstVectorRight;
+                                firstVectorUp = -firstVectorUp;
+                            }
 
-                        if (index == constrainPoints[targetF[maleIndex]].backConstrainPoints.Count - 1)
-                            bConstrainPastFarSide = true;
+                            if (!backHPointsInward[index])
+                            {
+                                secondVectorRight = -secondVectorRight;
+                                secondVectorUp = -secondVectorUp;
+                            }
 
-                        Vector3 adjustedDanPos = Geometry.ConstrainLineToHitPlane(dan101_pos, backAdjustedPos, danLength, minDanLength, backHitPoints[index - 1], backHitPoints[index], hPlane, bConstrainPastFarSide, ref bConstrainPastNearSide, out float adjustedAngle, out bool bHitPointFound);
-                        backAdjustedAngle += adjustedAngle;
-                            backAdjustedPos = adjustedDanPos;
-                        if (bHitPointFound)
-                            break;
-                    }
+                            TwistedPlane hPlane = new TwistedPlane(backHitPoints[index - 1], firstVectorRight, firstVectorUp, backHitPoints[index], secondVectorRight, secondVectorUp);
 
-                        dan109_pos = backAdjustedPos;
+                            if (index == constrainPoints[targetF[maleIndex]].backConstrainPoints.Count - 1)
+                                bConstrainPastFarSide = true;
+
+                            Console.WriteLine("hPlane.firstOrigin" + index + ": " + hPlane.firstOrigin.x + " , " + hPlane.firstOrigin.y + " , " + hPlane.firstOrigin.z);
+                            Console.WriteLine("hPlane.firstVector" + index + ": " + hPlane.firstVector.x + " , " + hPlane.firstVector.y + " , " + hPlane.firstVector.z);
+                            Console.WriteLine("hPlane.firstUpVector" + index + ": " + hPlane.firstUpVector.x + " , " + hPlane.firstUpVector.y + " , " + hPlane.firstUpVector.z);
+                            Console.WriteLine("hPlane.secondOrigin" + index + ": " + hPlane.secondOrigin.x + " , " + hPlane.secondOrigin.y + " , " + hPlane.secondOrigin.z);
+                            Console.WriteLine("hPlane.secondVector" + index + ": " + hPlane.secondVector.x + " , " + hPlane.secondVector.y + " , " + hPlane.secondVector.z);
+                            Console.WriteLine("hPlane.secondUpVector" + index + ": " + hPlane.secondUpVector.x + " , " + hPlane.secondUpVector.y + " , " + hPlane.secondUpVector.z);
+                            Console.WriteLine("bConstrainPastNearSideF" + index + ": " + bConstrainPastNearSide);
+                            Console.WriteLine("bConstrainPastFarSide" + index + ": " + bConstrainPastFarSide);
+                            adjustedDanPos = hPlane.ConstrainLineToTwistedPlane(dan101_pos, adjustedDanPos, ref danLength, minDanLength, ref bConstrainPastNearSide, bConstrainPastFarSide, out bool bHitPointFound);
+
+                            Console.WriteLine("adjustedDanPosB" + index + ": " + adjustedDanPos.x + " , " + adjustedDanPos.y + " , " + adjustedDanPos.z);
+                            Console.WriteLine("newDistanceB" + index + ": " + danLength);
+
+                            if (bHitPointFound)
+                                break;
+                        }
+
+                        dan109_pos = adjustedDanPos;
+
+                    Console.WriteLine("dan109_pos "+ dan109_pos.x + " , " + dan109_pos.y + " , " + dan109_pos.z);
                 }
-                else if (referenceLookAtTarget[maleIndex].name == "k_f_head_00")
+                else if (referenceLookAtTarget[maleIndex].name == head_target)
                 {
                     float danLength = _dan_length[maleIndex].Value;
 
@@ -520,12 +640,25 @@ namespace HS2_BetterPenetration
                 }
             }
 
-            Vector3 danForwardVector = dan109_pos - danPoints[maleIndex].danStart.position;
-            Vector3 danRightVector = danPoints[maleIndex].danTop.right;
-            Vector3 danUpVector = Vector3.Normalize(Vector3.Cross(danForwardVector, danRightVector));
+            Vector3 danForwardVector = dan109_pos - dan101_pos;
+            Quaternion danQuaternion = Quaternion.LookRotation(danForwardVector, Vector3.Normalize(Vector3.Cross(danForwardVector, danPoints[maleIndex].danTop.right)));
 
-            danPoints[maleIndex].danStart.rotation = Quaternion.LookRotation(danForwardVector, danUpVector);
-            danPoints[maleIndex].danEnd.SetPositionAndRotation(dan109_pos, Quaternion.LookRotation(danForwardVector, danUpVector));
+            danPoints[maleIndex].danStart.rotation = danQuaternion;
+            danPoints[maleIndex].danEnd.SetPositionAndRotation(dan109_pos, danQuaternion);
+
+            float danAngle = Vector3.Angle(danPoints[maleIndex].danEnd.position - danPoints[maleIndex].danStart.position, danPoints[maleIndex].danTop.up);
+
+            if (danAngle > lastDanAngle[maleIndex] + 7.5 || danAngle < lastDanAngle[maleIndex] - 7.5)
+            {
+                Console.WriteLine("Large Angle Shift Detected! " + lastDanAngle + " to " + danAngle);
+            }
+
+            lastDanAngle[maleIndex] = danAngle;
+            lastDanForwardVector[maleIndex] = danForwardVector;
+            lastDanLength[maleIndex] = Vector3.Distance(dan101_pos, dan109_pos);
+            lastDanRotation[maleIndex] = danQuaternion;
+            lastDan109Position[maleIndex] = dan109_pos;
+            lastDan101TargetDistance[maleIndex] = distDan101ToTarget;
         }
 
         private static void SceneManager_sceneLoaded(Scene scene, LoadSceneMode lsm)
