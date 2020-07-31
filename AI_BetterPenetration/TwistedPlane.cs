@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace HS2_BetterPenetration
+namespace AI_BetterPenetration
 {
 
     // Creates a Plane defined by two non-parallel lines

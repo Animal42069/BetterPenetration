@@ -1,5 +1,4 @@
 ﻿using System;
-using UnityEngine;
 
 namespace HS2_BetterPenetration
 {
@@ -26,9 +25,9 @@ namespace HS2_BetterPenetration
         public static bool SolveQuadratic(double quadA, double quadB, double quadC, out double solution1, out double solution2)
         {
             solution1 = solution2 = 0;
-            if (quadA > -0.0001 && quadA < 0.0001)
+            if (ApproximatelyZero(quadA))
             {
-                if (quadB == 0)
+                if (ApproximatelyZero(quadB))
                     return false;
 
                 solution1 = solution2 = -quadC / quadB;
@@ -45,5 +44,11 @@ namespace HS2_BetterPenetration
 
             return false;
         }
+
+        public static bool ApproximatelyZero(double value)
+        {
+            return (value > -0.0001 && value < 0.0001);
+        }
+
     }
 }
