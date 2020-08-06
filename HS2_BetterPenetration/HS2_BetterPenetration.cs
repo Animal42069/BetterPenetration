@@ -59,7 +59,6 @@ namespace HS2_BetterPenetration
         private static bool[] bHPointsFound = new bool[2] { false, false };
         private static int[] targetF = new int[2] { 0, 0 };
         private static ConstrainPoints[] constrainPoints;
-        private static H_Lookat_dan[] lookat_Dan = new H_Lookat_dan[2];
 
         private const string head_target = "k_f_head_00";
         private const string chest_target = "k_f_spine03_00";
@@ -198,7 +197,7 @@ namespace HS2_BetterPenetration
                     lastAdjustTime[maleNum] = Time.time;
                 }
 
-                referenceLookAtTarget[maleNum] = dan109;
+                referenceLookAtTarget[maleNum] = danPoints[maleNum].danEnd;
                 lastDan101TargetDistance[maleNum] = Vector3.Distance(referenceLookAtTarget[maleNum].position, danPoints[maleNum].danStart.position);
                 Console.WriteLine("bDansFound " + bDansFound[maleNum]);
                 maleNum++;
@@ -273,7 +272,7 @@ namespace HS2_BetterPenetration
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(H_Lookat_dan), "setInfo")]
-        private static void HScene_ChangeMotion(H_Lookat_dan __instance, System.Text.StringBuilder ___assetName, AIChara.ChaControl ___male)
+        private static void H_Lookat_dan_ChangeTarget(H_Lookat_dan __instance, System.Text.StringBuilder ___assetName, AIChara.ChaControl ___male)
         {
 
             if (!inHScene || __instance == null)
@@ -286,9 +285,6 @@ namespace HS2_BetterPenetration
             if (!bDansFound[maleNum])
                 return;
 
-            if (lookat_Dan[maleNum] == null)
-                lookat_Dan[maleNum] = __instance;
-				
             b2MAnimation = false;
             if (___assetName != null && ___assetName.Length != 0 && ___assetName.ToString().Contains("m2f"))
                 b2MAnimation = true;
@@ -300,12 +296,15 @@ namespace HS2_BetterPenetration
             if (targetF[maleNum] >= constrainPoints.Length)
                 targetF[maleNum] = 0;
 
-            SetupNewDanTarget(maleNum);
-            SetDanTarget(maleNum);
+            if (!bHPointsFound[targetF[maleNum]])
+                return;
+
+            SetupNewDanTarget(__instance, maleNum);
+            SetDanTarget(maleNum, false);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(H_Lookat_dan), "LateUpdate")]
-        public static void OffsetPenisTarget(AIChara.ChaControl ___male)
+        public static void H_Lookat_dan_LateUpdate(H_Lookat_dan __instance, AIChara.ChaControl ___male)
         {
             if (!inHScene)
                 return;
@@ -318,50 +317,47 @@ namespace HS2_BetterPenetration
                 maleNum = 1;
             }
 
-            if (bDansFound[maleNum])
-            {
-                danPoints[maleNum].danStart.localScale = new Vector3(_dan_girth[maleNum].Value, _dan_girth[maleNum].Value, 1);
-                danPoints[maleNum].danTop.localScale = new Vector3(_dan_sack_size[maleNum].Value, _dan_sack_size[maleNum].Value, _dan_sack_size[maleNum].Value);
+            if (!bDansFound[maleNum])
+                return;
 
-                if (bHPointsFound[targetF[maleNum]])
-				{
-					if (changingAnimations[maleNum] && !hScene.NowChangeAnim)
-		            {
-		                SetupNewDanTarget(maleNum);
-		                SetDanTarget(maleNum, false);
-		            }
-					else
-					{
-						SetDanTarget(maleNum, true);
-					}
-				}
-            }
+            danPoints[maleNum].danStart.localScale = new Vector3(_dan_girth[maleNum].Value, _dan_girth[maleNum].Value, 1);
+            danPoints[maleNum].danTop.localScale = new Vector3(_dan_sack_size[maleNum].Value, _dan_sack_size[maleNum].Value, _dan_sack_size[maleNum].Value);
+
+            if (!bHPointsFound[targetF[maleNum]])
+                return;
+
+			if (changingAnimations[maleNum] && !hScene.NowChangeAnim)
+		    {
+		        SetupNewDanTarget(__instance, maleNum);
+		        SetDanTarget(maleNum, false);
+		    }
+			else
+			{
+			SetDanTarget(maleNum, true);
+			}	
         }
 
-        private static void SetupNewDanTarget(int maleNum)
+        private static void SetupNewDanTarget(H_Lookat_dan lookAtDan, int maleNum)
         {
-			referenceLookAtTarget[maleNum] = danPoints[maleNum].danEnd;
+            referenceLookAtTarget[maleNum] = danPoints[maleNum].danEnd;
             lastDan109Position[maleNum] = danPoints[maleNum].danEnd.position;
             lastDanRotation[maleNum] = danPoints[maleNum].danEnd.rotation;
             lastDanVector[maleNum] = danPoints[maleNum].danEnd.position - danPoints[maleNum].danStart.position;
             lastDanLength[maleNum] = _dan_length[maleNum].Value;
             lastAdjustTime[maleNum] = Time.time;
             bDanPenetration[maleNum] = false;
-			changingAnimations[maleNum] = false;
-            if (lookat_Dan[maleNum].transLookAtNull != null && lookat_Dan[maleNum].transLookAtNull.name != chest_target && lookat_Dan[maleNum].strPlayMotion.Contains("Idle") == false && lookat_Dan[maleNum].strPlayMotion.Contains("OUT") == false)
+            changingAnimations[maleNum] = false;
+            if (lookAtDan != null && lookAtDan.transLookAtNull != null && lookAtDan.strPlayMotion != null && lookAtDan.transLookAtNull.name != chest_target && lookAtDan.strPlayMotion.Contains("Idle") == false && lookAtDan.strPlayMotion.Contains("OUT") == false)
             {
                 bDanPenetration[maleNum] = true;
-                referenceLookAtTarget[maleNum] = lookat_Dan[maleNum].transLookAtNull;
+                referenceLookAtTarget[maleNum] = lookAtDan.transLookAtNull;
             }
 			
-            lastDan101TargetDistance[maleNum] = Vector3.Distance(referenceLookAtTarget[maleNum].position, danPoints[maleNum].danStart.position);			
+            lastDan101TargetDistance[maleNum] = Vector3.Distance(referenceLookAtTarget[maleNum].position, danPoints[maleNum].danStart.position);
         }
 
         private static void SetDanTarget(int maleNum, bool bLimitDanMovement = false)
         {
-            if (!bDansFound[maleNum] || referenceLookAtTarget == null || referenceLookAtTarget.Length <= maleNum || referenceLookAtTarget[maleNum] == null)
-                return;
-
             Vector3 dan101_pos = danPoints[maleNum].danStart.position;
             Vector3 lookTarget = referenceLookAtTarget[maleNum].position;
 

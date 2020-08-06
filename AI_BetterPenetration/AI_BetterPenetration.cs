@@ -58,7 +58,6 @@ namespace AI_BetterPenetration
         private static bool changingAnimations = false;
         private static bool bHPointsFound = false;
         private static ConstrainPoints constrainPoints;
-        private static H_Lookat_dan lookat_Dan;
 
         private const string head_target = "k_f_head_00";
         private const string chest_target = "k_f_spine03_00";
@@ -141,7 +140,7 @@ namespace AI_BetterPenetration
             };
 
             harmony = new Harmony("AI_BetterPenetration");
-            harmony.PatchAll(typeof(Transpilers));
+//            harmony.PatchAll(typeof(Transpilers));
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(HScene), "SetStartVoice")]
@@ -160,9 +159,9 @@ namespace AI_BetterPenetration
             {
                 if (!bDansFound)
                 {
-                    Transform dan101 = male.GetComponentsInChildren<Transform>().Where(x => x.name.Contains("cm_J_dan101_00")).FirstOrDefault();
-                    Transform dan109 = male.GetComponentsInChildren<Transform>().Where(x => x.name.Contains("cm_J_dan109_00")).FirstOrDefault();
-                    Transform danTop = male.GetComponentsInChildren<Transform>().Where(x => x.name.Contains("cm_J_dan_f_top")).FirstOrDefault();
+	                Transform dan101 = male.GetComponentsInChildren<Transform>().Where(x => x.name.Contains(dan_base)).FirstOrDefault();
+	                Transform dan109 = male.GetComponentsInChildren<Transform>().Where(x => x.name.Contains(dan_head)).FirstOrDefault();
+	                Transform danTop = male.GetComponentsInChildren<Transform>().Where(x => x.name.Contains(dan_sack)).FirstOrDefault();
 
                     bDanPenetration = false;
                     if (dan101 != null && dan109 != null && danTop != null)
@@ -190,7 +189,7 @@ namespace AI_BetterPenetration
 	                    lastAdjustTime = Time.time;
                     }
 
-                    referenceLookAtTarget = dan109;
+                    referenceLookAtTarget = danPoints.danEnd;
                 	lastDan101TargetDistance = Vector3.Distance(referenceLookAtTarget.position, danPoints.danStart.position);
                     Console.WriteLine("bDansFound " + bDansFound);
                 }
@@ -211,7 +210,7 @@ namespace AI_BetterPenetration
                     for (int index = 0; index < backHPointsList.Length; index++)
                         backHPoints.Add(female.GetComponentsInChildren<Transform>().Where(x => x.name.Contains(backHPointsList[index])).FirstOrDefault());
 
-                    hPointBackOfHead = female.GetComponentsInChildren<Transform>().Where(x => x.name.Contains("k_f_head_03")).FirstOrDefault();
+                    hPointBackOfHead = female.GetComponentsInChildren<Transform>().Where(x => x.name.Contains(headHPoint)).FirstOrDefault();
 
                     if (frontHPoints.Count == frontHPointsList.Length && backHPoints.Count == backHPointsList.Length && hPointBackOfHead != null)
                     {
@@ -261,20 +260,18 @@ namespace AI_BetterPenetration
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(H_Lookat_dan), "setInfo")]
-        private static void HScene_ChangeMotion(H_Lookat_dan __instance)
+        private static void H_Lookat_dan_ChangeTarget(H_Lookat_dan __instance)
         {
-            if (!inHScene || __instance == null || !bDansFound)
+            if (!inHScene || __instance == null || !bDansFound || !bHPointsFound)
                 return;
 
-            if (lookat_Dan == null)
-                lookat_Dan = __instance;
 
-            SetupNewDanTarget();
+            SetupNewDanTarget(__instance);
             SetDanTarget(false);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(H_Lookat_dan), "LateUpdate")]
-        public static void OffsetPenisTarget()
+        public static void H_Lookat_dan_LateUpdate(H_Lookat_dan __instance)
         {
             if (!inHScene || !bDansFound || !bHPointsFound)
                 return;
@@ -284,7 +281,7 @@ namespace AI_BetterPenetration
 
             if (changingAnimations && !hScene.NowChangeAnim)
             {
-                SetupNewDanTarget();
+                SetupNewDanTarget(__instance);
                 SetDanTarget(false);
             }
             else
@@ -293,7 +290,7 @@ namespace AI_BetterPenetration
             }
        }
 
-        private static void SetupNewDanTarget()
+        private static void SetupNewDanTarget(H_Lookat_dan lookAtDan)
         {
             referenceLookAtTarget = danPoints.danEnd;
             lastDan109Position = danPoints.danEnd.position;
@@ -303,19 +300,16 @@ namespace AI_BetterPenetration
             lastAdjustTime = Time.time;
             bDanPenetration = false;
             changingAnimations = false;
-            if (lookat_Dan.transLookAtNull != null && lookat_Dan.transLookAtNull.name != chest_target && lookat_Dan.strPlayMotion.Contains("Idle") == false && lookat_Dan.strPlayMotion.Contains("OUT") == false)
+            if (lookAtDan != null && lookAtDan.transLookAtNull != null && lookAtDan.strPlayMotion != null && lookAtDan.transLookAtNull.name != chest_target && lookAtDan.strPlayMotion.Contains("Idle") == false && lookAtDan.strPlayMotion.Contains("OUT") == false)
             {
                 bDanPenetration = true;
-                referenceLookAtTarget = lookat_Dan.transLookAtNull;
+                referenceLookAtTarget = lookAtDan.transLookAtNull;
             }
             lastDan101TargetDistance = Vector3.Distance(referenceLookAtTarget.position, danPoints.danStart.position);
         }
 
 		private static void SetDanTarget(bool bLimitDanMovement = false)
         {
-            if (!bDansFound || !bHPointsFound || referenceLookAtTarget == null)
-                return;
-
             Vector3 dan101_pos = danPoints.danStart.position;
             Vector3 lookTarget = referenceLookAtTarget.position;
 
