@@ -13,6 +13,7 @@ namespace HS2_BetterPenetration
 
     [BepInPlugin("animal42069.HS2betterpenetration", "HS2 Better Penetration", VERSION)]
     [BepInProcess("HoneySelect2")]
+    [BepInProcess("HoneySelect2VR")]
     public class HS2_BetterPenetration : BaseUnityPlugin
     {
         public const string VERSION = "2.0.9.1";
