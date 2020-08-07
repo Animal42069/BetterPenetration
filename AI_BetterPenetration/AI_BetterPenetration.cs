@@ -9,7 +9,6 @@ using Manager;
 
 namespace AI_BetterPenetration
 {
-
     [BepInPlugin("animal42069.aibetterpenetration", "AI Better Penetration", VERSION)]
     [BepInProcess("AI-Syoujyo")]
     public class AI_BetterPenetration : BaseUnityPlugin
