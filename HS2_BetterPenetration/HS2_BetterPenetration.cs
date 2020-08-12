@@ -16,7 +16,7 @@ namespace HS2_BetterPenetration
     [BepInProcess("HoneySelect2VR")]
     public class HS2_BetterPenetration : BaseUnityPlugin
     {
-        public const string VERSION = "2.0.9.2";
+        public const string VERSION = "2.1.0.0";
         private static Harmony harmony;
 		private static HScene hScene;
         private static ConfigEntry<float>[] _dan_length = new ConfigEntry<float>[2];
