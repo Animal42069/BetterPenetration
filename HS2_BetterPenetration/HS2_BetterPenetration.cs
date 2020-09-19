@@ -24,8 +24,6 @@ namespace HS2_BetterPenetration
         private static ConfigEntry<float>[] _dan_softness = new ConfigEntry<float>[2];
         private static ConfigEntry<float>[] _dan_collider_headlength = new ConfigEntry<float>[2];
         private static ConfigEntry<float>[] _dan_collider_radius = new ConfigEntry<float>[2];
-        private static ConfigEntry<float>[] _dan_move_limit = new ConfigEntry<float>[2];
-        private static ConfigEntry<float>[] _dan_angle_limit = new ConfigEntry<float>[2];
         private static ConfigEntry<float>[] _allow_telescope_percent = new ConfigEntry<float>[2];
         private static ConfigEntry<bool>[] _force_telescope = new ConfigEntry<bool>[2];
 
@@ -90,8 +88,6 @@ namespace HS2_BetterPenetration
                 _dan_softness[maleNum] = Config.Bind<float>("Male " + (maleNum + 1) + " Options", "Penis: Softness", 0.15f, "Set the softness of the penis.  A value of 0 means maximum hardness, the penis will remain the same length at all times.  A value greater than 0 will cause the penis to begin to telescope after penetration.  A small value can make it appear there is friction during penetration.");
                 _allow_telescope_percent[maleNum] = Config.Bind<float>("Male " + (maleNum + 1) + " Options", "Limiter: Telescope Threshold", 0.6f, "Allow the penis to begin telescoping after it has penetrated a certain amount. 0 = never telescope, 0.5 = allow telescoping after the halfway point, 1 = always allow telescoping.");
                 _force_telescope[maleNum] = Config.Bind<bool>("Male " + (maleNum + 1) + " Options", "Limiter: Telescope Always", true, "Force the penis to always telescope at the threshold point, instead of only doing it when it prevents clipping.");
-                _dan_move_limit[maleNum] = Config.Bind<float>("Male " + (maleNum + 1) + " Options", "Limiter: Length Limiter", 5.0f, "Sets a limit for how suddenly the penis can change length, preventing the penis from suddenly shifting and creating unrealistic looking physics.");
-                _dan_angle_limit[maleNum] = Config.Bind<float>("Male " + (maleNum + 1) + " Options", "Limiter: Angle Limiter", 240.0f, "Sets a limit for how suddenly the penis can change angles, preventing the penis from suddenly shifting and creating unrealistic looking physics.");
 
                 _dan_length[maleNum].SettingChanged += delegate
                 {
@@ -327,7 +323,7 @@ namespace HS2_BetterPenetration
                 return;
 
             SetupNewDanTarget(__instance, maleNum);
-            SetDanTarget(maleNum, false);
+            SetDanTarget(maleNum);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(H_Lookat_dan), "LateUpdate")]
@@ -354,15 +350,9 @@ namespace HS2_BetterPenetration
                 return;
 
 			if (changingAnimations[maleNum] && !hScene.NowChangeAnim)
-		    {
 		        SetupNewDanTarget(__instance, maleNum);
-		        SetDanTarget(maleNum, false);
-		    }
-			else
-			{
-			    SetDanTarget(maleNum, false);
-   //             SetDanTarget(maleNum, true);
-            }	
+
+		    SetDanTarget(maleNum);
         }
 
         private static void SetupNewDanTarget(H_Lookat_dan lookAtDan, int maleNum)
@@ -394,7 +384,7 @@ namespace HS2_BetterPenetration
             lastDan101TargetDistance[maleNum] = Vector3.Distance(referenceLookAtTarget[maleNum].position, danPoints[maleNum].danStart.position);
         }
 
-        private static void SetDanTarget(int maleNum, bool bLimitDanMovement = false)
+        private static void SetDanTarget(int maleNum)
         {
             Vector3 dan101_pos = danPoints[maleNum].danStart.position;
             Vector3 lookTarget = referenceLookAtTarget[maleNum].position;
@@ -455,44 +445,13 @@ namespace HS2_BetterPenetration
 
                     float minDanLength = distDan101ToTarget + (danLength * (1 - _allow_telescope_percent[maleNum].Value));
 
-                    if (bLimitDanMovement)
-                    {
-                        float maxLengthAdjust = _dan_move_limit[maleNum].Value * timeSinceLastAdjust;
-                        float maxAngleAdjust = _dan_angle_limit[maleNum].Value * timeSinceLastAdjust;
-                        float danForwardMovement = Math.Abs(distDan101ToTarget - lastDan101TargetDistance[maleNum]);
-                        float normalizedForwardMovement = _dan_length[maleNum].Value * timeSinceLastAdjust;
+                    if (minDanLength > danLength)
+                        minDanLength = danLength;
 
-                        if (danForwardMovement > normalizedForwardMovement)
-                        {
-                            maxLengthAdjust *= danForwardMovement / normalizedForwardMovement;
-                            maxAngleAdjust *= danForwardMovement / normalizedForwardMovement;
-                        }
+                    if (_force_telescope[maleNum].Value)
+                        danLength = minDanLength;
 
-                        if (minDanLength < lastDanLength[maleNum] - maxLengthAdjust)
-                            minDanLength = lastDanLength[maleNum] - maxLengthAdjust;
-
-                        if (danLength > lastDanLength[maleNum] + maxLengthAdjust)
-                            danLength = lastDanLength[maleNum] + maxLengthAdjust;
-
-                        if (minDanLength > danLength)
-                            minDanLength = danLength;
-
-                        if (_force_telescope[maleNum].Value)
-                            danLength = minDanLength;
-
-                        danVector = Vector3.RotateTowards(lastDanVector[maleNum], danVector, (float)Geometry.DegToRad(maxAngleAdjust), 0);
-                        dan109_pos = dan101_pos + danVector * danLength;
-                    }
-                    else
-                    {
-                        if (minDanLength > danLength)
-                            minDanLength = danLength;
-
-                        if (_force_telescope[maleNum].Value)
-                            danLength = minDanLength;
-
-                        dan109_pos = dan101_pos + danVector * danLength;
-                    }
+                    dan109_pos = dan101_pos + danVector * danLength;
 
                     bool bHitPointFound = false;
                     bool bConstrainPastNearSide = true;
