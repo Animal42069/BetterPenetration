@@ -94,8 +94,8 @@ namespace AI_BetterPenetration
                 _front_collision_point_offset.Add(Config.Bind<float>("Female Options", "Clipping Offset: Front Collision " + index, frontOffsets[index], "Individual offset on colision point, to improve clipping"));
             for (int index = 0; index < backOffsets.Length; index++)
                 _back_collision_point_offset.Add(Config.Bind<float>("Female Options", "Clipping Offset: Back Collision " + index, backOffsets[index], "Individual offset on colision point, to improve clipping"));
-            _kokanForwardOffset = Config.Bind<float>("Female Options", "Target Offset: Vagina Vertical", -0.05f, "Vertical offset of the vagina target");
-            _kokanUpOffset = Config.Bind<float>("Female Options", "Target Offset: Vagina Depth", -0.05f, "Depth offset of the vagina target");
+            _kokanForwardOffset = Config.Bind<float>("Female Options", "Target Offset: Vagina Vertical", 0.0f, "Vertical offset of the vagina target");
+            _kokanUpOffset = Config.Bind<float>("Female Options", "Target Offset: Vagina Depth", 0.0f, "Depth offset of the vagina target");
             _headForwardOffset = Config.Bind<float>("Female Options", "Target Offset: Mouth Depth", 0.1f, "Depth offset of the mouth target");
             _headUpOffset = Config.Bind<float>("Female Options", "Target Offset: Mouth Vertical", 0.035f, "Vertical offset of the mouth target");
 
@@ -213,6 +213,13 @@ namespace AI_BetterPenetration
 
                     hPointBackOfHead = female.GetComponentsInChildren<Transform>().Where(x => x.name.Contains(headHPoint)).FirstOrDefault();
 
+                    bpKokanTarget = female.GetComponentsInChildren<Transform>().Where(x => x.name.Equals(bp_kokan_target)).FirstOrDefault();
+                    if (bpKokanTarget != null)
+                    {
+                        Console.WriteLine("BP Target Found " + bpKokanTarget.name);
+                        frontHPoints[0] = bpKokanTarget;
+                    }
+
                     if (frontHPoints.Count == frontHPointsList.Length && backHPoints.Count == backHPointsList.Length && hPointBackOfHead != null)
                     {
                         bHPointsFound = true;
@@ -220,12 +227,7 @@ namespace AI_BetterPenetration
                     }
 
                     Console.WriteLine("bHPointsFound " + bHPointsFound);
-
                     List<DynamicBone> dbList = new List<DynamicBone>();
-                	bpKokanTarget = female.GetComponentsInChildren<Transform>().Where(x => x.name.Equals(bp_kokan_target)).FirstOrDefault();
-                if (bpKokanTarget != null)
-                    Console.WriteLine("BP Target Found " + bpKokanTarget.name);
-
                     foreach (DynamicBone db in female.GetComponentsInChildren<DynamicBone>().Where(x => x.name.Contains("cf_J_Vagina")))
                     {
                         if (db != null)
@@ -332,7 +334,7 @@ namespace AI_BetterPenetration
             Vector3 dan101_pos = danPoints.danStart.position;
             Vector3 lookTarget = referenceLookAtTarget.position;
 
-            if (referenceLookAtTarget.name == kokan_target)
+            if (referenceLookAtTarget.name == kokan_target || referenceLookAtTarget.name == bp_kokan_target)
                 lookTarget = lookTarget + (referenceLookAtTarget.forward * _kokanForwardOffset.Value) + (referenceLookAtTarget.up * _kokanUpOffset.Value);
             if (referenceLookAtTarget.name == head_target)
                 lookTarget = lookTarget + (referenceLookAtTarget.forward * _headForwardOffset.Value) + (referenceLookAtTarget.up * _headUpOffset.Value);

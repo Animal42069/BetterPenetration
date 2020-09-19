@@ -73,8 +73,8 @@ namespace HS2_BetterPenetration
         private const string headHPoint = "cf_J_Head";
         private static readonly string[] frontHPointsList = { kokan_target, "cf_J_sk_00_02", "N_Waist_f", "k_f_spine03_03" };
         private static readonly string[] backHPointsList = { ana_target, "cf_J_sk_04_02", "N_Waist_b", "N_Back" };
-        private static readonly float[] frontOffsets = { -0.4f, 0.1f, 0f, -0.65f };
-        private static readonly float[] backOffsets = { -0.2f, 0.25f, 0.05f, 0.05f };
+        private static readonly float[] frontOffsets = { -0.3f, 0.18f, 0f, -0.65f };
+        private static readonly float[] backOffsets = { -0.2f, 0.2f, 0.05f, 0.05f };
         private static readonly bool[] frontHPointsInward = { false, false, false, false };
         private static readonly bool[] backHPointsInward = { false, false, true, true };
 
@@ -83,7 +83,7 @@ namespace HS2_BetterPenetration
             for (int maleNum = 0; maleNum < _dan_length.Length; maleNum++)
             {
                 _dan_collider_headlength[maleNum] = Config.Bind<float>("Male " + (maleNum + 1) + " Options", "Collider: Length of Head", 0.4f, "Distance from the center of the head bone to the tip, used for collision purposes.");
-                _dan_collider_radius[maleNum] = Config.Bind<float>("Male " + (maleNum + 1) + " Options", "Collider: Radius of Shaft", 0.35f, "Radius of the shaft collider.");
+                _dan_collider_radius[maleNum] = Config.Bind<float>("Male " + (maleNum + 1) + " Options", "Collider: Radius of Shaft", 0.38f, "Radius of the shaft collider.");
                 _dan_length[maleNum] = Config.Bind<float>("Male " + (maleNum + 1) + " Options", "Penis: Length", 1.8f, "Set the length of the penis.  Apparent Length is about 0.2 larget than this, depending on uncensor.  2.0 is about 8 inches or 20 cm.");
                 _dan_girth[maleNum] = Config.Bind<float>("Male " + (maleNum + 1) + " Options", "Penis: Girth", 1.0f, "Set the scale of the circumference of the penis.");
                 _dan_sack_size[maleNum] = Config.Bind<float>("Male " + (maleNum + 1) + " Options", "Penis: Sack Size", 1.0f, "Set the scale (size) of the sack");
@@ -235,6 +235,13 @@ namespace HS2_BetterPenetration
 
                 hPointBackOfHead = female.GetComponentsInChildren<Transform>().Where(x => x.name.Contains(headHPoint)).FirstOrDefault();
 
+                bpKokanTarget[femaleNum] = female.GetComponentsInChildren<Transform>().Where(x => x.name.Equals(bp_kokan_target)).FirstOrDefault();
+                if (bpKokanTarget[femaleNum] != null)
+                {
+                    Console.WriteLine("BP Target Found " + bpKokanTarget[femaleNum].name);
+                    frontHPoints[0] = bpKokanTarget[femaleNum];
+                }
+
                 if (frontHPoints.Count == frontHPointsList.Length && backHPoints.Count == backHPointsList.Length && hPointBackOfHead != null)
                 {
                     bHPointsFound[femaleNum] = true;
@@ -242,14 +249,7 @@ namespace HS2_BetterPenetration
                 }
 
                 Console.WriteLine("bHPointsFound " + bHPointsFound[femaleNum]);
-
                 List<DynamicBone> dbList = new List<DynamicBone>();
-
-                bpKokanTarget[femaleNum] = female.GetComponentsInChildren<Transform>().Where(x => x.name.Equals(bp_kokan_target)).FirstOrDefault();
-
-                if (bpKokanTarget[femaleNum] != null)
-                    Console.WriteLine("BP Target Found " + bpKokanTarget[femaleNum].name);
-
                 foreach (DynamicBone db in female.GetComponentsInChildren<DynamicBone>().Where(x => x.name.Contains("cf_J_Vagina")))
                 {
                     if (db != null)
@@ -360,8 +360,9 @@ namespace HS2_BetterPenetration
 		    }
 			else
 			{
-			SetDanTarget(maleNum, true);
-			}	
+			    SetDanTarget(maleNum, false);
+   //             SetDanTarget(maleNum, true);
+            }	
         }
 
         private static void SetupNewDanTarget(H_Lookat_dan lookAtDan, int maleNum)
@@ -398,7 +399,7 @@ namespace HS2_BetterPenetration
             Vector3 dan101_pos = danPoints[maleNum].danStart.position;
             Vector3 lookTarget = referenceLookAtTarget[maleNum].position;
 
-            if (referenceLookAtTarget[maleNum].name == kokan_target)
+            if (referenceLookAtTarget[maleNum].name == kokan_target || referenceLookAtTarget[maleNum].name == bp_kokan_target)
                 lookTarget = lookTarget + (referenceLookAtTarget[maleNum].forward * _kokanForwardOffset.Value) + (referenceLookAtTarget[maleNum].up * _kokanUpOffset.Value);
             if (referenceLookAtTarget[maleNum].name == head_target)
                 lookTarget = lookTarget + (referenceLookAtTarget[maleNum].forward * _headForwardOffset.Value) + (referenceLookAtTarget[maleNum].up * _headUpOffset.Value);
@@ -497,6 +498,18 @@ namespace HS2_BetterPenetration
                     bool bConstrainPastNearSide = true;
                     bool bConstrainPastFarSide = false;
                     Vector3 adjustedDanPos = dan109_pos;
+
+                    for (int index = 0; index < constrainPoints[targetF[maleNum]].frontConstrainPoints.Count; index++)
+                        Console.WriteLine("frontHitPoints" + index + ": " + frontHitPoints[index].x + ", " + frontHitPoints[index].y + ", " + frontHitPoints[index].z);
+
+                    for (int index = 0; index < constrainPoints[targetF[maleNum]].frontConstrainPoints.Count; index++)
+                        Console.WriteLine("backHitPoints" + index + ": " + backHitPoints[index].x + ", " + backHitPoints[index].y + ", " + backHitPoints[index].z);
+
+                    Console.WriteLine("dan101_pos: " + dan101_pos.x + ", " + dan101_pos.y + ", " + dan101_pos.z);
+                    Console.WriteLine("lookTarget: " + lookTarget.x + ", " + lookTarget.y + ", " + lookTarget.z);
+                    Console.WriteLine("dan109_pos: " + dan109_pos.x + ", " + dan109_pos.y + ", " + dan109_pos.z);
+                    Console.WriteLine("danVector: " + danVector.x + ", " + danVector.y + ", " + danVector.z);
+
                     for (int index = 1; index < constrainPoints[targetF[maleNum]].frontConstrainPoints.Count; index++)
                     {
                         if (bHitPointFound)
@@ -513,10 +526,16 @@ namespace HS2_BetterPenetration
 
                         TwistedPlane hPlane = new TwistedPlane(frontHitPoints[index - 1], firstVectorRight, frontHitPoints[index], secondVectorRight);
 
+                        Console.WriteLine("hPlane.firstOriginF" + index + ": " + hPlane.firstOrigin.x + ", " + hPlane.firstOrigin.y + ", " + hPlane.firstOrigin.z);
+                        Console.WriteLine("hPlane.firstVectorF" + index + ": " + hPlane.firstVector.x + ", " + hPlane.firstVector.y + ", " + hPlane.firstVector.z);
+                        Console.WriteLine("hPlane.secondOriginF" + index + ": " + hPlane.secondOrigin.x + ", " + hPlane.secondOrigin.y + ", " + hPlane.secondOrigin.z);
+                        Console.WriteLine("hPlane.secondVectorF" + index + ": " + hPlane.secondVector.x + ", " + hPlane.secondVector.y + ", " + hPlane.secondVector.z);
+
                         if (index == constrainPoints[targetF[maleNum]].frontConstrainPoints.Count - 1)
                             bConstrainPastFarSide = true;
 
                         adjustedDanPos = hPlane.ConstrainLineToTwistedPlane(dan101_pos, adjustedDanPos, ref danLength, minDanLength, ref bConstrainPastNearSide, bConstrainPastFarSide, out bHitPointFound);
+                        Console.WriteLine("adjustedDanPosF" + index +  ": "+ adjustedDanPos.x + ", " + adjustedDanPos.y + ", " + adjustedDanPos.z);
                     }
 
                     bConstrainPastFarSide = false;
@@ -537,12 +556,22 @@ namespace HS2_BetterPenetration
 
                         TwistedPlane hPlane = new TwistedPlane(backHitPoints[index - 1], firstVectorRight, backHitPoints[index], secondVectorRight);
 
+                        Console.WriteLine("hPlane.firstOriginB" + index + ": " + hPlane.firstOrigin.x + ", " + hPlane.firstOrigin.y + ", " + hPlane.firstOrigin.z);
+                        Console.WriteLine("hPlane.firstVectorB" + index + ": " + hPlane.firstVector.x + ", " + hPlane.firstVector.y + ", " + hPlane.firstVector.z);
+                        Console.WriteLine("hPlane.secondOriginB" + index + ": " + hPlane.secondOrigin.x + ", " + hPlane.secondOrigin.y + ", " + hPlane.secondOrigin.z);
+                        Console.WriteLine("hPlane.secondVectorB" + index + ": " + hPlane.secondVector.x + ", " + hPlane.secondVector.y + ", " + hPlane.secondVector.z);
+
                         if (index == constrainPoints[targetF[maleNum]].backConstrainPoints.Count - 1)
                             bConstrainPastFarSide = true;
 
                         adjustedDanPos = hPlane.ConstrainLineToTwistedPlane(dan101_pos, adjustedDanPos, ref danLength, minDanLength, ref bConstrainPastNearSide, bConstrainPastFarSide, out bHitPointFound);
+                        Console.WriteLine("adjustedDanPosB" + index + ": " + adjustedDanPos.x + ", " + adjustedDanPos.y + ", " + adjustedDanPos.z);
                     }
                     dan109_pos = adjustedDanPos;
+
+                    danCollider[maleNum].m_Center = new Vector3(0, 0, danLength / 2);
+                    danCollider[maleNum].m_Height = danLength + (_dan_collider_headlength[maleNum].Value * 2);
+
                 }
                 else if (referenceLookAtTarget[maleNum].name == head_target)
                 {

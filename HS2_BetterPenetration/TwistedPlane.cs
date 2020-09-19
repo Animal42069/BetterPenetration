@@ -144,8 +144,21 @@ namespace HS2_BetterPenetration
             }
 
             intersectionPoint = lineStart + lineVector * t;
-            intersectForwardVector = Vector3.Normalize((secondOrigin + secondVector * v) - (firstOrigin + firstVector * v));
-            distanceToSecondVector = Vector3.Distance(intersectionPoint, secondOrigin + secondVector * v);
+            //           intersectForwardVector = Vector3.Normalize((secondOrigin + secondVector * v) - (firstOrigin + firstVector * v));
+            //           distanceToSecondVector = Vector3.Distance(intersectionPoint, secondOrigin + secondVector * v);
+
+            Vector3 intersectFirst = Geometry.castSegmentToSegment(lineStart, lineVector, firstOrigin, firstVector);
+            Vector3 intersectSecond = Geometry.castSegmentToSegment(lineStart, lineVector, secondOrigin, secondVector);
+
+            intersectForwardVector = Vector3.Normalize(intersectSecond - intersectFirst);
+            distanceToSecondVector = Vector3.Distance(intersectSecond, intersectionPoint);
+
+            Console.WriteLine("intersectFirst " + intersectFirst.x + ", " + intersectFirst.y + ", " + intersectFirst.z);
+            Console.WriteLine("intersectSecond " + intersectSecond.x + ", " + intersectSecond.y + ", " + intersectSecond.z);
+            Console.WriteLine("IntersectionPoint " + intersectionPoint.x + ", " + intersectionPoint.y + ", " + intersectionPoint.z);
+            Console.WriteLine("intersectForwardVector " + intersectForwardVector.x + ", " + intersectForwardVector.y + ", " + intersectForwardVector.z);
+            Console.WriteLine("distanceToSecondVector " + distanceToSecondVector);
+
             return true;
         }
 
