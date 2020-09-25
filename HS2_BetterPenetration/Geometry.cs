@@ -13,12 +13,8 @@ namespace HS2_BetterPenetration
         }
 
         // Casts a point onto an infinite line defined by two points on the line
-        public static Vector3 castToSegment(Vector3 position, Vector3 lineStart, Vector3 lineVector)
+        public static Vector3 CastToSegment(Vector3 position, Vector3 lineStart, Vector3 lineVector)
         {
-            Console.WriteLine("position " + position.x + ", " + position.y + ", " + position.z);
-            Console.WriteLine("lineStart " + lineStart.x + ", " + lineStart.y + ", " + lineStart.z);
-            Console.WriteLine("lineVector " + lineVector.x + ", " + lineVector.y + ", " + lineVector.z);
-
             Vector3 lineEnd = lineStart + lineVector;
             float normDistAlongSegment = Vector3.Dot(position - lineStart, lineVector) / Vector3.Magnitude(lineVector);
             return Vector3.LerpUnclamped(lineStart, lineEnd, normDistAlongSegment);
@@ -26,15 +22,9 @@ namespace HS2_BetterPenetration
 
         // Finds the point on segment C to D that is closest to segment A to B
         // SEGMENT C D must be normalized
-        public static Vector3 castSegmentToSegment(Vector3 projFromStart, Vector3 projFromVector, Vector3 projToStart, Vector3 projToVector)
+        public static Vector3 CastSegmentToSegment(Vector3 projFromStart, Vector3 projFromVector, Vector3 projToStart, Vector3 projToVector)
         {
-            Console.WriteLine("projFromStart " + projFromStart.x + ", " + projFromStart.y + ", " + projFromStart.z);
-            Console.WriteLine("projFromVector " + projFromVector.x + ", " + projFromVector.y + ", " + projFromVector.z);
-            Console.WriteLine("projToStart " + projToStart.x + ", " + projToStart.y + ", " + projToStart.z);
-            Console.WriteLine("projToVector " + projToVector.x + ", " + projToVector.y + ", " + projToVector.z);
-
             Vector3 projFromEnd = projFromStart + projFromVector;
-
             Vector3 inPlaneStart = projFromStart - Vector3.Dot(projFromStart - projToStart, projToVector) * projToVector;
             Vector3 inPlaneEnd = projFromEnd - Vector3.Dot(projFromEnd - projToStart, projToVector) * projToVector;
             Vector3 inPlaneVector = inPlaneEnd - inPlaneStart;
@@ -44,7 +34,7 @@ namespace HS2_BetterPenetration
             float inPlaneVectorMag = Vector3.Magnitude(inPlaneVector);
             float normDistAlongLine = dotinToPlaneStartinPlaneVector / inPlaneVectorMag;
 
-            return castToSegment(projFromStart + projFromVector * normDistAlongLine, projToStart, projToVector);
+            return CastToSegment(projFromStart + projFromVector * normDistAlongLine, projToStart, projToVector);
         }
 
         public static double DegToRad(double degrees)

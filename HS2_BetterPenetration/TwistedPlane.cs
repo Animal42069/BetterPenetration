@@ -104,7 +104,6 @@ namespace HS2_BetterPenetration
             if (Geometry.SolveQuadratic(quadraticA, quadraticB, quadraticC, out double u1, out double u2) == false)
                 return false;
 
-            double v1 = 0, v2 = 0;
             double t1 = 0, t2 = 0;
             Vector3 FVxLV = Vector3.Cross(firstVector, lineVector);
             Vector3 TWxLV = Vector3.Cross(twistVector, lineVector);
@@ -114,7 +113,7 @@ namespace HS2_BetterPenetration
             bool bIntersect1Found = false;
             if ((u1 < 4) && (u1 > -4) && (u1 >= 0 || bExtendPlaneBeyondFirstVector) && (u1 <= 1 || bExtendPlaneBeyoneSecondVector))
             {
-                bIntersect1Found = this.FindIntersectValues(lineVector, offsetVector, FVxLV, TWxLV, OFxLV, LVxFW, u1, out v1, out t1);
+                bIntersect1Found = this.FindIntersectValues(lineVector, offsetVector, FVxLV, TWxLV, OFxLV, LVxFW, u1, out _, out t1);
                 if (bIntersect1Found && t1 < 0 || t1 > 1)
                     bIntersect1Found = false;
 
@@ -123,7 +122,7 @@ namespace HS2_BetterPenetration
             bool bIntersect2Found = false;
             if ((u2 < 4) && (u2 > -4) && (u2 >= 0 || bExtendPlaneBeyondFirstVector) && (u2 <= 1 || bExtendPlaneBeyoneSecondVector))
             {
-                bIntersect2Found = this.FindIntersectValues(lineVector, offsetVector, FVxLV, TWxLV, OFxLV, LVxFW, u2, out v2, out t2);
+                bIntersect2Found = this.FindIntersectValues(lineVector, offsetVector, FVxLV, TWxLV, OFxLV, LVxFW, u2, out _, out t2);
                 if (bIntersect2Found && t2 < 0 || t2 > 1)
                     bIntersect2Found = false;
             }
@@ -131,33 +130,19 @@ namespace HS2_BetterPenetration
             if (!bIntersect1Found && !bIntersect2Found)
                 return false;
 
-            float t = 0, v = 0;
+            float t = 0;
             if (bIntersect1Found)
-            {
                 t = (float)t1;
-                v = (float)v1;
-            }
+
             if (bIntersect2Found && (!bIntersect1Found || (bIntersect1Found && t2 < t1)))
-            {
                 t = (float)t2;
-                v = (float)v2;
-            }
 
             intersectionPoint = lineStart + lineVector * t;
-            //           intersectForwardVector = Vector3.Normalize((secondOrigin + secondVector * v) - (firstOrigin + firstVector * v));
-            //           distanceToSecondVector = Vector3.Distance(intersectionPoint, secondOrigin + secondVector * v);
-
-            Vector3 intersectFirst = Geometry.castSegmentToSegment(lineStart, lineVector, firstOrigin, firstVector);
-            Vector3 intersectSecond = Geometry.castSegmentToSegment(lineStart, lineVector, secondOrigin, secondVector);
+            Vector3 intersectFirst = Geometry.CastSegmentToSegment(lineStart, lineVector, firstOrigin, firstVector);
+            Vector3 intersectSecond = Geometry.CastSegmentToSegment(lineStart, lineVector, secondOrigin, secondVector);
 
             intersectForwardVector = Vector3.Normalize(intersectSecond - intersectFirst);
             distanceToSecondVector = Vector3.Distance(intersectSecond, intersectionPoint);
-
-            Console.WriteLine("intersectFirst " + intersectFirst.x + ", " + intersectFirst.y + ", " + intersectFirst.z);
-            Console.WriteLine("intersectSecond " + intersectSecond.x + ", " + intersectSecond.y + ", " + intersectSecond.z);
-            Console.WriteLine("IntersectionPoint " + intersectionPoint.x + ", " + intersectionPoint.y + ", " + intersectionPoint.z);
-            Console.WriteLine("intersectForwardVector " + intersectForwardVector.x + ", " + intersectForwardVector.y + ", " + intersectForwardVector.z);
-            Console.WriteLine("distanceToSecondVector " + distanceToSecondVector);
 
             return true;
         }
