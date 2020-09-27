@@ -24,6 +24,7 @@ namespace AI_BetterPenetration
         private static ConfigEntry<float> _dan_softness;
         private static ConfigEntry<float> _dan_collider_headlength;
         private static ConfigEntry<float> _dan_collider_radius;
+        private static ConfigEntry<float> _dan_collider_verticalcenter;
         private static ConfigEntry<float> _allow_telescope_percent;
         private static ConfigEntry<bool> _force_telescope;
 
@@ -74,30 +75,22 @@ namespace AI_BetterPenetration
         private static readonly bool[] frontHPointsInward = { false, false, false, false };
         private static readonly bool[] backHPointsInward = { false, false, true, true };
 
-        private static readonly string[] colliderList = { "cf_J_Vagina_Collider_B", "cf_J_Vagina_Collider_F", "cf_J_Vagina_Collider_Inner_F"};
-        private static readonly string[] dynamicBonesList = { "cf_J_Vagina_Pivot_B", "cf_J_Vagina_Pivot_F", "cf_J_Vagina_Pivot_Inner_F" };
-        private static readonly float[] colliderHeightList = { 0.39f, 0.19f, 0.34f };
-        private static readonly float[] colliderRadiusList = { 0.0021f, 0.0011f, 0.0011f };
+        private static readonly string[] colliderList = { "cf_J_Vagina_Collider_B", "cf_J_Vagina_Collider_F", "cf_J_Vagina_Collider_Inner_F", "cf_J_Vagina_Collider_L.005", "cf_J_Vagina_Collider_R.005" };
+        private static readonly string[] dynamicBonesList = { "cf_J_Vagina_Pivot_B", "cf_J_Vagina_Pivot_F", "cf_J_Vagina_Pivot_Inner_F", "cf_J_Vagina_Pivot_L.005", "cf_J_Vagina_Pivot_R.005" };
+        private static readonly float[] colliderHeightList = { 0.39f, 0.19f, 0.34f, 0.39f, 0.39f };
+        private static readonly float[] colliderRadiusList = { 0.0021f, 0.0011f, 0.0011f, 0.0021f, 0.0021f };
 
         private void Awake()
         {
             _dan_collider_headlength = Config.Bind<float>("Male Options", "Collider: Length of Head", 0.4f, "Distance from the center of the head bone to the tip, used for collision purposes.");
-            _dan_collider_radius = Config.Bind<float>("Male Options", "Collider: Radius of Shaft", 0.35f, "Radius of the shaft collider.");
-            _dan_length = Config.Bind<float>("Male Options", "Penis: Length", 1.8f, "Set the length of the penis.  Apparent Length is about 0.2 larget than this, depending on uncensor.  2.0 is about 8 inches or 20 cm.");
+            _dan_collider_radius = Config.Bind<float>("Male Options", "Collider: Radius of Shaft", 0.32f, "Radius of the shaft collider.");
+            _dan_collider_verticalcenter = Config.Bind<float>("Male Options", "Collider: Vertical Center", -0.03f, "Vertical Center of the shaft collider");
+            _dan_length = Config.Bind<float>("Male Options", "Penis: Length", 1.75f, "Set the length of the penis.  Apparent Length is about 0.2 larget than this, depending on uncensor.  2.0 is about 8 inches or 20 cm.");
             _dan_girth = Config.Bind<float>("Male Options", "Penis: Girth", 1.0f, "Set the scale of the circumference of the penis.");
             _dan_sack_size = Config.Bind<float>("Male Options", "Penis: Sack Size", 1.0f, "Set the scale (size) of the sack");
             _dan_softness = Config.Bind<float>("Male Options", "Penis: Softness", 0.15f, "Set the softness of the penis.  A value of 0 means maximum hardness, the penis will remain the same length at all times.  A value greater than 0 will cause the penis to begin to telescope after penetration.  A small value can make it appear there is friction during penetration.");
             _allow_telescope_percent = Config.Bind<float>("Male Options", "Limiter: Telescope Threshold", 0.6f, "Allow the penis to begin telescoping after it has penetrated a certain amount. 0 = never telescope, 0.5 = allow telescoping after the halfway point, 1 = always allow telescoping.");
             _force_telescope = Config.Bind<bool>("Male Options", "Limiter: Telescope Always", true, "Force the penis to always telescope at the threshold point, instead of only doing it when it prevents clipping.");
-
-            _dan_length.SettingChanged += delegate
-            {
-                if (inHScene && danCollider != null)
-                {
-                    danCollider.m_Center = new Vector3(0, 0, _dan_length.Value / 2);
-                    danCollider.m_Height = _dan_length.Value + (_dan_collider_headlength.Value * 2);
-                }
-            };
 
             _dan_girth.SettingChanged += delegate
             {
@@ -178,7 +171,7 @@ namespace AI_BetterPenetration
                             danCollider = dan101.gameObject.AddComponent(typeof(DynamicBoneCollider)) as DynamicBoneCollider;
                             
                         danCollider.m_Direction = DynamicBoneColliderBase.Direction.Z;
-                        danCollider.m_Center = new Vector3(0, 0, _dan_length.Value / 2);
+                        danCollider.m_Center = new Vector3(0, _dan_collider_verticalcenter.Value, _dan_length.Value / 2);
                         danCollider.m_Bound = DynamicBoneColliderBase.Bound.Outside;
                         danCollider.m_Radius = _dan_collider_radius.Value;
                         danCollider.m_Height = _dan_length.Value + (_dan_collider_headlength.Value * 2);
@@ -231,7 +224,7 @@ namespace AI_BetterPenetration
 	                    db.m_Colliders.Clear();
 
 	                Console.WriteLine("bHPointsFound " + bHPointsFound);
-	                for (int i = 0; i < colliderList.Length; i++)
+	       /*         for (int i = 0; i < colliderList.Length; i++)
 	                {
 	                    DynamicBone db = female.GetComponentsInChildren<DynamicBone>().Where(x => x.m_Root.name.Equals(dynamicBonesList[i])).FirstOrDefault();
 	                    DynamicBoneCollider dbc = female.GetComponentsInChildren<DynamicBoneCollider>().Where(x => x.name.Equals(colliderList[i])).FirstOrDefault();
@@ -267,6 +260,7 @@ namespace AI_BetterPenetration
 	                            Console.WriteLine(colliderList[i] + " collider not found for " + female.name);
 	                    }
 	                }
+           */
                     List<DynamicBone> dbList = new List<DynamicBone>();
                     foreach (DynamicBone db in female.GetComponentsInChildren<DynamicBone>().Where(x => x.name.Contains("cf_J_Vagina")))
                     {
@@ -496,9 +490,11 @@ namespace AI_BetterPenetration
                     }
                     dan109_pos = adjustedDanPos;
 
-                    danCollider.m_Center = new Vector3(0, 0, danLength / 2);
-                    danCollider.m_Height = danLength + (_dan_collider_headlength.Value * 2);
-
+                    if (danCollider != null)
+                    {
+                        danCollider.m_Center = new Vector3(0, _dan_collider_verticalcenter.Value, danLength / 2);
+                        danCollider.m_Height = danLength + (_dan_collider_headlength.Value * 2);
+                    }
                 }
                 else if (referenceLookAtTarget.name == head_target)
                 {
