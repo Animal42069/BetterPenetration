@@ -49,8 +49,6 @@ namespace HS2_BetterPenetration
         private static readonly bool[] bDanPenetration = new bool[2] { false, false };
         private static Transform[] referenceLookAtTarget;
         private static readonly Transform[] bpKokanTarget = new Transform[2];
-        private static readonly float[] lastDanLength = new float[2] { 0, 0 };
-        private static readonly Vector3[] lastDanVector = new Vector3[2] { new Vector3(0, 0, 0), new Vector3(0, 0, 0) };
         private static readonly Quaternion[] lastDanRotation = new Quaternion[2] { new Quaternion(0, 0, 0, 0), new Quaternion(0, 0, 0, 0) };
         private static readonly Vector3[] lastDan109Position = new Vector3[2] { new Vector3(0, 0, 0), new Vector3(0, 0, 0) };
         private static readonly float[] lastDan101TargetDistance = new float[2] { 0, 0 };
@@ -150,7 +148,7 @@ namespace HS2_BetterPenetration
             _kokanForwardOffset = Config.Bind<float>("Female Options", "Target Offset: Vagina Vertical", 0.0f, "Vertical offset of the vagina target");
             _kokanUpOffset = Config.Bind<float>("Female Options", "Target Offset: Vagina Depth", 0.0f, "Depth offset of the vagina target");
             _headForwardOffset = Config.Bind<float>("Female Options", "Target Offset: Mouth Depth", 0.0f, "Depth offset of the mouth target");
-            _headUpOffset = Config.Bind<float>("Female Options", "Target Offset: Mouth Vertical", 0.05f, "Vertical offset of the mouth target");
+            _headUpOffset = Config.Bind<float>("Female Options", "Target Offset: Mouth Vertical", 0.025f, "Vertical offset of the mouth target");
 
             harmony = new Harmony("HS2_BetterPenetration");
             SceneManager.sceneLoaded += SceneManager_sceneLoaded;
@@ -199,8 +197,6 @@ namespace HS2_BetterPenetration
                     danPoints[maleNum].danTop.localScale = new Vector3(_dan_sack_size[maleNum].Value, _dan_sack_size[maleNum].Value, _dan_sack_size[maleNum].Value);
                     lastDan109Position[maleNum] = danPoints[maleNum].danEnd.position;
                     lastDanRotation[maleNum] = danPoints[maleNum].danEnd.rotation;
-                    lastDanVector[maleNum] = danPoints[maleNum].danEnd.position - danPoints[maleNum].danStart.position;
-                    lastDanLength[maleNum] = _dan_length[maleNum].Value;
                     lastAdjustTime[maleNum] = Time.time;
                 }
 
@@ -314,7 +310,7 @@ namespace HS2_BetterPenetration
                 return;
 
             int maleNum = 0;
-            if (___male != null && ___male.name.Contains("002"))
+            if (___male != null && ___male.chaID != 99)
                 maleNum = 1;
 
             if (!bDansFound[maleNum])
@@ -345,7 +341,7 @@ namespace HS2_BetterPenetration
                 return;
 
             int maleNum = 0;
-            if (___male != null && ___male.name.Contains("002"))
+            if (___male != null && ___male.chaID != 99)
             {
                 if (!b2MAnimation)
                     return;
@@ -372,8 +368,6 @@ namespace HS2_BetterPenetration
             referenceLookAtTarget[maleNum] = danPoints[maleNum].danEnd;
             lastDan109Position[maleNum] = danPoints[maleNum].danEnd.position;
             lastDanRotation[maleNum] = danPoints[maleNum].danEnd.rotation;
-            lastDanVector[maleNum] = danPoints[maleNum].danEnd.position - danPoints[maleNum].danStart.position;
-            lastDanLength[maleNum] = _dan_length[maleNum].Value;
             lastAdjustTime[maleNum] = Time.time;
             bDanPenetration[maleNum] = false;
             changingAnimations[maleNum] = false;
@@ -585,8 +579,6 @@ namespace HS2_BetterPenetration
             danPoints[maleNum].danStart.rotation = danQuaternion;
             danPoints[maleNum].danEnd.SetPositionAndRotation(dan109_pos, danQuaternion);
 
-            lastDanVector[maleNum] = danForwardVector;
-            lastDanLength[maleNum] = Vector3.Distance(dan101_pos, dan109_pos);
             lastDanRotation[maleNum] = danQuaternion;
             lastDan109Position[maleNum] = dan109_pos;
             lastDan101TargetDistance[maleNum] = distDan101ToTarget;
