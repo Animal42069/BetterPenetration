@@ -15,7 +15,7 @@ namespace HS2_BetterPenetration
     [BepInProcess("HoneySelect2VR")]
     public class HS2_BetterPenetration : BaseUnityPlugin
     {
-        public const string VERSION = "2.1.9.0";
+        public const string VERSION = "2.2.0.1";
         private static Harmony harmony;
 		private static HScene hScene;
         private static readonly ConfigEntry<float>[] _dan_length = new ConfigEntry<float>[2];
@@ -239,50 +239,52 @@ namespace HS2_BetterPenetration
                     db.m_Colliders.Clear();
 
                 Console.WriteLine("bHPointsFound " + bHPointsFound[femaleNum]);
-                for (int i = 0; i < colliderList.Length; i++)
-                {
-                    DynamicBone db = female.GetComponentsInChildren<DynamicBone>().Where(x => x.m_Root.name.Equals(dynamicBonesList[i])).FirstOrDefault();
-                    DynamicBoneCollider dbc = female.GetComponentsInChildren<DynamicBoneCollider>().Where(x => x.name.Equals(colliderList[i])).FirstOrDefault();
-
-                    if (dbc == null)
-                    {
-                        Transform colliderTransform = female.GetComponentsInChildren<Transform>().Where(x => x.name.Contains(colliderList[i])).FirstOrDefault();
-
-                        if (colliderTransform != null)
-                        {
-                            dbc = colliderTransform.gameObject.AddComponent(typeof(DynamicBoneCollider)) as DynamicBoneCollider;
-                            dbc.m_Bound = DynamicBoneColliderBase.Bound.Inside;
-                            dbc.m_Direction = DynamicBoneColliderBase.Direction.Y;
-                            dbc.m_Height = colliderHeightList[i];
-                            dbc.m_Radius = colliderRadiusList[i];
-                        }
-                    }
-
-                    if (db != null && dbc != null)
-                    {             
-                        db.m_Colliders.Add(dbc);
-
-                        Console.WriteLine(dbc.name + " collider radius " + dbc.m_Radius + ", height: " + dbc.m_Height);
-
-                        foreach (DynamicBoneColliderBase dbcb in db.m_Colliders)
-                            Console.WriteLine(db.m_Root.name + " collider " + dbcb.name);
-                    }
-                    else
-                    {
-                        if (db == null)
-                            Console.WriteLine(dynamicBonesList[i] + " bone not found for " + female.name);
-                        if (dbc == null)
-                            Console.WriteLine(colliderList[i] + " collider not found for " + female.name);
-                    }
-                }
 
                 List<DynamicBone> dbList = new List<DynamicBone>();
                 foreach (DynamicBone db in female.GetComponentsInChildren<DynamicBone>().Where(x => x.name.Contains("cf_J_Vagina")))
                 {
-                    if (db != null)
+                    if (db == null)
+                        continue;
+
+                    if (db.m_Root != null)
                     {
-                        dbList.Add(db);
+                        for (int i = 0; i < colliderList.Length; i++)
+                        {
+                            if (db.m_Root.name.Equals(dynamicBonesList[i]))
+                            {
+                                DynamicBoneCollider dbc = female.GetComponentsInChildren<DynamicBoneCollider>().Where(x => x.name.Contains(colliderList[i])).FirstOrDefault();
+                                if (dbc == null)
+                                {
+                                    Transform colliderTransform = female.GetComponentsInChildren<Transform>().Where(x => x.name.Contains(colliderList[i])).FirstOrDefault();
+
+                                    if (colliderTransform != null)
+                                    {
+                                        Console.WriteLine("collider " + colliderTransform.name);
+
+                                        dbc = colliderTransform.gameObject.AddComponent(typeof(DynamicBoneCollider)) as DynamicBoneCollider;
+                                        dbc.m_Bound = DynamicBoneColliderBase.Bound.Inside;
+                                        dbc.m_Direction = DynamicBoneColliderBase.Direction.Y;
+                                        dbc.m_Height = colliderHeightList[i];
+                                        dbc.m_Radius = colliderRadiusList[i];
+                                    }
+                                }
+
+                                if (dbc != null)
+                                {
+                                    db.m_Colliders.Add(dbc);
+                                    foreach (DynamicBoneColliderBase dbcb in db.m_Colliders)
+                                        Console.WriteLine(db.m_Root.name + " collider " + dbcb.name);
+                                }
+                                else
+                                { 
+                                    Console.WriteLine(colliderList[i] + " collider not found for " + female.name);
+                                }
+                            }
+                        }
                     }
+
+                    dbList.Add(db);
+
                 }
 
                 kokanBones[femaleNum] = dbList;

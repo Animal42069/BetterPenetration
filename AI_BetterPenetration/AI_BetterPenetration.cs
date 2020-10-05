@@ -13,7 +13,7 @@ namespace AI_BetterPenetration
     [BepInProcess("AI-Syoujyo")]
     public class AI_BetterPenetration : BaseUnityPlugin
     {
-        public const string VERSION = "2.1.9.0";
+        public const string VERSION = "2.2.1.0";
         private static Harmony harmony;
 		private static HScene hScene;
         private static bool patched;
@@ -133,7 +133,7 @@ namespace AI_BetterPenetration
             _kokanForwardOffset = Config.Bind<float>("Female Options", "Target Offset: Vagina Vertical", 0.0f, "Vertical offset of the vagina target");
             _kokanUpOffset = Config.Bind<float>("Female Options", "Target Offset: Vagina Depth", 0.0f, "Depth offset of the vagina target");
             _headForwardOffset = Config.Bind<float>("Female Options", "Target Offset: Mouth Depth", 0.0f, "Depth offset of the mouth target");
-            _headUpOffset = Config.Bind<float>("Female Options", "Target Offset: Mouth Vertical", 0.05f, "Vertical offset of the mouth target");
+            _headUpOffset = Config.Bind<float>("Female Options", "Target Offset: Mouth Vertical", -0.05f, "Vertical offset of the mouth target");
             harmony = new Harmony("AI_BetterPenetration");
         }
 
