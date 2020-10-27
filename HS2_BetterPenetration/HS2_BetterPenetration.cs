@@ -13,8 +13,9 @@ namespace HS2_BetterPenetration
 {
 
     [BepInPlugin("animal42069.HS2betterpenetration", "HS2 Better Penetration", VERSION)]
-    [BepInDependency("com.deathweasel.bepinex.uncensorselector", BepInDependency.DependencyFlags.SoftDependency)]
-    [BepInDependency("com.joan6694.illusionplugins.bonesframework", BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency("com.deathweasel.bepinex.uncensorselector", "3.10")]
+    [BepInDependency("com.joan6694.illusionplugins.bonesframework", "1.4.1")]
+
     [BepInProcess("HoneySelect2")]
     [BepInProcess("HoneySelect2VR")]
     public class HS2_BetterPenetration : BaseUnityPlugin
@@ -171,7 +172,7 @@ namespace HS2_BetterPenetration
                 changingAnimations[maleNum] = true;
         }
 
-        public static void ChaControl_AfterReload()
+        public static void AfterCharacterReload()
         {
             if (!inHScene)
                 return;

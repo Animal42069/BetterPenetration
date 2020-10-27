@@ -12,8 +12,8 @@ using System.Reflection;
 namespace AI_BetterPenetration
 {
     [BepInPlugin("animal42069.aibetterpenetration", "AI Better Penetration", VERSION)]
-    [BepInDependency("com.deathweasel.bepinex.uncensorselector", BepInDependency.DependencyFlags.SoftDependency)]
-    [BepInDependency("com.joan6694.illusionplugins.bonesframework", BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency("com.deathweasel.bepinex.uncensorselector", "3.10")]
+    [BepInDependency("com.joan6694.illusionplugins.bonesframework", "1.4.1")]
     [BepInProcess("AI-Syoujyo")]
     public class AI_BetterPenetration : BaseUnityPlugin
     {
@@ -153,7 +153,7 @@ namespace AI_BetterPenetration
                 changingAnimations = true;
         }
 
-        public static void ChaControl_AfterReload()
+        public static void AfterCharacterReload()
         {
             if (!inHScene)
                 return;
@@ -170,7 +170,6 @@ namespace AI_BetterPenetration
             AddPColliders();
             inHScene = true;
         }
-        
 
         public static void AddPColliders()
         {
