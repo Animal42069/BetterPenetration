@@ -1,19 +1,23 @@
 ﻿using BepInEx;
 using BepInEx.Configuration;
+using BepInEx.Bootstrap;
 using HarmonyLib;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using Manager;
+using System.Reflection;
 
 namespace AI_BetterPenetration
 {
     [BepInPlugin("animal42069.aibetterpenetration", "AI Better Penetration", VERSION)]
+    [BepInDependency("com.deathweasel.bepinex.uncensorselector", BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency("com.joan6694.illusionplugins.bonesframework", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInProcess("AI-Syoujyo")]
     public class AI_BetterPenetration : BaseUnityPlugin
     {
-        public const string VERSION = "2.2.1.0";
+        public const string VERSION = "2.3.0.0";
         private static Harmony harmony;
 		private static HScene hScene;
         private static bool patched;
@@ -37,6 +41,7 @@ namespace AI_BetterPenetration
         private static readonly List<ConfigEntry<float>> _back_collision_point_offset = new List<ConfigEntry<float>>();
 
         private static bool inHScene = false;
+        private static bool loadingCharacter = false;
 
         public static AIChara.ChaControl[] fem_list;
         public static AIChara.ChaControl[] male_list;
@@ -137,12 +142,43 @@ namespace AI_BetterPenetration
             harmony = new Harmony("AI_BetterPenetration");
         }
 
+        public static void BeforeCharacterReload()
+        { 
+            if (!inHScene)
+                return;
+
+            loadingCharacter = true;
+
+            for (int maleNum = 0; maleNum < male_list.Length; maleNum++)
+                changingAnimations = true;
+        }
+
+        public static void ChaControl_AfterReload()
+        {
+            if (!inHScene)
+                return;
+
+            AddPColliders();
+
+            loadingCharacter = false;
+        }
+
         [HarmonyPostfix, HarmonyPatch(typeof(HScene), "SetStartVoice")]
-        public static void AddPColliders(HScene __instance)
+        public static void HScene_Start(HScene __instance)
         {
             hScene = __instance;
-            male_list = __instance.GetMales().Where(male => male != null).ToArray();
-            fem_list = __instance.GetFemales().Where(female => female != null).ToArray();
+            AddPColliders();
+            inHScene = true;
+        }
+        
+
+        public static void AddPColliders()
+        {
+            if (hScene == null)
+                return;
+
+            male_list = hScene.GetMales().Where(male => male != null).ToArray();
+            fem_list = hScene.GetFemales().Where(female => female != null).ToArray();
 
             danCollider = new DynamicBoneCollider();
             constrainPoints = new ConstrainPoints();
@@ -272,7 +308,7 @@ namespace AI_BetterPenetration
                     kokanBones = dbList;
                 }
             }
-            inHScene = true;
+
             Console.WriteLine("AddColliders done.");
         }
 
@@ -288,7 +324,7 @@ namespace AI_BetterPenetration
         [HarmonyPostfix, HarmonyPatch(typeof(H_Lookat_dan), "setInfo")]
         private static void H_Lookat_dan_ChangeTarget(H_Lookat_dan __instance)
         {
-            if (!inHScene || __instance == null || !bDansFound || !bHPointsFound)
+            if (loadingCharacter || !inHScene || __instance == null || !bDansFound || !bHPointsFound)
                 return;
 
 
@@ -299,7 +335,7 @@ namespace AI_BetterPenetration
         [HarmonyPostfix, HarmonyPatch(typeof(H_Lookat_dan), "LateUpdate")]
         public static void H_Lookat_dan_LateUpdate(H_Lookat_dan __instance)
         {
-            if (!inHScene || !bDansFound || !bHPointsFound)
+            if (loadingCharacter || !inHScene || !bDansFound || !bHPointsFound)
                 return;
 
             danPoints.danStart.localScale = new Vector3(_dan_girth.Value, _dan_girth.Value, 1);
@@ -579,16 +615,36 @@ namespace AI_BetterPenetration
             if (hScene == null)
                 return;
 		}
-		
+
         private static void HScene_sceneLoaded(bool loaded)
         {
             patched = loaded;
-            
-            if (loaded)
-                harmony.PatchAll(typeof(AI_BetterPenetration));
-            else
-                harmony.UnpatchAll(nameof(AI_BetterPenetration));
-        }
 
+            if (loaded)
+            {
+                harmony.PatchAll(typeof(AI_BetterPenetration));
+
+                Console.WriteLine("AI_BetterPenetration: Searching for Uncensor Selector");
+                Chainloader.PluginInfos.TryGetValue("com.deathweasel.bepinex.uncensorselector", out PluginInfo pluginInfo);
+                if (pluginInfo != null && pluginInfo.Instance != null)
+                {
+                    Type nestedType = pluginInfo.Instance.GetType().GetNestedType("UncensorSelectorController", AccessTools.all);
+                    if (nestedType != null)
+                    {
+                        Console.WriteLine("HS2_BetterPenetration: UncensorSelector found, trying to patch");
+                        MethodInfo methodInfo = AccessTools.Method(nestedType, "ReloadCharacterBody", null, null);
+                        if (methodInfo != null)
+                        {
+                            harmony.Patch(methodInfo, new HarmonyMethod(typeof(AI_BetterPenetration), "BeforeCharacterReload"), new HarmonyMethod(typeof(AI_BetterPenetration), "AfterCharacterReload"), null, null);
+                            Console.WriteLine("HS2_BetterPenetration: UncensorSelector patched correctly");
+                        }
+                    }
+                }
+            }
+            else
+            {
+                harmony.UnpatchAll(nameof(AI_BetterPenetration));
+            }
+        }
     }
 }
