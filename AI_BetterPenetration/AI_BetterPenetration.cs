@@ -61,8 +61,9 @@ namespace AI_BetterPenetration
 
         private static bool bDansFound = false;
         private static DanPoints danPoints;
-        private static float baseDanLength;
+        private static float baseDanLength = 1.8f;
         private static bool bDanPenetration = false;
+        private static bool bDanPull = false;
         private static Transform referenceLookAtTarget;
         private static Transform bpKokanTarget;
         private static bool changingAnimations = false;
@@ -78,8 +79,6 @@ namespace AI_BetterPenetration
         private const string dan_base = "cm_J_dan101_00";
         private const string dan_head = "cm_J_dan109_00";
         private const string dan_sack = "cm_J_dan_f_top";
-        private const string dan_sao_00 = "k_m_dansao00_00";
-        private const string dan_sao_01 = "k_m_dansao00_01";
         private const string index_finger = "cf_J_Hand_Index03_R";
         private const string middle_finger = "cf_J_Hand_Middle03_R";
         private const string ring_finger = "cf_J_Hand_Ring03_R";
@@ -117,7 +116,7 @@ namespace AI_BetterPenetration
             {
                 if (inHScene && bDansFound)
                 {
-                    danPoints.danStart.localScale = new Vector3(_dan_girth.Value, _dan_girth.Value, 1);
+                    danPoints.danStart.localScale = new Vector3(_dan_girth.Value, _dan_girth.Value, _dan_length.Value / baseDanLength);
                 }
             };
 
@@ -175,10 +174,10 @@ namespace AI_BetterPenetration
             _kokanUpOffset = Config.Bind("Female Options", "Target Offset: Vagina Depth", 0.0f, "Depth offset of the vagina target");
             _headForwardOffset = Config.Bind("Female Options", "Target Offset: Mouth Depth", 0.0f, "Depth offset of the mouth target");
             _headUpOffset = Config.Bind("Female Options", "Target Offset: Mouth Vertical", 0.03f, "Vertical offset of the mouth target");
-            _kokan_adjust = Config.Bind("Female Options", "Joint Adjustment: Missionary Correction", true, "Adjust the Vagina bone postion for certain Missionary positions to correct its appearance");
-            _kokan_adjust_position_y = Config.Bind("Female Options", "Joint Adjustment: Missionary Position Y", -0.175f, "Amount to adjust the Vagina bone position Y for certain Missionary positions to correct its appearance");
-            _kokan_adjust_position_z = Config.Bind("Female Options", "Joint Adjustment: Missionary Position Z", 0.125f, "Amount to adjust the Vagina bone position Z for certain Missionary positions to correct its appearance");
-            _kokan_adjust_rotation_x = Config.Bind("Female Options", "Joint Adjustment: Missionary Rotation X", 20.0f, "Amount to adjust the Vagina bone rotation X for certain Missionary positions to correct its appearance");
+            _kokan_adjust = Config.Bind("Female Options", "Joint Adjustment: Missionary Correction", false, "NOTE: There is an Illusion bug that causes the vagina to appear sunken in certain missionary positions.  It is best to use Advanced Bonemod and adjust your female character's cf_J_Kokan Offset Y to 0.001.  If you don't do that, enabling this option will attempt to fix the problem by guessing where the bone should be");
+            _kokan_adjust_position_y = Config.Bind("Female Options", "Joint Adjustment: Missionary Position Y", -0.075f, "Amount to adjust the Vagina bone position Y for certain Missionary positions to correct its appearance");
+            _kokan_adjust_position_z = Config.Bind("Female Options", "Joint Adjustment: Missionary Position Z", 0.0625f, "Amount to adjust the Vagina bone position Z for certain Missionary positions to correct its appearance");
+            _kokan_adjust_rotation_x = Config.Bind("Female Options", "Joint Adjustment: Missionary Rotation X", 10.0f, "Amount to adjust the Vagina bone rotation X for certain Missionary positions to correct its appearance");
 
             harmony = new Harmony("AI_BetterPenetration");
         }
@@ -232,34 +231,36 @@ namespace AI_BetterPenetration
 	                Transform dan101 = male.GetComponentsInChildren<Transform>().Where(x => x.name.Contains(dan_base)).FirstOrDefault();
 	                Transform dan109 = male.GetComponentsInChildren<Transform>().Where(x => x.name.Contains(dan_head)).FirstOrDefault();
 	                Transform danTop = male.GetComponentsInChildren<Transform>().Where(x => x.name.Contains(dan_sack)).FirstOrDefault();
-	                Transform danSao00 = male.GetComponentsInChildren<Transform>().Where(x => x.name.Contains(dan_sao_00)).FirstOrDefault();
-	                Transform danSao01 = male.GetComponentsInChildren<Transform>().Where(x => x.name.Contains(dan_sao_01)).FirstOrDefault();
 	                Transform index = male.GetComponentsInChildren<Transform>().Where(x => x.name.Contains(index_finger)).FirstOrDefault();
 	                Transform middle = male.GetComponentsInChildren<Transform>().Where(x => x.name.Contains(middle_finger)).FirstOrDefault();
 	                Transform ring = male.GetComponentsInChildren<Transform>().Where(x => x.name.Contains(ring_finger)).FirstOrDefault();
 
                     bDanPenetration = false;
+                	bDanPull = false;
                     if (dan101 != null && dan109 != null && danTop != null)
-                    {
+                {
                     	baseDanLength = Vector3.Distance(dan101.position, dan109.position);
-                        danPoints = new DanPoints(dan101, dan109, danTop, danSao00, danSao01);
+                        if (Geometry.ApproximatelyZero(baseDanLength))
+                            baseDanLength = 1.8f;
+
+                    danPoints = new DanPoints(dan101, dan109, danTop);
 
                         bDansFound = true;
-                        dan101.localScale = new Vector3(_dan_girth.Value, _dan_girth.Value, 1);
+                        dan101.localScale = new Vector3(_dan_girth.Value, _dan_girth.Value, _dan_length.Value / baseDanLength);
 
                         danCollider = dan101.GetComponent<DynamicBoneCollider>();
 
                         if (danCollider == null)
                             danCollider = dan101.gameObject.AddComponent(typeof(DynamicBoneCollider)) as DynamicBoneCollider;
-                            
+                    
                         danCollider.m_Direction = DynamicBoneColliderBase.Direction.Z;
                         danCollider.m_Center = new Vector3(0, _dan_collider_verticalcenter.Value, _dan_length.Value / 2);
                         danCollider.m_Bound = DynamicBoneColliderBase.Bound.Outside;
                         danCollider.m_Radius = _dan_collider_radius.Value;
                         danCollider.m_Height = _dan_length.Value + (_dan_collider_headlength.Value * 2);
-						
+				
                         danPoints.danTop.localScale = new Vector3(_dan_sack_size.Value, _dan_sack_size.Value, _dan_sack_size.Value);
-                    }
+                }
 
                 if (index != null && middle != null && ring != null)
                 {
@@ -294,6 +295,7 @@ namespace AI_BetterPenetration
                     ringCollider.m_Radius = _finger_collider_radius.Value;
                     ringCollider.m_Height = _finger_collider_length.Value;
                 }
+
                     referenceLookAtTarget = danPoints.danEnd;
                     Console.WriteLine("bDansFound " + bDansFound);
                 }
@@ -411,14 +413,7 @@ namespace AI_BetterPenetration
                 }
             }
         }
-
-        [HarmonyPostfix, HarmonyPatch(typeof(H_Lookat_dan), "DankonInit")]
-        private static void H_Lookat_dan_PostDankonInit(H_Lookat_dan __instance)
-        {
-            if (__instance != null)
-                __instance.DanTop = null;
-        }
-
+		
         [HarmonyPostfix, HarmonyPatch(typeof(H_Lookat_dan), "setInfo")]
         private static void H_Lookat_dan_PostSetInfo(H_Lookat_dan __instance)
         {
@@ -430,15 +425,11 @@ namespace AI_BetterPenetration
             SetDanTarget();
         }
 
-        [HarmonyPrefix, HarmonyPatch(typeof(H_Lookat_dan), "LateUpdate")]
-        public static void H_Lookat_dan_PreLateUpdate(H_Lookat_dan __instance)
+        [HarmonyPostfix, HarmonyPatch(typeof(H_Lookat_dan), "LateUpdate")]
+        public static void H_Lookat_dan_PostLateUpdate(H_Lookat_dan __instance)
         {
             if (loadingCharacter || !inHScene || !bDansFound || !bHPointsFound)
                 return;
-
-            danPoints.danStart.localScale = new Vector3(_dan_girth.Value, _dan_girth.Value, 1);
-            danPoints.danTop.localScale = new Vector3(_dan_sack_size.Value, _dan_sack_size.Value, _dan_sack_size.Value);
-
 
             if (_kokan_adjust.Value && adjustFAnimation && !hScene.NowChangeAnim)
                 AdjustFemaleAnimation();
@@ -446,29 +437,37 @@ namespace AI_BetterPenetration
             if (changingAnimations && !hScene.NowChangeAnim)
                 SetupNewDanTarget(__instance);
 
-        	SetDanTarget();
+            danPoints.danStart.localScale = new Vector3(_dan_girth.Value, _dan_girth.Value, _dan_length.Value / baseDanLength);
+            danPoints.danTop.localScale = new Vector3(_dan_sack_size.Value, _dan_sack_size.Value, _dan_sack_size.Value);
 
-            if (__instance.transLookAtNull != null)
-                __instance.transLookAtNull.position = danPoints.danEnd.position;
+            if (bDanPenetration || bDanPull)
+                SetDanTarget();
         }
 
         private static void SetupNewDanTarget(H_Lookat_dan lookAtDan)
         {
             referenceLookAtTarget = danPoints.danEnd;
             bDanPenetration = false;
+            bDanPull = false;
             changingAnimations = false;
 
-            if (lookAtDan != null && lookAtDan.bTopStick && lookAtDan.transLookAtNull != null && lookAtDan.strPlayMotion != null &&
-                (lookAtDan.transLookAtNull.name == kokan_target || lookAtDan.transLookAtNull.name == ana_target || lookAtDan.transLookAtNull.name == head_target))
+            if (lookAtDan != null && lookAtDan.strPlayMotion != null)
             {
-                bDanPenetration = true;
-                referenceLookAtTarget = lookAtDan.transLookAtNull;
-
-                if (referenceLookAtTarget.name == kokan_target)
+                if (lookAtDan.strPlayMotion.Contains("Pull"))
                 {
-                    if (bpKokanTarget != null)
+                    bDanPull = true;
+                }
+                else if (lookAtDan.bTopStick && lookAtDan.transLookAtNull != null && (lookAtDan.transLookAtNull.name == kokan_target || lookAtDan.transLookAtNull.name == ana_target || lookAtDan.transLookAtNull.name == head_target))
+                {
+                    bDanPenetration = true;
+                    referenceLookAtTarget = lookAtDan.transLookAtNull;
+
+                    if (referenceLookAtTarget.name == kokan_target)
                     {
-                        referenceLookAtTarget = bpKokanTarget;
+                        if (bpKokanTarget != null)
+                        {
+                            referenceLookAtTarget = bpKokanTarget;
+                        }
                     }
                 }
             }
@@ -700,8 +699,7 @@ namespace AI_BetterPenetration
             if (bDanPenetration)
                 return;
 
-            danPoints.danSao00.localPosition = new Vector3(danPoints.danSao00.localPosition.x, danPoints.danSao00.localPosition.y, danPoints.danSao00.localPosition.z * _dan_length.Value / baseDanLength);
-            danPoints.danSao01.localPosition = new Vector3(danPoints.danSao01.localPosition.x, danPoints.danSao01.localPosition.y, danPoints.danSao01.localPosition.z * _dan_length.Value / baseDanLength);
+            danPoints.danStart.localScale = new Vector3(_dan_girth.Value, _dan_girth.Value, _dan_length.Value / baseDanLength);
         }
 
         [HarmonyPrefix, HarmonyPatch(typeof(HScene), "EndProc")]
