@@ -24,9 +24,6 @@ namespace HS2_BetterPenetration
         private static HScene hScene;
         private static bool patched = false;
 
-        private static readonly ConfigEntry<float>[] _dan_length = new ConfigEntry<float>[2];
-        private static readonly ConfigEntry<float>[] _dan_girth = new ConfigEntry<float>[2];
-        private static readonly ConfigEntry<float>[] _dan_sack_size = new ConfigEntry<float>[2];
         private static readonly ConfigEntry<float>[] _dan_softness = new ConfigEntry<float>[2];
         private static readonly ConfigEntry<float>[] _dan_collider_headlength = new ConfigEntry<float>[2];
         private static readonly ConfigEntry<float>[] _dan_collider_radius = new ConfigEntry<float>[2];
@@ -42,6 +39,8 @@ namespace HS2_BetterPenetration
         private static ConfigEntry<float> _headForwardOffset;
         private static ConfigEntry<float> _headUpOffset;
         private static ConfigEntry<bool> _kokan_adjust;
+        private static ConfigEntry<bool> _use_finger_colliders;
+        private static ConfigEntry<bool> _use_bounding_colliders;
         private static ConfigEntry<float> _kokan_adjust_position_y;
         private static ConfigEntry<float> _kokan_adjust_position_z;
         private static ConfigEntry<float> _kokan_adjust_rotation_x;
@@ -52,7 +51,7 @@ namespace HS2_BetterPenetration
         private static bool loadingCharacter = false;
         private static bool b2MAnimation;
         private static bool adjustFAnimation;
-        private static Transform kokanBone;
+        private static Transform kokanBoneAdjustTarget;
 
         public static ChaControl[] fem_list;
         public static ChaControl[] male_list;
@@ -73,6 +72,7 @@ namespace HS2_BetterPenetration
         private static readonly bool[] bHPointsFound = new bool[2] { false, false };
         private static readonly int[] targetF = new int[2] { 0, 0 };
         private static ConstrainPoints[] constrainPoints;
+        private static readonly Vector3[] lastDanPostion = new Vector3[2];
 
         private const string head_target = "k_f_head_00";
         private const string chest_target_00 = "k_f_spine03_00";
@@ -88,63 +88,38 @@ namespace HS2_BetterPenetration
         private const string ring_finger = "cf_J_Hand_Ring03_R";
 
         private const string headHPoint = "cf_J_Head";
-        private static readonly string[] frontHPointsList = { kokan_target, "cf_J_sk_00_02", "N_Waist_f", "k_f_spine03_03" };
-        private static readonly string[] backHPointsList = { ana_target, "cf_J_sk_04_02", "N_Waist_b", "N_Back" };
-        private static readonly float[] frontOffsets = { -0.35f, 0.25f, 0f, -0.65f };
-        private static readonly float[] backOffsets = { -0.05f, 0.25f, 0.05f, 0.05f };
-        private static readonly bool[] frontHPointsInward = { false, false, false, false };
-        private static readonly bool[] backHPointsInward = { false, false, true, true };
+        private static readonly List<string> frontHPointsList = new List<string> { kokan_target, "cf_J_sk_00_02", "N_Waist_f", "k_f_spine03_03" };
+        private static readonly List<string> backHPointsList = new List<string> { ana_target, "cf_J_sk_04_02", "N_Waist_b", "N_Back" };
+        private static readonly List<float> frontOffsets = new List<float> { -0.35f, 0.25f, 0f, -0.65f };
+        private static readonly List<float> backOffsets = new List<float> { -0.05f, 0.25f, 0.05f, 0.05f };
+        private static readonly List<bool> frontHPointsInward = new List<bool> { false, false, false, false };
+        private static readonly List<bool> backHPointsInward = new List<bool> { false, false, true, true };
 
-        private static readonly string[] colliderList = { "cf_J_Vagina_Collider_B", "cf_J_Vagina_Collider_F", "cf_J_Vagina_Collider_Inner_F", "cf_J_Vagina_Collider_L.005", "cf_J_Vagina_Collider_R.005" };
-        private static readonly string[] dynamicBonesList = { "cf_J_Vagina_Pivot_B", "cf_J_Vagina_Pivot_F", "cf_J_Vagina_Pivot_Inner_F", "cf_J_Vagina_Pivot_L.005", "cf_J_Vagina_Pivot_R.005" };
-        private static readonly float[] colliderHeightList = { 0.39f, 0.19f, 0.34f, 0.39f, 0.39f };
-        private static readonly float[] colliderRadiusList = { 0.0021f, 0.0011f, 0.0011f, 0.0021f, 0.0021f };
+        private static readonly List<string> colliderList = new List<string> { "cf_J_Vagina_Collider_B", "cf_J_Vagina_Collider_F", "cf_J_Vagina_Collider_Inner_F", "cf_J_Vagina_Collider_L.005", "cf_J_Vagina_Collider_R.005" };
+        private static readonly List<string> dynamicBonesList = new List<string> { "cf_J_Vagina_Pivot_B", "cf_J_Vagina_Pivot_F", "cf_J_Vagina_Pivot_Inner_F", "cf_J_Vagina_Pivot_L.005", "cf_J_Vagina_Pivot_R.005" };
+        private static readonly List<float> colliderHeightList = new List<float> { 0.39f, 0.19f, 0.34f, 0.39f, 0.39f };
+        private static readonly List<float> colliderRadiusList = new List<float> { 0.0021f, 0.0011f, 0.0011f, 0.0021f, 0.0021f };
 
-        private static readonly string[] animationAdjustmentList = { "ais_f_00", "ais_f_01", "ais_f_12", "ais_f_19", "ais_f_20" };
+        private static readonly List<string> animationAdjustmentList = new List<string> { "ais_f_00", "ais_f_01", "ais_f_12", "ais_f_19", "ais_f_20" };
 
         private void Awake()
         {
-            for (int maleNum = 0; maleNum < _dan_length.Length; maleNum++)
+            for (int maleNum = 0; maleNum < _dan_collider_headlength.Length; maleNum++)
             {
-                _finger_collider_length[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Collider: Finger Length", 0.7f, "Lenght of the finger colliders.");
-                _finger_collider_radius[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Collider: Finger Radius", 0.225f, "Radius of the fiinger colliders.");
-                _dan_collider_headlength[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Collider: Length of Head", 0.4f, "Distance from the center of the head bone to the tip, used for collision purposes.");
-                _dan_collider_radius[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Collider: Radius of Shaft", 0.32f, "Radius of the shaft collider.");
-                _dan_collider_verticalcenter[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Collider: Vertical Center", -0.03f, "Vertical Center of the shaft collider");
-                _dan_length[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis: Length", 1.8f, "Set the length of the penis.  Apparent Length is about 0.2 larget than this, depending on uncensor.  2.0 is about 8 inches or 20 cm.");
-                _dan_girth[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis: Girth", 1.0f, "Set the scale of the circumference of the penis.");
-                _dan_sack_size[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis: Sack Size", 1.0f, "Set the scale (size) of the sack");
+                _finger_collider_length[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Finger Collider: Length", 0.6f, "Lenght of the finger colliders.");
+                _finger_collider_radius[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Finger Collider: Radius", 0.2f, "Radius of the finger colliders.");
+                _dan_collider_headlength[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis Collider: Length of Head", 0.35f, "Distance from the center of the head bone to the tip, used for collision purposes.");
+                _dan_collider_radius[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis Collider: Radius of Shaft", 0.32f, "Radius of the shaft collider.");
+                _dan_collider_verticalcenter[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis Collider: Vertical Center", -0.03f, "Vertical Center of the shaft collider");
                 _dan_softness[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis: Softness", 0.15f, "Set the softness of the penis.  A value of 0 means maximum hardness, the penis will remain the same length at all times.  A value greater than 0 will cause the penis to begin to telescope after penetration.  A small value can make it appear there is friction during penetration.");
                 _allow_telescope_percent[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Limiter: Telescope Threshold", 0.6f, "Allow the penis to begin telescoping after it has penetrated a certain amount. 0 = never telescope, 0.5 = allow telescoping after the halfway point, 1 = always allow telescoping.");
                 _force_telescope[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Limiter: Telescope Always", true, "Force the penis to always telescope at the threshold point, instead of only doing it when it prevents clipping.");
 
-                _dan_girth[maleNum].SettingChanged += delegate
-                {
-                    for (int index = 0; index < _dan_girth.Length; index++)
-                    {
-                        if (inHScene && bDansFound[index])
-                        {
-                            danPoints[index].danStart.localScale = new Vector3(_dan_girth[index].Value, _dan_girth[index].Value, _dan_length[index].Value / baseDanLength[index]);
-                        }
-                    }
-                };
-
-                _dan_sack_size[maleNum].SettingChanged += delegate
-                {
-                    for (int index = 0; index < _dan_girth.Length; index++)
-                    {
-                        if (inHScene && bDansFound[index])
-                        {
-                            danPoints[index].danTop.localScale = new Vector3(_dan_sack_size[index].Value, _dan_sack_size[index].Value, _dan_sack_size[index].Value);
-                        }
-                    }
-                };
-
                 _dan_collider_radius[maleNum].SettingChanged += delegate
                 {
-                    for (int index = 0; index < _dan_girth.Length; index++)
+                    for (int index = 0; index < danCollider.Length; index++)
                     {
-                        if (inHScene && danCollider[index] != null)
+                        if (inHScene && danCollider[index] != null && bDansFound[index])
                         {
                             danCollider[index].m_Radius = _dan_collider_radius[index].Value;
                         }
@@ -153,18 +128,18 @@ namespace HS2_BetterPenetration
 
                 _dan_collider_headlength[maleNum].SettingChanged += delegate
                 {
-                    for (int index = 0; index < _dan_girth.Length; index++)
+                    for (int index = 0; index < danCollider.Length; index++)
                     {
-                        if (inHScene && danCollider[index] != null)
+                        if (inHScene && danCollider[index] != null && bDansFound[index])
                         {
-                            danCollider[index].m_Height = _dan_length[index].Value + (_dan_collider_headlength[index].Value * 2);
+                            danCollider[index].m_Height = danPoints[index].danEnd.localPosition.z + (_dan_collider_headlength[index].Value  * 2);
                         }
                     }
                 };
 
                 _finger_collider_radius[maleNum].SettingChanged += delegate
                 {
-                    for (int index = 0; index < _dan_girth.Length; index++)
+                    for (int index = 0; index < indexCollider.Length; index++)
                     {
                         if (inHScene && indexCollider[index] != null && middleCollider[index] != null && ringCollider[index] != null)
                         {
@@ -177,7 +152,7 @@ namespace HS2_BetterPenetration
 
                 _finger_collider_length[maleNum].SettingChanged += delegate
                 {
-                    for (int index = 0; index < _dan_girth.Length; index++)
+                    for (int index = 0; index < indexCollider.Length; index++)
                     {
                         if (inHScene && indexCollider[index] != null && middleCollider[index] != null && ringCollider[index] != null)
                         {
@@ -192,14 +167,16 @@ namespace HS2_BetterPenetration
             }
 
             _clipping_depth = Config.Bind("Female Options", "Clipping Depth", 0.25f, "Set how close to body surface to limit penis for clipping purposes. Smaller values will result in more clipping through the body, larger values will make the shaft wander further away from the intended penetration point.");
-            for (int femaleNum = 0; femaleNum < frontOffsets.Length; femaleNum++)
+            for (int femaleNum = 0; femaleNum < frontOffsets.Count; femaleNum++)
                 _front_collision_point_offset.Add(Config.Bind("Female Options", "Clipping Offset: Front Collision " + femaleNum, frontOffsets[femaleNum], "Individual offset on colision point, to improve clipping"));
-            for (int femaleNum = 0; femaleNum < backOffsets.Length; femaleNum++)
+            for (int femaleNum = 0; femaleNum < backOffsets.Count; femaleNum++)
                 _back_collision_point_offset.Add(Config.Bind("Female Options", "Clipping Offset: Back Collision " + femaleNum, backOffsets[femaleNum], "Individual offset on colision point, to improve clipping"));
             _kokanForwardOffset = Config.Bind("Female Options", "Target Offset: Vagina Vertical", 0.0f, "Vertical offset of the vagina target");
             _kokanUpOffset = Config.Bind("Female Options", "Target Offset: Vagina Depth", 0.0f, "Depth offset of the vagina target");
             _headForwardOffset = Config.Bind("Female Options", "Target Offset: Mouth Depth", 0.0f, "Depth offset of the mouth target");
             _headUpOffset = Config.Bind("Female Options", "Target Offset: Mouth Vertical", 0.03f, "Vertical offset of the mouth target");
+            _use_finger_colliders = Config.Bind("Female Options", "Colliders: Use Finger Colliders", true, "Use finger colliders");
+            _use_bounding_colliders = Config.Bind("Female Options", "Colliders: Use Bounding Colliders", true, "Use internal bounding colliders to help animate correctly");
             _kokan_adjust = Config.Bind("Female Options", "Joint Adjustment: Missionary Correction", false, "NOTE: There is an Illusion bug that causes the vagina to appear sunken in certain missionary positions.  It is best to use Advanced Bonemod and adjust your female character's cf_J_Kokan Offset Y to 0.001.  If you don't do that, enabling this option will attempt to fix the problem by guessing where the bone should be");
             _kokan_adjust_position_y = Config.Bind("Female Options", "Joint Adjustment: Missionary Position Y", -0.075f, "Amount to adjust the Vagina bone position Y for certain Missionary positions to correct its appearance");
             _kokan_adjust_position_z = Config.Bind("Female Options", "Joint Adjustment: Missionary Position Z", 0.0625f, "Amount to adjust the Vagina bone position Z for certain Missionary positions to correct its appearance");
@@ -226,7 +203,7 @@ namespace HS2_BetterPenetration
             if (!inHScene)
                 return;
 
-            AddPColliders();
+            AddPColliders(false);
 
             loadingCharacter = false;
         }
@@ -235,11 +212,11 @@ namespace HS2_BetterPenetration
         public static void HScene_PostSetStartVoice(HScene __instance)
         {
             hScene = __instance;
-            AddPColliders();
+            AddPColliders(true);
             inHScene = true;
         }
 
-        public static void AddPColliders()
+        public static void AddPColliders(bool setDanLength)
         {
             if (hScene == null)
                 return;
@@ -269,14 +246,16 @@ namespace HS2_BetterPenetration
 
                 if (dan101 != null && dan109 != null && danTop != null)
                 {
-                    baseDanLength[maleNum] = Vector3.Distance(dan101.position, dan109.position);
-                    if (Geometry.ApproximatelyZero(baseDanLength[maleNum]))
-                        baseDanLength[maleNum] = 1.8f;
+                    if (setDanLength)
+                    {
+                        baseDanLength[maleNum] = Vector3.Distance(dan101.position, dan109.position);
+                        if (Geometry.ApproximatelyZero(baseDanLength[maleNum]))
+                            baseDanLength[maleNum] = 1.8f;
+                    }
 
                     danPoints[maleNum] = new DanPoints(dan101, dan109, danTop);
-
+                    lastDanPostion[maleNum] = dan109.position;
                     bDansFound[maleNum] = true;
-                    dan101.localScale = new Vector3(_dan_girth[maleNum].Value, _dan_girth[maleNum].Value, _dan_length[maleNum].Value / baseDanLength[maleNum]);
 
                     danCollider[maleNum] = dan101.GetComponent<DynamicBoneCollider>();
 
@@ -284,19 +263,18 @@ namespace HS2_BetterPenetration
                         danCollider[maleNum] = dan101.gameObject.AddComponent(typeof(DynamicBoneCollider)) as DynamicBoneCollider;
                     
                     danCollider[maleNum].m_Direction = DynamicBoneColliderBase.Direction.Z;
-                    danCollider[maleNum].m_Center = new Vector3(0, _dan_collider_verticalcenter[maleNum].Value, _dan_length[maleNum].Value / 2);
                     danCollider[maleNum].m_Bound = DynamicBoneColliderBase.Bound.Outside;
+                    danCollider[maleNum].m_Center = new Vector3(0, _dan_collider_verticalcenter[maleNum].Value, danPoints[maleNum].danEnd.localPosition.z / 2);
                     danCollider[maleNum].m_Radius = _dan_collider_radius[maleNum].Value;
-                    danCollider[maleNum].m_Height = _dan_length[maleNum].Value + (_dan_collider_headlength[maleNum].Value * 2);
+                    danCollider[maleNum].m_Height = danPoints[maleNum].danEnd.localPosition.z + (_dan_collider_headlength[maleNum].Value * 2);
 				
-                    danPoints[maleNum].danTop.localScale = new Vector3(_dan_sack_size[maleNum].Value, _dan_sack_size[maleNum].Value, _dan_sack_size[maleNum].Value);
                 }
 
                 if (index != null && middle != null && ring != null)
                 {
                     indexCollider[maleNum] = index.GetComponent<DynamicBoneCollider>();
                     middleCollider[maleNum] = middle.GetComponent<DynamicBoneCollider>();
-                    ringCollider[maleNum] = middle.GetComponent<DynamicBoneCollider>();
+                    ringCollider[maleNum] = ring.GetComponent<DynamicBoneCollider>();
 
                     if (indexCollider[maleNum] == null)
                         indexCollider[maleNum] = index.gameObject.AddComponent(typeof(DynamicBoneCollider)) as DynamicBoneCollider;
@@ -326,7 +304,6 @@ namespace HS2_BetterPenetration
                     ringCollider[maleNum].m_Height = _finger_collider_length[maleNum].Value;
                 }
 
-                referenceLookAtTarget[maleNum] = danPoints[maleNum].danEnd;
                 Console.WriteLine("bDansFound " + bDansFound[maleNum]);
                 maleNum++;
             }
@@ -339,10 +316,10 @@ namespace HS2_BetterPenetration
                 Transform hPointBackOfHead;
                 bHPointsFound[femaleNum] = false;
 
-                for (int index = 0; index < frontHPointsList.Length; index++)
+                for (int index = 0; index < frontHPointsList.Count; index++)
                     frontHPoints.Add(female.GetComponentsInChildren<Transform>().Where(x => x.name.Contains(frontHPointsList[index])).FirstOrDefault());
 
-                for (int index = 0; index < backHPointsList.Length; index++)
+                for (int index = 0; index < backHPointsList.Count; index++)
                     backHPoints.Add(female.GetComponentsInChildren<Transform>().Where(x => x.name.Contains(backHPointsList[index])).FirstOrDefault());
 
                 hPointBackOfHead = female.GetComponentsInChildren<Transform>().Where(x => x.name.Contains(headHPoint)).FirstOrDefault();
@@ -354,7 +331,7 @@ namespace HS2_BetterPenetration
                     frontHPoints[0] = bpKokanTarget[femaleNum];
                 }
 
-                if (frontHPoints.Count == frontHPointsList.Length && backHPoints.Count == backHPointsList.Length && hPointBackOfHead != null)
+                if (frontHPoints.Count == frontHPointsList.Count && backHPoints.Count == backHPointsList.Count && hPointBackOfHead != null)
                 {
                     bHPointsFound[femaleNum] = true;
                     constrainPoints[femaleNum] = new ConstrainPoints(frontHPoints, backHPoints, hPointBackOfHead);
@@ -365,6 +342,7 @@ namespace HS2_BetterPenetration
 
                 Console.WriteLine("bHPointsFound " + bHPointsFound[femaleNum]);
 
+                Transform kokanBone = female.GetComponentsInChildren<Transform>().Where(x => x.name.Contains("cf_J_Kokan")).FirstOrDefault();
                 List<DynamicBone> dbList = new List<DynamicBone>();
                 foreach (DynamicBone db in female.GetComponentsInChildren<DynamicBone>().Where(x => x.name.Contains("cf_J_Vagina")))
                 {
@@ -373,50 +351,64 @@ namespace HS2_BetterPenetration
 
                     if (db.m_Root != null)
                     {
-                        for (int i = 0; i < colliderList.Length; i++)
+                        int colliderIndex = dynamicBonesList.IndexOf(db.m_Root.name);
+                        if (colliderIndex >= 0)
                         {
-                            if (db.m_Root.name.Equals(dynamicBonesList[i]))
+                            DynamicBoneCollider dbc = female.GetComponentsInChildren<DynamicBoneCollider>().Where(x => x.name.Contains(colliderList[colliderIndex])).FirstOrDefault();
+                            if (dbc == null)
                             {
-                                DynamicBoneCollider dbc = female.GetComponentsInChildren<DynamicBoneCollider>().Where(x => x.name.Contains(colliderList[i])).FirstOrDefault();
-                                if (dbc == null)
+                                Transform colliderTransform = female.GetComponentsInChildren<Transform>().Where(x => x.name.Contains(colliderList[colliderIndex])).FirstOrDefault();
+
+                                if (colliderTransform != null)
                                 {
-                                    Transform colliderTransform = female.GetComponentsInChildren<Transform>().Where(x => x.name.Contains(colliderList[i])).FirstOrDefault();
+                                    Console.WriteLine("collider " + colliderTransform.name);
 
-                                    if (colliderTransform != null)
+                                    dbc = colliderTransform.gameObject.AddComponent(typeof(DynamicBoneCollider)) as DynamicBoneCollider;
+                                    dbc.m_Bound = DynamicBoneColliderBase.Bound.Inside;
+                                    dbc.m_Direction = DynamicBoneColliderBase.Direction.Y;
+
+                                    if (kokanBone == null)
                                     {
-                                        Console.WriteLine("collider " + colliderTransform.name);
+                                        dbc.m_Height = colliderHeightList[colliderIndex];
+                                        dbc.m_Radius = colliderRadiusList[colliderIndex];
+                                    }
+                                    else
+                                    {
+                                        if (colliderIndex < 3)
+                                        {
+                                            dbc.m_Height = colliderHeightList[colliderIndex] * kokanBone.lossyScale.z;
+                                            dbc.m_Radius = colliderRadiusList[colliderIndex] * kokanBone.lossyScale.z;
+                                            db.m_Radius *= kokanBone.lossyScale.z;
+                                        }
+                                        else
+                                        {
 
-                                        dbc = colliderTransform.gameObject.AddComponent(typeof(DynamicBoneCollider)) as DynamicBoneCollider;
-                                        dbc.m_Bound = DynamicBoneColliderBase.Bound.Inside;
-                                        dbc.m_Direction = DynamicBoneColliderBase.Direction.Y;
-                                        dbc.m_Height = colliderHeightList[i];
-                                        dbc.m_Radius = colliderRadiusList[i];
+                                            dbc.m_Height = colliderHeightList[colliderIndex] * (kokanBone.lossyScale.x + kokanBone.lossyScale.z) / 2;
+                                            dbc.m_Radius = colliderRadiusList[colliderIndex] * (kokanBone.lossyScale.x + kokanBone.lossyScale.z) / 2;
+                                            db.m_Radius *= (kokanBone.lossyScale.x + kokanBone.lossyScale.z) / 2;
+                                        }
                                     }
                                 }
-
-                                if (dbc != null)
-                                {
-                                    db.m_Colliders.Add(dbc);
-                                    foreach (DynamicBoneColliderBase dbcb in db.m_Colliders)
-                                        Console.WriteLine(db.m_Root.name + " collider " + dbcb.name);
-                                }
-                                else
-                                { 
-                                    Console.WriteLine(colliderList[i] + " collider not found for " + female.name);
-                                }
                             }
+
+                            if (_use_bounding_colliders.Value && dbc != null)
+                                db.m_Colliders.Add(dbc);
                         }
+                        else if (kokanBone != null)
+                        {
+                            db.m_Radius *= kokanBone.lossyScale.x;
+                        }
+
+                        db.UpdateParameters();
+                        dbList.Add(db);
                     }
-
-                    dbList.Add(db);
-
                 }
 
                 kokanBones[femaleNum] = dbList;
                 femaleNum++;
             }
 
-            kokanBone = fem_list[0].GetComponentsInChildren<Transform>().Where(x => x.name.Contains("cf_J_Kokan")).FirstOrDefault();
+            kokanBoneAdjustTarget = fem_list[0].GetComponentsInChildren<Transform>().Where(x => x.name.Contains("cf_J_Kokan")).FirstOrDefault();
 
             Console.WriteLine("AddColliders done.");
         }
@@ -435,11 +427,11 @@ namespace HS2_BetterPenetration
             if (_info.fileFemale == null || fem_list == null || fem_list[0] == null)
                 return;
 
-            for (int i = 0; i < animationAdjustmentList.Length; i++)
+            for (int i = 0; i < animationAdjustmentList.Count; i++)
             {
                 if (animationAdjustmentList[i] == _info.fileFemale)
                 {
-                    if (kokanBone != null)
+                    if (kokanBoneAdjustTarget != null)
                         adjustFAnimation = true;
               
                     return;
@@ -464,6 +456,12 @@ namespace HS2_BetterPenetration
             if (___assetName != null && ___assetName.Length != 0 && ___assetName.ToString().Contains("m2f"))
                 b2MAnimation = true;
 
+            if (!b2MAnimation && male_list[1] != null)
+            {
+                RemoveDanColliders(1, 0);
+                RemoveFingerColliders(1, 0);
+            }
+
             if (maleNum == 1 && b2MAnimation == false)
                 return;
 
@@ -475,7 +473,7 @@ namespace HS2_BetterPenetration
                 return;
 
             SetupNewDanTarget(__instance, maleNum);
-            SetDanTarget(maleNum);
+			lastDanPostion[maleNum] = danPoints[maleNum].danEnd.position;
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(H_Lookat_dan), "LateUpdate")]
@@ -501,19 +499,19 @@ namespace HS2_BetterPenetration
 			if (changingAnimations[maleNum] && !hScene.NowChangeAnim)
 		        SetupNewDanTarget(__instance, maleNum);
 
-            danPoints[maleNum].danStart.localScale = new Vector3(_dan_girth[maleNum].Value, _dan_girth[maleNum].Value, _dan_length[maleNum].Value / baseDanLength[maleNum]);
-            danPoints[maleNum].danTop.localScale = new Vector3(_dan_sack_size[maleNum].Value, _dan_sack_size[maleNum].Value, _dan_sack_size[maleNum].Value);
-
             if (bDanPenetration[maleNum] || bDanPull[maleNum])
                 SetDanTarget(maleNum);
+
+            lastDanPostion[maleNum] = danPoints[maleNum].danEnd.position;
         }
 
         private static void SetupNewDanTarget(H_Lookat_dan lookAtDan, int maleNum)
         {
-            referenceLookAtTarget[maleNum] = danPoints[maleNum].danEnd;
+            referenceLookAtTarget[maleNum] = null;
             bDanPenetration[maleNum] = false;
             bDanPull[maleNum] = false;
             changingAnimations[maleNum] = false;
+            lastDanPostion[maleNum] = danPoints[maleNum].danEnd.position;
 
             if (lookAtDan != null && lookAtDan.strPlayMotion != null)
             {
@@ -526,68 +524,80 @@ namespace HS2_BetterPenetration
                     bDanPenetration[maleNum] = true;
                     referenceLookAtTarget[maleNum] = lookAtDan.transLookAtNull;
 
-                    if (referenceLookAtTarget[maleNum].name == kokan_target)
-                    {
-                        if (bpKokanTarget[targetF[maleNum]] != null)
-                        {
-                            referenceLookAtTarget[maleNum] = bpKokanTarget[targetF[maleNum]];
-                        }
-                    }
+                    if (referenceLookAtTarget[maleNum].name == kokan_target && bpKokanTarget[targetF[maleNum]] != null)
+                        referenceLookAtTarget[maleNum] = bpKokanTarget[targetF[maleNum]];
                 }
             }
 
-            if (referenceLookAtTarget[maleNum].name != ana_target && referenceLookAtTarget[maleNum].name != head_target && referenceLookAtTarget[maleNum].name != chest_target_00 && referenceLookAtTarget[maleNum].name != chest_target_01)
+            if (referenceLookAtTarget[maleNum] == null || referenceLookAtTarget[maleNum].name != ana_target && referenceLookAtTarget[maleNum].name != head_target && referenceLookAtTarget[maleNum].name != chest_target_00 && referenceLookAtTarget[maleNum].name != chest_target_01)
             {
-                foreach (DynamicBone db in kokanBones[targetF[maleNum]])
-                {
-                    if (danCollider[maleNum] != null && !db.m_Colliders.Contains(danCollider[maleNum]))
-                        db.m_Colliders.Add(danCollider[maleNum]);
+                AddDanColliders(maleNum, targetF[maleNum]);
 
-                    if (referenceLookAtTarget[maleNum].name != kokan_target)
-                    {
-                        if (indexCollider[maleNum] != null && !db.m_Colliders.Contains(indexCollider[maleNum]))
-                            db.m_Colliders.Add(indexCollider[maleNum]);
-
-                        if (middleCollider[maleNum] != null && !db.m_Colliders.Contains(middleCollider[maleNum]))
-                            db.m_Colliders.Add(middleCollider[maleNum]);
-
-                        if (ringCollider[maleNum] != null && !db.m_Colliders.Contains(ringCollider[maleNum]))
-                            db.m_Colliders.Add(ringCollider[maleNum]);
-                    }
-                    else
-                    {
-                        if (indexCollider[maleNum] != null && db.m_Colliders.Contains(indexCollider[maleNum]))
-                            db.m_Colliders.Remove(indexCollider[maleNum]);
-
-                        if (middleCollider[maleNum] != null && db.m_Colliders.Contains(middleCollider[maleNum]))
-                            db.m_Colliders.Remove(middleCollider[maleNum]);
-
-                        if (ringCollider[maleNum] != null && db.m_Colliders.Contains(ringCollider[maleNum]))
-                            db.m_Colliders.Remove(ringCollider[maleNum]);
-                    }
-                }
+                if (_use_finger_colliders.Value && (referenceLookAtTarget[maleNum] == null || referenceLookAtTarget[maleNum].name != kokan_target))
+                    AddFingerColliders(maleNum, targetF[maleNum]);
+                else
+                    RemoveFingerColliders(maleNum, targetF[maleNum]);
             }
             else
             {
-                foreach (DynamicBone db in kokanBones[targetF[maleNum]])
-                {
-                    if (danCollider[maleNum] != null && db.m_Colliders.Contains(danCollider[maleNum]))
-                        db.m_Colliders.Remove(danCollider[maleNum]);
+                RemoveDanColliders(maleNum, targetF[maleNum]);
+                RemoveFingerColliders(maleNum, targetF[maleNum]);
+            }
+        }
 
-                    if (indexCollider[maleNum] != null && db.m_Colliders.Contains(indexCollider[maleNum]))
-                        db.m_Colliders.Remove(indexCollider[maleNum]);
+        private static void AddDanColliders(int maleNum, int femaleNum)
+        {
+            foreach (DynamicBone db in kokanBones[femaleNum])
+            {
+                if (danCollider[maleNum] != null && !db.m_Colliders.Contains(danCollider[maleNum]))
+                    db.m_Colliders.Add(danCollider[maleNum]);
+            }
+        }
 
-                    if (middleCollider[maleNum] != null && db.m_Colliders.Contains(middleCollider[maleNum]))
-                        db.m_Colliders.Remove(middleCollider[maleNum]);
+        private static void RemoveDanColliders(int maleNum, int femaleNum)
+        {
+            foreach (DynamicBone db in kokanBones[femaleNum])
+            {
+                if (danCollider[maleNum] != null && db.m_Colliders.Contains(danCollider[maleNum]))
+                    db.m_Colliders.Remove(danCollider[maleNum]);
+            }
+        }
 
-                    if (ringCollider[maleNum] != null && db.m_Colliders.Contains(ringCollider[maleNum]))
-                        db.m_Colliders.Remove(ringCollider[maleNum]);
-                }
+        private static void AddFingerColliders(int maleNum, int femaleNum)
+        {
+            foreach (DynamicBone db in kokanBones[femaleNum])
+            {
+                if (indexCollider[maleNum] != null && !db.m_Colliders.Contains(indexCollider[maleNum]))
+                    db.m_Colliders.Add(indexCollider[maleNum]);
+
+                if (middleCollider[maleNum] != null && !db.m_Colliders.Contains(middleCollider[maleNum]))
+                    db.m_Colliders.Add(middleCollider[maleNum]);
+
+                if (ringCollider[maleNum] != null && !db.m_Colliders.Contains(ringCollider[maleNum]))
+                    db.m_Colliders.Add(ringCollider[maleNum]);
+            }
+        }
+
+        private static void RemoveFingerColliders(int maleNum, int femaleNum)
+        {
+            foreach (DynamicBone db in kokanBones[femaleNum])
+            {
+                if (indexCollider[maleNum] != null && db.m_Colliders.Contains(indexCollider[maleNum]))
+                    db.m_Colliders.Remove(indexCollider[maleNum]);
+
+                if (middleCollider[maleNum] != null && db.m_Colliders.Contains(middleCollider[maleNum]))
+                    db.m_Colliders.Remove(middleCollider[maleNum]);
+
+                if (ringCollider[maleNum] != null && db.m_Colliders.Contains(ringCollider[maleNum]))
+                    db.m_Colliders.Remove(ringCollider[maleNum]);
             }
         }
 
         private static void SetDanTarget(int maleNum)
         {
+            if (referenceLookAtTarget[maleNum] == null)
+                return;
+
             Vector3 dan101_pos = danPoints[maleNum].danStart.position;
             Vector3 lookTarget = referenceLookAtTarget[maleNum].position;
 
@@ -608,7 +618,7 @@ namespace HS2_BetterPenetration
                 return;
 
             Vector3 danVector = Vector3.Normalize(lookTarget - dan101_pos);
-            Vector3 dan109_pos = dan101_pos + danVector * _dan_length[maleNum].Value;
+            Vector3 dan109_pos = dan101_pos + danVector * baseDanLength[maleNum];
 
             if (bDanPenetration[maleNum])
             {
@@ -632,14 +642,14 @@ namespace HS2_BetterPenetration
                             backHitPoints.Add(constrainPoints[targetF[maleNum]].backConstrainPoints[index].position + (_clipping_depth.Value + _back_collision_point_offset[index].Value) * constrainPoints[targetF[maleNum]].backConstrainPoints[index].forward);
                     }
 
-                    float danLength = _dan_length[maleNum].Value;
+                    float danLength = baseDanLength[maleNum];
                     Plane kokanPlane = new Plane(danPoints[maleNum].danStart.forward, lookTarget);
 
-                    if (_dan_length[maleNum].Value > distDan101ToTarget)
-                        danLength = _dan_length[maleNum].Value - (_dan_length[maleNum].Value - distDan101ToTarget) * _dan_softness[maleNum].Value;
+                    if (baseDanLength[maleNum] > distDan101ToTarget)
+                        danLength = baseDanLength[maleNum] - (baseDanLength[maleNum] - distDan101ToTarget) * _dan_softness[maleNum].Value;
 
                     if (kokanPlane.GetSide(dan101_pos))
-                        danLength = _dan_length[maleNum].Value * (1 - _dan_softness[maleNum].Value);
+                        danLength = baseDanLength[maleNum] * (1 - _dan_softness[maleNum].Value);
 
                     float minDanLength = distDan101ToTarget + (danLength * (1 - _allow_telescope_percent[maleNum].Value));
 
@@ -701,13 +711,7 @@ namespace HS2_BetterPenetration
 
                         adjustedDanPos = hPlane.ConstrainLineToTwistedPlane(dan101_pos, adjustedDanPos, ref danLength, minDanLength, ref bConstrainPastNearSide, bConstrainPastFarSide, out bHitPointFound);
                    }
-                    dan109_pos = adjustedDanPos;
-
-                    if (danCollider[maleNum] != null)
-                    {
-                        danCollider[maleNum].m_Center = new Vector3(0, _dan_collider_verticalcenter[maleNum].Value, danLength / 2);
-                        danCollider[maleNum].m_Height = danLength + (_dan_collider_headlength[maleNum].Value * 2);
-                    }
+                   dan109_pos = adjustedDanPos;
                 }
                 else if (referenceLookAtTarget[maleNum].name == head_target)
                 {
@@ -716,15 +720,15 @@ namespace HS2_BetterPenetration
 
                     if (Vector3.Distance(dan101_pos, constrainPoints[targetF[maleNum]].headConstrainPoint.position) < Vector3.Distance(lookTarget, constrainPoints[targetF[maleNum]].headConstrainPoint.position))
                     {
-                        danLength = _dan_length[maleNum].Value * (1 - _dan_softness[maleNum].Value);
+                        danLength = baseDanLength[maleNum] * (1 - _dan_softness[maleNum].Value);
                         max_dist = Vector3.Distance(dan101_pos, constrainPoints[targetF[maleNum]].headConstrainPoint.position);
                     }
                     else
                     {
-                        if (_dan_length[maleNum].Value > distDan101ToTarget)
-                            danLength = _dan_length[maleNum].Value - (_dan_length[maleNum].Value - distDan101ToTarget) * _dan_softness[maleNum].Value;
+                        if (baseDanLength[maleNum] > distDan101ToTarget)
+                            danLength = baseDanLength[maleNum] - (baseDanLength[maleNum] - distDan101ToTarget) * _dan_softness[maleNum].Value;
                         else
-                            danLength = _dan_length[maleNum].Value;
+                            danLength = baseDanLength[maleNum];
                         max_dist = distDan101ToTarget + Vector3.Distance(lookTarget, constrainPoints[targetF[maleNum]].headConstrainPoint.position);
                     }
 
@@ -743,39 +747,32 @@ namespace HS2_BetterPenetration
         }
 
         //-- IK Solver Patch --//
-        [HarmonyPrefix, HarmonyPatch(typeof(RootMotion.SolverManager), "LateUpdate")]
-        public static void SolverManager_PreLateUpdate(RootMotion.SolverManager __instance)
+        [HarmonyPrefix, HarmonyPatch(typeof(HScene), "LateUpdate")]
+        public static void HScene_PreLateUpdate()
         {
             if (hScene == null)
                 return;
 
-            ChaControl character = __instance.GetComponentInParent<ChaControl>();
-
-            if (character == null)
-                return;
-
-            if (b2MAnimation && character.chaID == 2 && male_list.Length >= 2 && bDansFound[1])
-            {
-                SetDanSaoPoints(1);
-            }
-            else if (character.chaID == 99 && bDansFound[0])
-            {
-                SetDanSaoPoints(0);
-            }
+            EarlyAimDan(0);
+            if (b2MAnimation)
+                EarlyAimDan(1);
         }
 
-        private static void SetDanSaoPoints(int maleNum)
+        private static void EarlyAimDan(int maleNum)
         {
-            if (bDanPenetration[maleNum])
-                return;
+            if (referenceLookAtTarget[maleNum] != null)
+            {
+                Vector3 danForwardVector = Vector3.Normalize(lastDanPostion[maleNum] - danPoints[maleNum].danStart.position);
+                Quaternion danQuaternion = Quaternion.LookRotation(danForwardVector, Vector3.Cross(danForwardVector, danPoints[maleNum].danTop.right));
 
-            danPoints[maleNum].danStart.localScale = new Vector3(_dan_girth[maleNum].Value, _dan_girth[maleNum].Value, _dan_length[maleNum].Value / baseDanLength[maleNum]);
+                danPoints[maleNum].danStart.rotation = danQuaternion;
+            }
         }
 
         private static void AdjustFemaleAnimation()
         {
-            kokanBone.localPosition += new Vector3(0, _kokan_adjust_position_y.Value, _kokan_adjust_position_z.Value);
-            kokanBone.localEulerAngles += new Vector3(_kokan_adjust_rotation_x.Value, 0, 0);
+            kokanBoneAdjustTarget.localPosition += new Vector3(0, _kokan_adjust_position_y.Value, _kokan_adjust_position_z.Value);
+            kokanBoneAdjustTarget.localEulerAngles += new Vector3(_kokan_adjust_rotation_x.Value, 0, 0);
         }
 
         private static void SceneManager_sceneLoaded(Scene scene, LoadSceneMode lsm)
