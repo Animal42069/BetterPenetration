@@ -17,7 +17,7 @@ namespace AI_BetterPenetration
     [BepInProcess("AI-Syoujyo")]
     public class AI_BetterPenetration : BaseUnityPlugin
     {
-        public const string VERSION = "2.4.6.0";
+        public const string VERSION = "2.4.7.0";
         private static Harmony harmony;
         private static HScene hScene;
         private static bool patched = false;
