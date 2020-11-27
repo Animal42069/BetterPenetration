@@ -39,6 +39,7 @@
   </PropertyGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="Better Penetration Frequently Asked Questions.pdf" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
