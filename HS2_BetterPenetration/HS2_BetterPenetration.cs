@@ -513,28 +513,34 @@ namespace HS2_BetterPenetration
 
             if (fem_list.Length > 1 && fem_list[1].visibleAll && fem_list[1].objTop != null)
             {
-                if (lookAtDan.transLookAtNull == null || lookAtDan.transLookAtNull.name == kokan_target)
+				var secondTarget = 1 - targetF[maleNum];
+                if (secondTarget < 0)
+                    secondTarget = 0;
+			
+                if (lookAtDan.transLookAtNull == null)
                 {
-                    AddDanColliders(maleNum, 0);
-                    AddDanColliders(maleNum, 1);
+                    AddDanColliders(maleNum, targetF[maleNum]);
+                    AddDanColliders(maleNum, secondTarget);
+                    RemoveFingerColliders(maleNum, targetF[maleNum]);
+                    RemoveFingerColliders(maleNum, secondTarget);
+                }
+                else if (lookAtDan.transLookAtNull.name == kokan_target)
+                {
+                    AddDanColliders(maleNum, targetF[maleNum]);
+                    RemoveDanColliders(maleNum, secondTarget);
+                    RemoveFingerColliders(maleNum, targetF[maleNum]);
 
                     if (_use_finger_colliders.Value)
-                    {
-                        AddFingerColliders(maleNum, 0);
-                        AddFingerColliders(maleNum, 1);
-                    }
+                        AddFingerColliders(maleNum, secondTarget);
                     else
-                    {
-                        RemoveFingerColliders(maleNum, 0);
-                        RemoveFingerColliders(maleNum, 1);
-                    }
+                        RemoveFingerColliders(maleNum, secondTarget);
                 }
                 else
                 {
-                    AddFingerColliders(maleNum, targetF[maleNum]);
-                    AddFingerColliders(maleNum, targetF[maleNum]);
-                    RemoveFingerColliders(maleNum, 0);
-                    RemoveFingerColliders(maleNum, 1);
+                    RemoveDanColliders(maleNum, targetF[maleNum]);
+                    RemoveDanColliders(maleNum, secondTarget);
+                    RemoveFingerColliders(maleNum, targetF[maleNum]);
+                    RemoveFingerColliders(maleNum, secondTarget);
                 }
             }
             else
@@ -768,18 +774,6 @@ namespace HS2_BetterPenetration
 
             danPoints[maleNum].danStart.rotation = danQuaternion;
             danPoints[maleNum].danEnd.SetPositionAndRotation(dan109_pos, danQuaternion);
-        }
-
-        //-- IK Solver Patch --//
-        [HarmonyPostfix, HarmonyPatch(typeof(HScene), "LateUpdate")]
-        public static void HScene_PreLateUpdate()
-        {
-            if (hScene == null)
-                return;
-
-            EarlyAimDan(0);
-            if (b2MAnimation)
-                EarlyAimDan(1);
         }
 
         private static void EarlyAimDan(int maleNum)
