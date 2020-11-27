@@ -17,7 +17,7 @@ namespace AI_BetterPenetration
     [BepInProcess("AI-Syoujyo")]
     public class AI_BetterPenetration : BaseUnityPlugin
     {
-        public const string VERSION = "2.4.7.0";
+        public const string VERSION = "2.4.8.0";
         private static Harmony harmony;
         private static HScene hScene;
         private static bool patched = false;
@@ -62,7 +62,6 @@ namespace AI_BetterPenetration
         private static DanPoints danPoints;
         private static float baseDanLength = 1.8f;
         private static bool bDanPenetration = false;
-        private static bool bDanPull = false;
         private static Transform referenceLookAtTarget;
         private static Transform bpKokanTarget;
         private static bool changingAnimations = false;
@@ -152,7 +151,7 @@ namespace AI_BetterPenetration
                 _front_collision_point_offset.Add(Config.Bind("Female Options", "Clipping Offset: Front Collision " + femaleNum, frontOffsets[femaleNum], "Individual offset on colision point, to improve clipping"));
             for (int femaleNum = 0; femaleNum < backOffsets.Count; femaleNum++)
                 _back_collision_point_offset.Add(Config.Bind("Female Options", "Clipping Offset: Back Collision " + femaleNum, backOffsets[femaleNum], "Individual offset on colision point, to improve clipping"));
-            _kokanForwardOffset = Config.Bind("Female Options", "Target Offset: Vagina Vertical", 0.0f, "Vertical offset of the vagina target");
+            _kokanForwardOffset = Config.Bind("Female Options", "Target Offset: Vagina Vertical", -0.15f, "Vertical offset of the vagina target");
             _kokanUpOffset = Config.Bind("Female Options", "Target Offset: Vagina Depth", 0.0f, "Depth offset of the vagina target");
             _headForwardOffset = Config.Bind("Female Options", "Target Offset: Mouth Depth", 0.0f, "Depth offset of the mouth target");
             _headUpOffset = Config.Bind("Female Options", "Target Offset: Mouth Vertical", 0.03f, "Vertical offset of the mouth target");
@@ -221,7 +220,6 @@ namespace AI_BetterPenetration
 	                Transform ring = male.GetComponentsInChildren<Transform>().Where(x => x.name.Contains(ring_finger)).FirstOrDefault();
 
                     bDanPenetration = false;
-                	bDanPull = false;
                     if (dan101 != null && dan109 != null && danTop != null)
 	                {
 		                    if (setDanLength)
@@ -232,7 +230,7 @@ namespace AI_BetterPenetration
 		                    }
 
 	                    	danPoints = new DanPoints(dan101, dan109, danTop);
-	                    	lastDanPostion = dan109.position;
+	                    	lastDanPostion = new Vector3(0,0,0);
 	                        bDansFound = true;
 
 	                        danCollider = dan101.GetComponent<DynamicBoneCollider>();
@@ -424,7 +422,6 @@ namespace AI_BetterPenetration
 
 
             SetupNewDanTarget(__instance);
-			lastDanPostion = danPoints.danEnd.position;
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(H_Lookat_dan), "LateUpdate")]
@@ -439,8 +436,7 @@ namespace AI_BetterPenetration
             if (changingAnimations && !hScene.NowChangeAnim)
                 SetupNewDanTarget(__instance);
 
-            if (bDanPenetration || bDanPull)
-                SetDanTarget();
+            SetDanTarget();
 
             lastDanPostion = danPoints.danEnd.position;
         }
@@ -449,40 +445,30 @@ namespace AI_BetterPenetration
         {
             referenceLookAtTarget = null;
             bDanPenetration = false;
-            bDanPull = false;
             changingAnimations = false;
-            lastDanPostion = danPoints.danEnd.position;
+            lastDanPostion = new Vector3(0, 0, 0);
 
-            if (lookAtDan != null && lookAtDan.strPlayMotion != null)
-            {
-                if (lookAtDan.strPlayMotion.Contains("Pull"))
-                {
-                    bDanPull = true;
-                }
-                else if (lookAtDan.bTopStick && lookAtDan.transLookAtNull != null && (lookAtDan.transLookAtNull.name == kokan_target || lookAtDan.transLookAtNull.name == ana_target || lookAtDan.transLookAtNull.name == head_target))
-                {
-                    bDanPenetration = true;
-                    referenceLookAtTarget = lookAtDan.transLookAtNull;
+            if (lookAtDan == null || lookAtDan.strPlayMotion == null)
+                return;
 
-                    if (referenceLookAtTarget.name == kokan_target && bpKokanTarget != null)
-                        referenceLookAtTarget = bpKokanTarget;
-                }
-            }
-
-            if (referenceLookAtTarget == null || referenceLookAtTarget.name != ana_target && referenceLookAtTarget.name != head_target && referenceLookAtTarget.name != chest_target_00 && referenceLookAtTarget.name != chest_target_01)
-            {
+            if (lookAtDan.transLookAtNull == null || lookAtDan.transLookAtNull.name == kokan_target)
                 AddDanColliders();
-
-                if (_use_finger_colliders.Value && (referenceLookAtTarget == null || referenceLookAtTarget.name != kokan_target))
-                    AddFingerColliders();
-                else
-                    RemoveFingerColliders();
-            }
             else
-            {
                 RemoveDanColliders();
+
+            if (_use_finger_colliders.Value && lookAtDan.transLookAtNull == null)
+                AddFingerColliders();
+            else
                 RemoveFingerColliders();
-            }
+
+            if (lookAtDan.transLookAtNull == null)
+                return;
+
+            referenceLookAtTarget = lookAtDan.transLookAtNull;
+            if (lookAtDan.bTopStick && referenceLookAtTarget.name == kokan_target && !lookAtDan.strPlayMotion.Contains("Idle") && !lookAtDan.strPlayMotion.Contains("Pull") && !lookAtDan.strPlayMotion.Contains("OUT") && bpKokanTarget != null)
+                referenceLookAtTarget = bpKokanTarget;
+
+            bDanPenetration = lookAtDan.bTopStick;
         }
 
         private static void AddDanColliders()
@@ -498,7 +484,7 @@ namespace AI_BetterPenetration
         {
             foreach (DynamicBone db in kokanBones)
             {
-                if (danCollider != null && db.m_Colliders.Contains(danCollider))
+                if (danCollider != null)
                     db.m_Colliders.Remove(danCollider);
             }
         }
@@ -522,13 +508,13 @@ namespace AI_BetterPenetration
         {
             foreach (DynamicBone db in kokanBones)
             {
-                if (indexCollider != null && db.m_Colliders.Contains(indexCollider))
+                if (indexCollider != null)
                     db.m_Colliders.Remove(indexCollider);
 
-                if (middleCollider != null && db.m_Colliders.Contains(middleCollider))
+                if (middleCollider != null)
                     db.m_Colliders.Remove(middleCollider);
 
-                if (ringCollider != null && db.m_Colliders.Contains(ringCollider))
+                if (ringCollider != null)
                     db.m_Colliders.Remove(ringCollider);
             }
         }
@@ -541,17 +527,13 @@ namespace AI_BetterPenetration
             Vector3 dan101_pos = danPoints.danStart.position;
             Vector3 lookTarget = referenceLookAtTarget.position;
 
-            if (referenceLookAtTarget.name == kokan_target || referenceLookAtTarget.name == bp_kokan_target)
-            {
+            if (referenceLookAtTarget.name == kokan_target)
                 lookTarget += (referenceLookAtTarget.forward * _kokanForwardOffset.Value) + (referenceLookAtTarget.up * _kokanUpOffset.Value);
-
-                if (_kokan_adjust.Value && adjustFAnimation)
-                {
-                    lookTarget += referenceLookAtTarget.forward * _kokan_adjust_position_z.Value;
-                }
-            }
-            if (referenceLookAtTarget.name == head_target)
+            else if (referenceLookAtTarget.name == head_target)
                 lookTarget += (referenceLookAtTarget.forward * _headForwardOffset.Value) + (referenceLookAtTarget.up * _headUpOffset.Value);
+
+            if (_kokan_adjust.Value && adjustFAnimation && (referenceLookAtTarget.name == kokan_target || referenceLookAtTarget.name == kokan_target))
+                lookTarget += referenceLookAtTarget.forward * _kokan_adjust_position_z.Value;
 
             float distDan101ToTarget = Vector3.Distance(dan101_pos, lookTarget);
             if (distDan101ToTarget == 0)
@@ -678,6 +660,19 @@ namespace AI_BetterPenetration
                     dan109_pos = dan101_pos + danVector * danLength;
                 }
             }
+            else if ((referenceLookAtTarget.name == kokan_target) && (baseDanLength > distDan101ToTarget))
+            {
+                float danLength = baseDanLength - (baseDanLength - distDan101ToTarget) * _dan_softness.Value;
+                float minDanLength = distDan101ToTarget + (danLength * (1 - _allow_telescope_percent.Value));
+
+                if (minDanLength > danLength)
+                    minDanLength = danLength;
+
+                if (_force_telescope.Value)
+                    danLength = minDanLength;
+
+                dan109_pos = dan101_pos + danVector * danLength;
+            }
 
             Vector3 danForwardVector = Vector3.Normalize(dan109_pos - dan101_pos);
             Quaternion danQuaternion = Quaternion.LookRotation(danForwardVector, Vector3.Cross(danForwardVector, danPoints.danTop.right));
@@ -687,7 +682,7 @@ namespace AI_BetterPenetration
         }
 
         //-- IK Solver Patch --//
-        [HarmonyPrefix, HarmonyPatch(typeof(HScene), "LateUpdate")]
+        [HarmonyPostfix, HarmonyPatch(typeof(HScene), "LateUpdate")]
         public static void HScene_PreLateUpdate()
         {
             if (hScene == null)
@@ -698,7 +693,7 @@ namespace AI_BetterPenetration
 
         private static void EarlyAimDan()
         {
-            if (referenceLookAtTarget != null)
+            if (referenceLookAtTarget != null && lastDanPostion != new Vector3(0, 0, 0))
             {
                 Vector3 danForwardVector = Vector3.Normalize(lastDanPostion - danPoints.danStart.position);
                 Quaternion danQuaternion = Quaternion.LookRotation(danForwardVector, Vector3.Cross(danForwardVector, danPoints.danTop.right));

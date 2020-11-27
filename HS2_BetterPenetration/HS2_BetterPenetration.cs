@@ -19,7 +19,7 @@ namespace HS2_BetterPenetration
     [BepInProcess("HoneySelect2VR")]
     public class HS2_BetterPenetration : BaseUnityPlugin
     {
-        public const string VERSION = "2.4.7.0";
+        public const string VERSION = "2.4.8.0";
         private static Harmony harmony;
         private static HScene hScene;
         private static bool patched = false;
@@ -65,7 +65,6 @@ namespace HS2_BetterPenetration
         private static DanPoints[] danPoints;
         private static readonly float[] baseDanLength = new float[2] { 1.8f, 1.8f };
         private static readonly bool[] bDanPenetration = new bool[2] { false, false };
-        private static readonly bool[] bDanPull = new bool[2] { false, false };
         private static Transform[] referenceLookAtTarget;
         private static readonly Transform[] bpKokanTarget = new Transform[2];
         private static readonly bool[] changingAnimations = new bool[2] { false, false };
@@ -171,7 +170,7 @@ namespace HS2_BetterPenetration
                 _front_collision_point_offset.Add(Config.Bind("Female Options", "Clipping Offset: Front Collision " + femaleNum, frontOffsets[femaleNum], "Individual offset on colision point, to improve clipping"));
             for (int femaleNum = 0; femaleNum < backOffsets.Count; femaleNum++)
                 _back_collision_point_offset.Add(Config.Bind("Female Options", "Clipping Offset: Back Collision " + femaleNum, backOffsets[femaleNum], "Individual offset on colision point, to improve clipping"));
-            _kokanForwardOffset = Config.Bind("Female Options", "Target Offset: Vagina Vertical", 0.0f, "Vertical offset of the vagina target");
+            _kokanForwardOffset = Config.Bind("Female Options", "Target Offset: Vagina Vertical", -0.15f, "Vertical offset of the vagina target");
             _kokanUpOffset = Config.Bind("Female Options", "Target Offset: Vagina Depth", 0.0f, "Depth offset of the vagina target");
             _headForwardOffset = Config.Bind("Female Options", "Target Offset: Mouth Depth", 0.0f, "Depth offset of the mouth target");
             _headUpOffset = Config.Bind("Female Options", "Target Offset: Mouth Vertical", 0.03f, "Vertical offset of the mouth target");
@@ -241,7 +240,6 @@ namespace HS2_BetterPenetration
 
                 bDansFound[maleNum] = false;
                 bDanPenetration[maleNum] = false;
-                bDanPull[maleNum] = false;
                 targetF[maleNum] = 0;
 
                 if (dan101 != null && dan109 != null && danTop != null)
@@ -254,7 +252,7 @@ namespace HS2_BetterPenetration
                     }
 
                     danPoints[maleNum] = new DanPoints(dan101, dan109, danTop);
-                    lastDanPostion[maleNum] = dan109.position;
+                    lastDanPostion[maleNum] = new Vector3(0, 0, 0);
                     bDansFound[maleNum] = true;
 
                     danCollider[maleNum] = dan101.GetComponent<DynamicBoneCollider>();
@@ -473,7 +471,6 @@ namespace HS2_BetterPenetration
                 return;
 
             SetupNewDanTarget(__instance, maleNum);
-			lastDanPostion[maleNum] = danPoints[maleNum].danEnd.position;
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(H_Lookat_dan), "LateUpdate")]
@@ -499,8 +496,7 @@ namespace HS2_BetterPenetration
 			if (changingAnimations[maleNum] && !hScene.NowChangeAnim)
 		        SetupNewDanTarget(__instance, maleNum);
 
-            if (bDanPenetration[maleNum] || bDanPull[maleNum])
-                SetDanTarget(maleNum);
+            SetDanTarget(maleNum);
 
             lastDanPostion[maleNum] = danPoints[maleNum].danEnd.position;
         }
@@ -509,40 +505,59 @@ namespace HS2_BetterPenetration
         {
             referenceLookAtTarget[maleNum] = null;
             bDanPenetration[maleNum] = false;
-            bDanPull[maleNum] = false;
             changingAnimations[maleNum] = false;
-            lastDanPostion[maleNum] = danPoints[maleNum].danEnd.position;
+            lastDanPostion[maleNum] = new Vector3(0, 0, 0);
 
-            if (lookAtDan != null && lookAtDan.strPlayMotion != null)
+            if (lookAtDan == null || lookAtDan.strPlayMotion == null)
+                return;
+
+            if (fem_list.Length > 1 && fem_list[1].visibleAll && fem_list[1].objTop != null)
             {
-                if (lookAtDan.strPlayMotion.Contains("Pull"))
+                if (lookAtDan.transLookAtNull == null || lookAtDan.transLookAtNull.name == kokan_target)
                 {
-                    bDanPull[maleNum] = true;
-                }
-                else if (lookAtDan.bTopStick && lookAtDan.transLookAtNull != null && (lookAtDan.transLookAtNull.name == kokan_target || lookAtDan.transLookAtNull.name == ana_target || lookAtDan.transLookAtNull.name == head_target))
-                {
-                    bDanPenetration[maleNum] = true;
-                    referenceLookAtTarget[maleNum] = lookAtDan.transLookAtNull;
+                    AddDanColliders(maleNum, 0);
+                    AddDanColliders(maleNum, 1);
 
-                    if (referenceLookAtTarget[maleNum].name == kokan_target && bpKokanTarget[targetF[maleNum]] != null)
-                        referenceLookAtTarget[maleNum] = bpKokanTarget[targetF[maleNum]];
+                    if (_use_finger_colliders.Value)
+                    {
+                        AddFingerColliders(maleNum, 0);
+                        AddFingerColliders(maleNum, 1);
+                    }
+                    else
+                    {
+                        RemoveFingerColliders(maleNum, 0);
+                        RemoveFingerColliders(maleNum, 1);
+                    }
+                }
+                else
+                {
+                    AddFingerColliders(maleNum, targetF[maleNum]);
+                    AddFingerColliders(maleNum, targetF[maleNum]);
+                    RemoveFingerColliders(maleNum, 0);
+                    RemoveFingerColliders(maleNum, 1);
                 }
             }
-
-            if (referenceLookAtTarget[maleNum] == null || referenceLookAtTarget[maleNum].name != ana_target && referenceLookAtTarget[maleNum].name != head_target && referenceLookAtTarget[maleNum].name != chest_target_00 && referenceLookAtTarget[maleNum].name != chest_target_01)
+            else
             {
-                AddDanColliders(maleNum, targetF[maleNum]);
+                if (lookAtDan.transLookAtNull == null || lookAtDan.transLookAtNull.name == kokan_target)
+                    AddDanColliders(maleNum, targetF[maleNum]);
+                else
+                    RemoveDanColliders(maleNum, targetF[maleNum]);
 
-                if (_use_finger_colliders.Value && (referenceLookAtTarget[maleNum] == null || referenceLookAtTarget[maleNum].name != kokan_target))
+                if (_use_finger_colliders.Value && lookAtDan.transLookAtNull == null)
                     AddFingerColliders(maleNum, targetF[maleNum]);
                 else
                     RemoveFingerColliders(maleNum, targetF[maleNum]);
             }
-            else
-            {
-                RemoveDanColliders(maleNum, targetF[maleNum]);
-                RemoveFingerColliders(maleNum, targetF[maleNum]);
-            }
+
+            if (lookAtDan.transLookAtNull == null)
+                return;
+
+            referenceLookAtTarget[maleNum] = lookAtDan.transLookAtNull;
+            if (lookAtDan.bTopStick && referenceLookAtTarget[maleNum].name == kokan_target && !lookAtDan.strPlayMotion.Contains("Idle") && !lookAtDan.strPlayMotion.Contains("Pull") && !lookAtDan.strPlayMotion.Contains("OUT") && bpKokanTarget[targetF[maleNum]] != null)
+                referenceLookAtTarget[maleNum] = bpKokanTarget[targetF[maleNum]];
+
+            bDanPenetration[maleNum] = lookAtDan.bTopStick;
         }
 
         private static void AddDanColliders(int maleNum, int femaleNum)
@@ -558,7 +573,7 @@ namespace HS2_BetterPenetration
         {
             foreach (DynamicBone db in kokanBones[femaleNum])
             {
-                if (danCollider[maleNum] != null && db.m_Colliders.Contains(danCollider[maleNum]))
+                if (danCollider[maleNum] != null)
                     db.m_Colliders.Remove(danCollider[maleNum]);
             }
         }
@@ -582,13 +597,13 @@ namespace HS2_BetterPenetration
         {
             foreach (DynamicBone db in kokanBones[femaleNum])
             {
-                if (indexCollider[maleNum] != null && db.m_Colliders.Contains(indexCollider[maleNum]))
+                if (indexCollider[maleNum] != null)
                     db.m_Colliders.Remove(indexCollider[maleNum]);
 
-                if (middleCollider[maleNum] != null && db.m_Colliders.Contains(middleCollider[maleNum]))
+                if (middleCollider[maleNum] != null)
                     db.m_Colliders.Remove(middleCollider[maleNum]);
 
-                if (ringCollider[maleNum] != null && db.m_Colliders.Contains(ringCollider[maleNum]))
+                if (ringCollider[maleNum] != null)
                     db.m_Colliders.Remove(ringCollider[maleNum]);
             }
         }
@@ -601,17 +616,13 @@ namespace HS2_BetterPenetration
             Vector3 dan101_pos = danPoints[maleNum].danStart.position;
             Vector3 lookTarget = referenceLookAtTarget[maleNum].position;
 
-            if (referenceLookAtTarget[maleNum].name == kokan_target || referenceLookAtTarget[maleNum].name == bp_kokan_target)
-            {
+            if (referenceLookAtTarget[maleNum].name == kokan_target)
                 lookTarget += (referenceLookAtTarget[maleNum].forward * _kokanForwardOffset.Value) + (referenceLookAtTarget[maleNum].up * _kokanUpOffset.Value);
-
-                if (_kokan_adjust.Value && adjustFAnimation)
-                {
-                    lookTarget += referenceLookAtTarget[maleNum].forward * _kokan_adjust_position_z.Value;
-                }
-            }
-            if (referenceLookAtTarget[maleNum].name == head_target)
+            else if (referenceLookAtTarget[maleNum].name == head_target)
                 lookTarget += (referenceLookAtTarget[maleNum].forward * _headForwardOffset.Value) + (referenceLookAtTarget[maleNum].up * _headUpOffset.Value);
+
+            if (_kokan_adjust.Value && adjustFAnimation && (referenceLookAtTarget[maleNum].name == kokan_target || referenceLookAtTarget[maleNum].name == kokan_target))
+                lookTarget += referenceLookAtTarget[maleNum].forward * _kokan_adjust_position_z.Value;
 
             float distDan101ToTarget = Vector3.Distance(dan101_pos, lookTarget);
             if (distDan101ToTarget == 0)
@@ -738,6 +749,19 @@ namespace HS2_BetterPenetration
                     dan109_pos = dan101_pos + danVector * danLength;
                 }
             }
+            else if ((referenceLookAtTarget[maleNum].name == kokan_target) && (baseDanLength[maleNum] > distDan101ToTarget))
+            {
+                float danLength = baseDanLength[maleNum] - (baseDanLength[maleNum] - distDan101ToTarget) * _dan_softness[maleNum].Value;
+                float minDanLength = distDan101ToTarget + (danLength * (1 - _allow_telescope_percent[maleNum].Value));
+
+                if (minDanLength > danLength)
+                    minDanLength = danLength;
+
+                if (_force_telescope[maleNum].Value)
+                    danLength = minDanLength;
+
+                dan109_pos = dan101_pos + danVector * danLength;
+            }
 
             Vector3 danForwardVector = Vector3.Normalize(dan109_pos - dan101_pos);
             Quaternion danQuaternion = Quaternion.LookRotation(danForwardVector, Vector3.Cross(danForwardVector, danPoints[maleNum].danTop.right));
@@ -747,7 +771,7 @@ namespace HS2_BetterPenetration
         }
 
         //-- IK Solver Patch --//
-        [HarmonyPrefix, HarmonyPatch(typeof(HScene), "LateUpdate")]
+        [HarmonyPostfix, HarmonyPatch(typeof(HScene), "LateUpdate")]
         public static void HScene_PreLateUpdate()
         {
             if (hScene == null)
@@ -760,7 +784,7 @@ namespace HS2_BetterPenetration
 
         private static void EarlyAimDan(int maleNum)
         {
-            if (referenceLookAtTarget[maleNum] != null)
+            if (referenceLookAtTarget[maleNum] != null && lastDanPostion[maleNum] != new Vector3(0, 0, 0))
             {
                 Vector3 danForwardVector = Vector3.Normalize(lastDanPostion[maleNum] - danPoints[maleNum].danStart.position);
                 Quaternion danQuaternion = Quaternion.LookRotation(danForwardVector, Vector3.Cross(danForwardVector, danPoints[maleNum].danTop.right));
