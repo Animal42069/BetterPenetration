@@ -681,27 +681,6 @@ namespace AI_BetterPenetration
             danPoints.danEnd.SetPositionAndRotation(dan109_pos, danQuaternion);
         }
 
-        //-- IK Solver Patch --//
-        [HarmonyPostfix, HarmonyPatch(typeof(HScene), "LateUpdate")]
-        public static void HScene_PreLateUpdate()
-        {
-            if (hScene == null)
-                return;
-
-            EarlyAimDan();
-        }
-
-        private static void EarlyAimDan()
-        {
-            if (referenceLookAtTarget != null && lastDanPostion != new Vector3(0, 0, 0))
-            {
-                Vector3 danForwardVector = Vector3.Normalize(lastDanPostion - danPoints.danStart.position);
-                Quaternion danQuaternion = Quaternion.LookRotation(danForwardVector, Vector3.Cross(danForwardVector, danPoints.danTop.right));
-
-                danPoints.danStart.rotation = danQuaternion;
-            }
-        }
-
         [HarmonyPrefix, HarmonyPatch(typeof(HScene), "EndProc")]
         public static void HScene_EndProc_Patch()
         {
