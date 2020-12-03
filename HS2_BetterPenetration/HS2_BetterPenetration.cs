@@ -19,7 +19,7 @@ namespace HS2_BetterPenetration
     [BepInProcess("HoneySelect2VR")]
     public class HS2_BetterPenetration : BaseUnityPlugin
     {
-        public const string VERSION = "2.4.8.0";
+        public const string VERSION = "2.5.0.0";
         private static Harmony harmony;
         private static HScene hScene;
         private static bool patched = false;
@@ -64,6 +64,7 @@ namespace HS2_BetterPenetration
         private static readonly bool[] bDansFound = new bool[2] { false, false };
         private static DanPoints[] danPoints;
         private static readonly float[] baseDanLength = new float[2] { 1.8f, 1.8f };
+        private static readonly float[] baseDanCenter = new float[2] { 0.9f, 0.9f };
         private static readonly bool[] bDanPenetration = new bool[2] { false, false };
         private static Transform[] referenceLookAtTarget;
         private static readonly Transform[] bpKokanTarget = new Transform[2];
@@ -249,6 +250,9 @@ namespace HS2_BetterPenetration
                         baseDanLength[maleNum] = Vector3.Distance(dan101.position, dan109.position);
                         if (Geometry.ApproximatelyZero(baseDanLength[maleNum]))
                             baseDanLength[maleNum] = 1.8f;
+                        baseDanCenter[maleNum] = danPoints[maleNum].danEnd.localPosition.z / 2;
+                        if (Geometry.ApproximatelyZero(baseDanCenter[maleNum]))
+                            baseDanCenter[maleNum] = 0.95f;
                     }
 
                     danPoints[maleNum] = new DanPoints(dan101, dan109, danTop);
@@ -259,13 +263,19 @@ namespace HS2_BetterPenetration
 
                     if (danCollider[maleNum] == null)
                         danCollider[maleNum] = dan101.gameObject.AddComponent(typeof(DynamicBoneCollider)) as DynamicBoneCollider;
-                    
+
                     danCollider[maleNum].m_Direction = DynamicBoneColliderBase.Direction.Z;
                     danCollider[maleNum].m_Bound = DynamicBoneColliderBase.Bound.Outside;
-                    danCollider[maleNum].m_Center = new Vector3(0, _dan_collider_verticalcenter[maleNum].Value, danPoints[maleNum].danEnd.localPosition.z / 2);
+                    danCollider[maleNum].m_Center = new Vector3(0, _dan_collider_verticalcenter[maleNum].Value, baseDanCenter[maleNum]);
                     danCollider[maleNum].m_Radius = _dan_collider_radius[maleNum].Value;
-                    danCollider[maleNum].m_Height = danPoints[maleNum].danEnd.localPosition.z + (_dan_collider_headlength[maleNum].Value * 2);
-				
+                    danCollider[maleNum].m_Height = (baseDanCenter[maleNum] + _dan_collider_headlength[maleNum].Value) * 2;
+
+                    Console.WriteLine($"Set {maleNum} Center to { danCollider[maleNum].m_Center}");
+                    Console.WriteLine($"Set {maleNum} Radius to { danCollider[maleNum].m_Radius}");
+                    Console.WriteLine($"Set {maleNum} Height to { danCollider[maleNum].m_Height}");
+                    Console.WriteLine($"Set {maleNum} LocalZ is {danPoints[maleNum].danEnd.localPosition.z}");
+                    Console.WriteLine($"Set {maleNum} baseDanLength is {baseDanLength[maleNum]}");
+                    Console.WriteLine($"Set {maleNum} baseDanCenter is {baseDanCenter[maleNum]}");
                 }
 
                 if (index != null && middle != null && ring != null)
@@ -797,7 +807,7 @@ namespace HS2_BetterPenetration
         {
             if (lsm != LoadSceneMode.Single)
                 return;
-            
+
             if (scene.name == "HScene")
             {
                 harmony.PatchAll(typeof(HS2_BetterPenetration));

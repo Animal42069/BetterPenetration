@@ -17,7 +17,7 @@ namespace AI_BetterPenetration
     [BepInProcess("AI-Syoujyo")]
     public class AI_BetterPenetration : BaseUnityPlugin
     {
-        public const string VERSION = "2.4.8.0";
+        public const string VERSION = "2.5.0.0";
         private static Harmony harmony;
         private static HScene hScene;
         private static bool patched = false;
@@ -38,7 +38,7 @@ namespace AI_BetterPenetration
         private static ConfigEntry<float> _headUpOffset;
         private static ConfigEntry<bool> _kokan_adjust;
         private static ConfigEntry<bool> _use_finger_colliders;
-        private static ConfigEntry<bool> _use_bounding_colliders;
+ //       private static ConfigEntry<bool> _use_bounding_colliders;
         private static ConfigEntry<float> _kokan_adjust_position_y;
         private static ConfigEntry<float> _kokan_adjust_position_z;
         private static ConfigEntry<float> _kokan_adjust_rotation_x;
@@ -120,7 +120,7 @@ namespace AI_BetterPenetration
             {
                 if (inHScene && danCollider != null && bDansFound)
                 {
-                	danCollider.m_Height = danPoints.danEnd.localPosition.z + (_dan_collider_headlength.Value  * 2);
+                	danCollider.m_Height = baseDanLength + (_dan_collider_headlength.Value  * 2);
                 }
             };
 
@@ -156,7 +156,7 @@ namespace AI_BetterPenetration
             _headForwardOffset = Config.Bind("Female Options", "Target Offset: Mouth Depth", 0.0f, "Depth offset of the mouth target");
             _headUpOffset = Config.Bind("Female Options", "Target Offset: Mouth Vertical", 0.03f, "Vertical offset of the mouth target");
             _use_finger_colliders = Config.Bind("Female Options", "Colliders: Use Finger Colliders", true, "Use finger colliders");
-            _use_bounding_colliders = Config.Bind("Female Options", "Colliders: Use Bounding Colliders", false, "Use internal bounding colliders to help animate correctly");
+//            _use_bounding_colliders = Config.Bind("Female Options", "Colliders: Use Bounding Colliders", false, "Use internal bounding colliders to help animate correctly");
             _kokan_adjust = Config.Bind("Female Options", "Joint Adjustment: Missionary Correction", false, "NOTE: There is an Illusion bug that causes the vagina to appear sunken in certain missionary positions.  It is best to use Advanced Bonemod and adjust your female character's cf_J_Kokan Offset Y to 0.001.  If you don't do that, enabling this option will attempt to fix the problem by guessing where the bone should be");
             _kokan_adjust_position_y = Config.Bind("Female Options", "Joint Adjustment: Missionary Position Y", -0.075f, "Amount to adjust the Vagina bone position Y for certain Missionary positions to correct its appearance");
             _kokan_adjust_position_z = Config.Bind("Female Options", "Joint Adjustment: Missionary Position Z", 0.0625f, "Amount to adjust the Vagina bone position Z for certain Missionary positions to correct its appearance");
@@ -240,9 +240,9 @@ namespace AI_BetterPenetration
                     
 		                    danCollider.m_Direction = DynamicBoneColliderBase.Direction.Z;
 		                    danCollider.m_Bound = DynamicBoneColliderBase.Bound.Outside;
-		                    danCollider.m_Center = new Vector3(0, _dan_collider_verticalcenter.Value, danPoints.danEnd.localPosition.z / 2);
+		                    danCollider.m_Center = new Vector3(0, _dan_collider_verticalcenter.Value, baseDanLength / 2);
 		                    danCollider.m_Radius = _dan_collider_radius.Value;
-		                    danCollider.m_Height = danPoints.danEnd.localPosition.z + (_dan_collider_headlength.Value * 2);
+		                    danCollider.m_Height = baseDanLength + (_dan_collider_headlength.Value * 2);
 				
 	                }
 
@@ -301,9 +301,12 @@ namespace AI_BetterPenetration
 
                     hPointBackOfHead = female.GetComponentsInChildren<Transform>().Where(x => x.name.Contains(headHPoint)).FirstOrDefault();
 
-                    bpKokanTarget = female.GetComponentsInChildren<Transform>().Where(x => x.name.Equals(bp_kokan_target)).FirstOrDefault();
+                    bpKokanTarget = female.GetComponentsInChildren<Transform>(true).Where(x => x.name.Equals(bp_kokan_target)).FirstOrDefault();
                     if (bpKokanTarget != null)
                     {
+                        if (bpKokanTarget.gameObject.activeSelf == false)
+                            bpKokanTarget.gameObject.SetActive(true);
+                        
                         Console.WriteLine("BP Target Found " + bpKokanTarget.name);
                         frontHPoints[0] = bpKokanTarget;
                     }
@@ -314,62 +317,65 @@ namespace AI_BetterPenetration
                         constrainPoints = new ConstrainPoints(frontHPoints, backHPoints, hPointBackOfHead);
                     }
 
-	                foreach (DynamicBone db in female.GetComponentsInChildren<DynamicBone>().Where(x => x.name.Contains("cf_J_Vagina")))
+	                foreach (DynamicBone db in female.GetComponentsInChildren<DynamicBone>(true).Where(x => x.name.Contains("cf_J_Vagina")))
 	                    db.m_Colliders.Clear();
 
 	                Console.WriteLine("bHPointsFound " + bHPointsFound);
 
 	                Transform kokanBone = female.GetComponentsInChildren<Transform>().Where(x => x.name.Contains("cf_J_Kokan")).FirstOrDefault();
 	                List<DynamicBone> dbList = new List<DynamicBone>();
-	                foreach (DynamicBone db in female.GetComponentsInChildren<DynamicBone>().Where(x => x.name.Contains("cf_J_Vagina")))
+	                foreach (DynamicBone db in female.GetComponentsInChildren<DynamicBone>(true).Where(x => x.name.Contains("cf_J_Vagina")))
 	                {
 	                    if (db == null)
 	                        continue;
+
+                        if (db.enabled == false)
+                            db.enabled = true;
 
 	                    if (db.m_Root != null)
 	                    {
 	                        int colliderIndex = dynamicBonesList.IndexOf(db.m_Root.name);
 	                        if (colliderIndex >= 0)
 	                        {
-	                            DynamicBoneCollider dbc = female.GetComponentsInChildren<DynamicBoneCollider>().Where(x => x.name.Contains(colliderList[colliderIndex])).FirstOrDefault();
-	                            if (dbc == null)
-	                            {
+	                        //    DynamicBoneCollider dbc = female.GetComponentsInChildren<DynamicBoneCollider>().Where(x => x.name.Contains(colliderList[colliderIndex])).FirstOrDefault();
+	                         //   if (dbc == null)
+	                         //   {
 	                                Transform colliderTransform = female.GetComponentsInChildren<Transform>().Where(x => x.name.Contains(colliderList[colliderIndex])).FirstOrDefault();
 
 	                                if (colliderTransform != null)
 	                                {
 	                                    Console.WriteLine("collider " + colliderTransform.name);
 
-	                                    dbc = colliderTransform.gameObject.AddComponent(typeof(DynamicBoneCollider)) as DynamicBoneCollider;
-	                                    dbc.m_Bound = DynamicBoneColliderBase.Bound.Inside;
-	                                    dbc.m_Direction = DynamicBoneColliderBase.Direction.Y;
+	                               //     dbc = colliderTransform.gameObject.AddComponent(typeof(DynamicBoneCollider)) as DynamicBoneCollider;
+	                               //     dbc.m_Bound = DynamicBoneColliderBase.Bound.Inside;
+	                               //     dbc.m_Direction = DynamicBoneColliderBase.Direction.Y;
 
 	                                    if (kokanBone == null)
 	                                    {
-	                                        dbc.m_Height = colliderHeightList[colliderIndex];
-	                                        dbc.m_Radius = colliderRadiusList[colliderIndex];
+	                              //          dbc.m_Height = colliderHeightList[colliderIndex];
+	                              //          dbc.m_Radius = colliderRadiusList[colliderIndex];
 	                                    }
 	                                    else
 	                                    {
 	                                        if (colliderIndex < 3)
 	                                        {
-	                                            dbc.m_Height = colliderHeightList[colliderIndex] * kokanBone.lossyScale.z;
-	                                            dbc.m_Radius = colliderRadiusList[colliderIndex] * kokanBone.lossyScale.z;
+	                            //                dbc.m_Height = colliderHeightList[colliderIndex] * kokanBone.lossyScale.z;
+	                              //              dbc.m_Radius = colliderRadiusList[colliderIndex] * kokanBone.lossyScale.z;
 	                                            db.m_Radius *= kokanBone.lossyScale.z;
 	                                        }
 	                                        else
 	                                        {
 
-	                                            dbc.m_Height = colliderHeightList[colliderIndex] * (kokanBone.lossyScale.x + kokanBone.lossyScale.z) / 2;
-	                                            dbc.m_Radius = colliderRadiusList[colliderIndex] * (kokanBone.lossyScale.x + kokanBone.lossyScale.z) / 2;
+	                            //                dbc.m_Height = colliderHeightList[colliderIndex] * (kokanBone.lossyScale.x + kokanBone.lossyScale.z) / 2;
+	                            //                dbc.m_Radius = colliderRadiusList[colliderIndex] * (kokanBone.lossyScale.x + kokanBone.lossyScale.z) / 2;
 	                                            db.m_Radius *= (kokanBone.lossyScale.x + kokanBone.lossyScale.z) / 2;
 	                                        }
 	                                    }
 	                                }
-	                            }
+	                       //     }
 
-	                            if (_use_bounding_colliders.Value && dbc != null)
-	                                db.m_Colliders.Add(dbc);
+	                     //       if (_use_bounding_colliders.Value && dbc != null)
+	                   //             db.m_Colliders.Add(dbc);
 	                        }
 	                        else if (kokanBone != null)
 	                        {
