@@ -19,7 +19,7 @@ namespace HS2_BetterPenetration
     [BepInProcess("HoneySelect2VR")]
     public class HS2_BetterPenetration : BaseUnityPlugin
     {
-        public const string VERSION = "2.5.0.0";
+        public const string VERSION = "2.5.0.1";
         private static Harmony harmony;
         private static HScene hScene;
         private static bool patched = false;
@@ -245,6 +245,10 @@ namespace HS2_BetterPenetration
 
                 if (dan101 != null && dan109 != null && danTop != null)
                 {
+                    danPoints[maleNum] = new DanPoints(dan101, dan109, danTop);
+                    lastDanPostion[maleNum] = new Vector3(0, 0, 0);
+                    bDansFound[maleNum] = true;
+
                     if (setDanLength)
                     {
                         baseDanLength[maleNum] = Vector3.Distance(dan101.position, dan109.position);
@@ -254,10 +258,6 @@ namespace HS2_BetterPenetration
                         if (Geometry.ApproximatelyZero(baseDanCenter[maleNum]))
                             baseDanCenter[maleNum] = 0.95f;
                     }
-
-                    danPoints[maleNum] = new DanPoints(dan101, dan109, danTop);
-                    lastDanPostion[maleNum] = new Vector3(0, 0, 0);
-                    bDansFound[maleNum] = true;
 
                     danCollider[maleNum] = dan101.GetComponent<DynamicBoneCollider>();
 
