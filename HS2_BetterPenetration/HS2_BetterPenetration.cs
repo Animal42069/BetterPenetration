@@ -19,7 +19,7 @@ namespace HS2_BetterPenetration
     [BepInProcess("HoneySelect2VR")]
     public class HS2_BetterPenetration : BaseUnityPlugin
     {
-        public const string VERSION = "2.5.0.2";
+        public const string VERSION = "2.5.1.0";
         private static Harmony harmony;
         private static HScene hScene;
         private static bool patched = false;
@@ -162,8 +162,6 @@ namespace HS2_BetterPenetration
                         }
                     }
                 };
-
-
             }
 
             _clipping_depth = Config.Bind("Female Options", "Clipping Depth", 0.25f, "Set how close to body surface to limit penis for clipping purposes. Smaller values will result in more clipping through the body, larger values will make the shaft wander further away from the intended penetration point.");
@@ -214,6 +212,32 @@ namespace HS2_BetterPenetration
             hScene = __instance;
             AddPColliders(true);
             inHScene = true;
+        }
+
+        [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "LoadCharaFbxDataAsync")]
+        public static void ChaControl_LoadCharaFbxDataAsync(ChaControl __instance)
+        {
+            RemovePCollidersFromCoordinate(__instance);
+        }
+
+        private static void RemovePCollidersFromCoordinate(ChaControl character)
+        {
+            var dynamicBones = character.GetComponentsInChildren<DynamicBone>(true);
+
+            if (dynamicBones == null)
+                return;
+
+            foreach (var dynamicBone in dynamicBones)
+            {
+                if (dynamicBone == null || dynamicBone.m_Colliders == null || (dynamicBone.name != null && dynamicBone.name.Contains("Vagina")))
+                    continue;
+
+                for (int collider = 0; collider < dynamicBone.m_Colliders.Count; collider++)
+                {
+                    if (dynamicBone.m_Colliders[collider] != null && dynamicBone.m_Colliders[collider].name != null && dynamicBone.m_Colliders[collider].name.Contains("Vagina"))
+                        dynamicBone.m_Colliders[collider] = null;
+                }
+            }
         }
 
         public static void AddPColliders(bool setDanLength)
@@ -345,14 +369,14 @@ namespace HS2_BetterPenetration
                     constrainPoints[femaleNum] = new ConstrainPoints(frontHPoints, backHPoints, hPointBackOfHead);
                 }
 
-                foreach (DynamicBone db in female.GetComponentsInChildren<DynamicBone>().Where(x => x.name.Contains("cf_J_Vagina")))
+                foreach (DynamicBone db in female.GetComponentsInChildren<DynamicBone>().Where(x => x.name != null && x.name.Contains("cf_J_Vagina")))
                     db.m_Colliders.Clear();
 
                 Console.WriteLine("bHPointsFound " + bHPointsFound[femaleNum]);
 
-                Transform kokanBone = female.GetComponentsInChildren<Transform>().Where(x => x.name.Contains("cf_J_Kokan")).FirstOrDefault();
+                Transform kokanBone = female.GetComponentsInChildren<Transform>().Where(x => x.name != null && x.name.Contains("cf_J_Kokan")).FirstOrDefault();
                 List<DynamicBone> dbList = new List<DynamicBone>();
-                foreach (DynamicBone db in female.GetComponentsInChildren<DynamicBone>().Where(x => x.name.Contains("cf_J_Vagina")))
+                foreach (DynamicBone db in female.GetComponentsInChildren<DynamicBone>().Where(x => x.name != null && x.name.Contains("cf_J_Vagina")))
                 {
                     if (db == null)
                         continue;
@@ -416,7 +440,7 @@ namespace HS2_BetterPenetration
                 femaleNum++;
             }
 
-            kokanBoneAdjustTarget = fem_list[0].GetComponentsInChildren<Transform>().Where(x => x.name.Contains("cf_J_Kokan")).FirstOrDefault();
+            kokanBoneAdjustTarget = fem_list[0].GetComponentsInChildren<Transform>().Where(x => x.name != null && x.name.Contains("cf_J_Kokan")).FirstOrDefault();
 
             Console.WriteLine("AddColliders done.");
         }
@@ -464,7 +488,7 @@ namespace HS2_BetterPenetration
             if (___assetName != null && ___assetName.Length != 0 && ___assetName.ToString().Contains("m2f"))
                 b2MAnimation = true;
 
-            if (!b2MAnimation && male_list[1] != null)
+            if (!b2MAnimation && male_list.Length > 1 && male_list[1] != null)
             {
                 RemoveDanColliders(1, 0);
                 RemoveFingerColliders(1, 0);

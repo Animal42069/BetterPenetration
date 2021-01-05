@@ -8,6 +8,7 @@ using System.Linq;
 using UnityEngine;
 using Manager;
 using System.Reflection;
+using AIChara;
 
 namespace AI_BetterPenetration
 {
@@ -17,7 +18,7 @@ namespace AI_BetterPenetration
     [BepInProcess("AI-Syoujyo")]
     public class AI_BetterPenetration : BaseUnityPlugin
     {
-        public const string VERSION = "2.5.0.0";
+        public const string VERSION = "2.5.1.0";
         private static Harmony harmony;
         private static HScene hScene;
         private static bool patched = false;
@@ -50,8 +51,8 @@ namespace AI_BetterPenetration
         private static bool adjustFAnimation;
         private static Transform kokanBoneAdjustTarget;
 
-        public static AIChara.ChaControl[] fem_list;
-        public static AIChara.ChaControl[] male_list;
+        public static ChaControl[] fem_list;
+        public static ChaControl[] male_list;
         public static List<DynamicBone> kokanBones = new List<DynamicBone>();
         public static DynamicBoneCollider danCollider = new DynamicBoneCollider();
         public static DynamicBoneCollider indexCollider = new DynamicBoneCollider();
@@ -194,6 +195,32 @@ namespace AI_BetterPenetration
             inHScene = true;
         }
 
+        [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "LoadCharaFbxDataAsync")]
+        public static void ChaControl_LoadCharaFbxDataAsync(ChaControl __instance)
+        {
+            RemovePCollidersFromCoordinate(__instance);
+        }
+
+        private static void RemovePCollidersFromCoordinate(ChaControl character)
+        {
+            var dynamicBones = character.GetComponentsInChildren<DynamicBone>(true);
+
+            if (dynamicBones == null)
+                return;
+
+            foreach (var dynamicBone in dynamicBones)
+            {
+                if (dynamicBone == null || dynamicBone.m_Colliders == null || (dynamicBone.name != null && dynamicBone.name.Contains("Vagina")))
+                    continue;
+
+                for (int collider = 0; collider < dynamicBone.m_Colliders.Count; collider++)
+                {
+                    if (dynamicBone.m_Colliders[collider] != null && dynamicBone.m_Colliders[collider].name != null && dynamicBone.m_Colliders[collider].name.Contains("Vagina"))
+                        dynamicBone.m_Colliders[collider] = null;
+                }
+            }
+        }
+
         public static void AddPColliders(bool setDanLength)
         {
             if (hScene == null)
@@ -317,14 +344,14 @@ namespace AI_BetterPenetration
                         constrainPoints = new ConstrainPoints(frontHPoints, backHPoints, hPointBackOfHead);
                     }
 
-	                foreach (DynamicBone db in female.GetComponentsInChildren<DynamicBone>(true).Where(x => x.name.Contains("cf_J_Vagina")))
+	                foreach (DynamicBone db in female.GetComponentsInChildren<DynamicBone>(true).Where(x => x.name != null && x.name.Contains("cf_J_Vagina")))
 	                    db.m_Colliders.Clear();
 
 	                Console.WriteLine("bHPointsFound " + bHPointsFound);
 
-	                Transform kokanBone = female.GetComponentsInChildren<Transform>().Where(x => x.name.Contains("cf_J_Kokan")).FirstOrDefault();
+	                Transform kokanBone = female.GetComponentsInChildren<Transform>().Where(x => x.name != null && x.name.Contains("cf_J_Kokan")).FirstOrDefault();
 	                List<DynamicBone> dbList = new List<DynamicBone>();
-	                foreach (DynamicBone db in female.GetComponentsInChildren<DynamicBone>(true).Where(x => x.name.Contains("cf_J_Vagina")))
+	                foreach (DynamicBone db in female.GetComponentsInChildren<DynamicBone>(true).Where(x => x.name != null && x.name.Contains("cf_J_Vagina")))
 	                {
 	                    if (db == null)
 	                        continue;
@@ -390,7 +417,7 @@ namespace AI_BetterPenetration
 	                kokanBones = dbList;
 	            }
 
-            	kokanBoneAdjustTarget = fem_list[0].GetComponentsInChildren<Transform>().Where(x => x.name.Contains("cf_J_Kokan")).FirstOrDefault();
+            	kokanBoneAdjustTarget = fem_list[0].GetComponentsInChildren<Transform>().Where(x => x.name != null && x.name.Contains("cf_J_Kokan")).FirstOrDefault();
 			}
             Console.WriteLine("AddColliders done.");
         }
@@ -425,7 +452,6 @@ namespace AI_BetterPenetration
         {
             if (loadingCharacter || !inHScene || __instance == null || !bDansFound || !bHPointsFound)
                 return;
-
 
             SetupNewDanTarget(__instance);
         }
