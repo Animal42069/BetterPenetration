@@ -18,7 +18,7 @@ namespace AI_BetterPenetration
     [BepInProcess("AI-Syoujyo")]
     public class AI_BetterPenetration : BaseUnityPlugin
     {
-        public const string VERSION = "2.5.1.0";
+        public const string VERSION = "2.5.2.0";
         private static Harmony harmony;
         private static HScene hScene;
         private static bool patched = false;
@@ -718,40 +718,58 @@ namespace AI_BetterPenetration
         {
             Console.WriteLine("HScene::EndProc");
 
-            inHScene = false;
-            bDansFound = false;
-            bDanPenetration = false;
-            bHPointsFound = false;
+            EndHScene();
+        }
 
-            if (!inHScene)
-            {
-                if (kokanBones.Any())
-                {
-                    foreach (DynamicBone kokanBone in kokanBones)
-                    {
-                        if (kokanBone != null)
-                        {
-                            Console.WriteLine("Clearing colliders from " + kokanBone.m_Root.name);
-                            kokanBone.m_Colliders.Clear();
-                        }
-                    }
-                }
+        [HarmonyPrefix, HarmonyPatch(typeof(HScene), "EndProcADV")]
+        public static void HScene_EndProcADV_Patch()
+        {
+            Console.WriteLine("HScene::EndProcADV");
 
-                Destroy(danCollider);
-                Destroy(indexCollider);
-                Destroy(middleCollider);
-                Destroy(ringCollider);
-                Console.WriteLine("Clearing females list");
-                Array.Clear(fem_list, 0, fem_list.Length);
-                Console.WriteLine("Clearing males list");
-                Array.Clear(male_list, 0, male_list.Length);
-            }
+            EndHScene();
         }
 
         private static void AdjustFemaleAnimation()
         {
             kokanBoneAdjustTarget.localPosition += new Vector3(0, _kokan_adjust_position_y.Value, _kokan_adjust_position_z.Value);
             kokanBoneAdjustTarget.localEulerAngles += new Vector3(_kokan_adjust_rotation_x.Value, 0, 0);
+        }
+
+        private static void EndHScene()
+        {
+            inHScene = false;
+            bDansFound = false;
+            bDanPenetration = false;
+            bHPointsFound = false;
+
+            foreach (var lookat in hScene.ctrlLookAts)
+            {
+                if (lookat == null)
+                    continue;
+
+                lookat.transLookAtNull = null;
+            }
+
+            if (kokanBones.Any())
+            {
+                foreach (DynamicBone kokanBone in kokanBones)
+                {
+                    if (kokanBone != null)
+                    {
+                        Console.WriteLine("Clearing colliders from " + kokanBone.m_Root.name);
+                        kokanBone.m_Colliders.Clear();
+                    }
+                }
+            }
+
+            Destroy(danCollider);
+            Destroy(indexCollider);
+            Destroy(middleCollider);
+            Destroy(ringCollider);
+            Console.WriteLine("Clearing females list");
+            Array.Clear(fem_list, 0, fem_list.Length);
+            Console.WriteLine("Clearing males list");
+            Array.Clear(male_list, 0, male_list.Length);
         }
 
 		private void Update()

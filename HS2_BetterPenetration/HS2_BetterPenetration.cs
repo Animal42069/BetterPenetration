@@ -19,7 +19,7 @@ namespace HS2_BetterPenetration
     [BepInProcess("HoneySelect2VR")]
     public class HS2_BetterPenetration : BaseUnityPlugin
     {
-        public const string VERSION = "2.5.1.0";
+        public const string VERSION = "2.5.2.0";
         private static Harmony harmony;
         private static HScene hScene;
         private static bool patched = false;
@@ -868,6 +868,14 @@ namespace HS2_BetterPenetration
                 return;
                 
             Console.WriteLine("SceneManager_sceneUnloaded");
+
+            foreach (var lookat in hScene.ctrlLookAts)
+            {
+                if (lookat == null)
+                    continue;
+
+                lookat.transLookAtNull = null;
+            }
 
             inHScene = false;
             for (int index = 0; index < male_list.Length; index++)
