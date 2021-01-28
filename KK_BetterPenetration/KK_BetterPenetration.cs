@@ -1,33 +1,27 @@
 ﻿using BepInEx;
 using BepInEx.Configuration;
-using BepInEx.Bootstrap;
 using HarmonyLib;
 using System;
 using System.Collections.Generic;
 using UnityEngine.SceneManagement;
-using System.Reflection;
-using AIChara;
 using Core_BetterPenetration;
-using System.Linq;
 
-namespace HS2_BetterPenetration
+namespace KK_BetterPenetration
 {
-    [BepInPlugin("animal42069.HS2betterpenetration", "HS2 Better Penetration", VERSION)]
-    [BepInDependency("com.deathweasel.bepinex.uncensorselector", "3.10")]
-    [BepInDependency("com.joan6694.illusionplugins.bonesframework", "1.4.1")]
-    [BepInProcess("HoneySelect2")]
-    [BepInProcess("HoneySelect2VR")]
-    public class HS2_BetterPenetration : BaseUnityPlugin
+    [BepInPlugin("animal42069.KKbetterpenetration", "KK Better Penetration", VERSION)]
+    [BepInProcess("Koikatu")]
+    [BepInProcess("KoikatuVR")]
+    public class KK_BetterPenetration : BaseUnityPlugin
     {
         public const string VERSION = "3.0.0.0";
         private const int MaleLimit = 2;
         private const int FemaleLimit = 2;
-        private const bool _useSelfColliders = true;
+        private const bool _useSelfColliders = false;
 
-        private static readonly List<float> frontOffsets = new List<float> { -0.35f, 0.25f, 0f, -0.65f };
-        private static readonly List<float> backOffsets = new List<float> { -0.05f, 0.25f, 0.05f, 0.05f };
-        private static readonly List<bool> frontPointsInward = new List<bool> { false, false, false, false };
-        private static readonly List<bool> backPointsInward = new List<bool> { false, false, true, true };
+        private static readonly List<float> frontOffsets = new List<float> { -0.035f, -0.04f, -0.02f};
+        private static readonly List<float> backOffsets = new List<float> { -0.005f, 0.01f, 0.01f};
+        private static readonly List<bool> frontPointsInward = new List<bool> { false, false, false,};
+        private static readonly List<bool> backPointsInward = new List<bool> { false, true, true};
 
         private static readonly ConfigEntry<float>[] _danSoftness = new ConfigEntry<float>[MaleLimit];
         private static readonly ConfigEntry<float>[] _danColliderHeadLength = new ConfigEntry<float>[MaleLimit];
@@ -44,33 +38,30 @@ namespace HS2_BetterPenetration
         private static ConfigEntry<float> _kokanOffsetUp;
         private static ConfigEntry<float> _headOffsetForward;
         private static ConfigEntry<float> _headOffsetUp;
-        private static ConfigEntry<bool> _useKokanFix;
-        private static ConfigEntry<float> _kokanFixPositionY;
-        private static ConfigEntry<float> _kokanFixPositionZ;
-        private static ConfigEntry<float> _kokanFixRotationX;
         private static readonly ConfigEntry<float>[] _frontCollisionOffset = new ConfigEntry<float>[frontOffsets.Count];
         private static readonly ConfigEntry<float>[] _backCollisionOffset = new ConfigEntry<float>[backOffsets.Count];
 
         private static Harmony harmony;
-        private static HScene hScene;
+        private static HSceneProc hSceneProc;
         private static bool patched = false;
+        private static bool hSceneStarted = false;
         private static bool inHScene = false;
-        private static bool loadingCharacter = false;
-        private static bool twoDans;
+        private static readonly bool loadingCharacter = false;
+        private static bool twoDans = false;
 
         private void Awake()
         {
             for (int maleNum = 0; maleNum < _danColliderHeadLength.Length; maleNum++)
             {
-                (_fingerColliderLength[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Finger Collider: Length", 0.6f, "Lenght of the finger colliders.")).SettingChanged += (s, e) =>
+                (_fingerColliderLength[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Finger Collider: Length", 0.06f, "Lenght of the finger colliders.")).SettingChanged += (s, e) =>
                 { UpdateFingerColliders(); };
-                (_fingerColliderRadius[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Finger Collider: Radius", 0.2f, "Radius of the finger colliders.")).SettingChanged += (s, e) =>
+                (_fingerColliderRadius[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Finger Collider: Radius", 0.02f, "Radius of the finger colliders.")).SettingChanged += (s, e) =>
                 { UpdateFingerColliders(); };
-                (_danColliderHeadLength[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis Collider: Length of Head", 0.35f, "Distance from the center of the head bone to the tip, used for collision purposes.")).SettingChanged += (s, e) =>
+                (_danColliderHeadLength[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis Collider: Length of Head", 0.035f, "Distance from the center of the head bone to the tip, used for collision purposes.")).SettingChanged += (s, e) =>
                 { UpdateDanColliders(); };
-                (_danColliderRadius[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis Collider: Radius of Shaft", 0.32f, "Radius of the shaft collider.")).SettingChanged += (s, e) =>
+                (_danColliderRadius[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis Collider: Radius of Shaft", 0.032f, "Radius of the shaft collider.")).SettingChanged += (s, e) =>
                 { UpdateDanColliders(); };
-                (_danColliderVerticalCenter[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis Collider: Vertical Center", -0.03f, "Vertical Center of the shaft collider")).SettingChanged += (s, e) =>
+                (_danColliderVerticalCenter[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis Collider: Vertical Center", -0.003f, "Vertical Center of the shaft collider")).SettingChanged += (s, e) =>
                 { UpdateDanColliders(); };
                 (_danSoftness[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis: Softness", 0.15f, "Set the softness of the penis.  A value of 0 means maximum hardness, the penis will remain the same length at all times.  A value greater than 0 will cause the penis to begin to telescope after penetration.  A small value can make it appear there is friction during penetration.")).SettingChanged += (s, e) =>
                 { UpdateDanOptions(); };
@@ -82,7 +73,7 @@ namespace HS2_BetterPenetration
                 { UpdateDanOptions(); };
             }
 
-            (_clippingDepth = Config.Bind("Female Options", "Clipping Depth", 0.25f, "Set how close to body surface to limit penis for clipping purposes. Smaller values will result in more clipping through the body, larger values will make the shaft wander further away from the intended penetration point.")).SettingChanged += (s, e) =>
+            (_clippingDepth = Config.Bind("Female Options", "Clipping Depth", 0.02f, "Set how close to body surface to limit penis for clipping purposes. Smaller values will result in more clipping through the body, larger values will make the shaft wander further away from the intended penetration point.")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
             for (int offset = 0; offset < frontOffsets.Count; offset++)
                 (_frontCollisionOffset[offset] = Config.Bind("Female Options", "Clipping Offset: Front Collision " + offset, frontOffsets[offset], "Individual offset on colision point, to improve clipping")).SettingChanged += (s, e) =>
@@ -90,24 +81,16 @@ namespace HS2_BetterPenetration
             for (int offset = 0; offset < backOffsets.Count; offset++)
                 (_backCollisionOffset[offset] = Config.Bind("Female Options", "Clipping Offset: Back Collision " + offset, backOffsets[offset], "Individual offset on colision point, to improve clipping")).SettingChanged += (s, e) =>
                 { UpdateCollisionOptions(); };
-            (_kokanOffsetForward = Config.Bind("Female Options", "Target Offset: Vagina Vertical", -0.15f, "Vertical offset of the vagina target")).SettingChanged += (s, e) =>
+            (_kokanOffsetForward = Config.Bind("Female Options", "Target Offset: Vagina Vertical", -0.007f, "Vertical offset of the vagina target")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
             (_kokanOffsetUp = Config.Bind("Female Options", "Target Offset: Vagina Depth", 0.0f, "Depth offset of the vagina target")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
             (_headOffsetForward = Config.Bind("Female Options", "Target Offset: Mouth Depth", 0.0f, "Depth offset of the mouth target")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_headOffsetUp = Config.Bind("Female Options", "Target Offset: Mouth Vertical", 0.03f, "Vertical offset of the mouth target")).SettingChanged += (s, e) =>
-            { UpdateCollisionOptions(); };
-            (_useKokanFix = Config.Bind("Female Options", "Joint Adjustment: Missionary Correction", false, "NOTE: There is an Illusion bug that causes the vagina to appear sunken in certain missionary positions.  It is best to use Advanced Bonemod and adjust your female character's cf_J_Kokan Offset Y to 0.001.  If you don't do that, enabling this option will attempt to fix the problem by guessing where the bone should be")).SettingChanged += (s, e) =>
-            { UpdateCollisionOptions(); };
-            (_kokanFixPositionY = Config.Bind("Female Options", "Joint Adjustment: Missionary Position Y", -0.075f, "Amount to adjust the Vagina bone position Y for certain Missionary positions to correct its appearance")).SettingChanged += (s, e) =>
-            { UpdateCollisionOptions(); };
-            (_kokanFixPositionZ = Config.Bind("Female Options", "Joint Adjustment: Missionary Position Z", 0.0625f, "Amount to adjust the Vagina bone position Z for certain Missionary positions to correct its appearance")).SettingChanged += (s, e) =>
-            { UpdateCollisionOptions(); };
-            (_kokanFixRotationX = Config.Bind("Female Options", "Joint Adjustment: Missionary Rotation X", 10.0f, "Amount to adjust the Vagina bone rotation X for certain Missionary positions to correct its appearance")).SettingChanged += (s, e) =>
+            (_headOffsetUp = Config.Bind("Female Options", "Target Offset: Mouth Vertical", 0.00f, "Vertical offset of the mouth target")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
 
-            harmony = new Harmony("HS2_BetterPenetration");
+            harmony = new Harmony("KK_BetterPenetration");
             SceneManager.sceneLoaded += SceneManager_sceneLoaded;
             SceneManager.sceneUnloaded += SceneManager_sceneUnloaded;
         }
@@ -149,69 +132,51 @@ namespace HS2_BetterPenetration
                 Core.UpdateCollisionOptions(index, collisionOptions[index]);
         }
 
-        public static void BeforeCharacterReload()
-        { 
-            if (!inHScene)
-                return;
-
-            loadingCharacter = true;
-            Core.SetChangingAnimations(true);
-        }
-
-        public static void AfterCharacterReload()
-        {
-            if (!inHScene || hScene == null)
-                return;
-
-            ChaControl[] femaleArray = hScene.GetFemales();
-            List<ChaControl> femaleList = new List<ChaControl>();
-
-            foreach (var character in femaleArray)
-            {
-                if (character == null)
-                    continue;
-                femaleList.Add(character);
-            }
-
-            List<CollisionOptions> collisionOptions = PopulateCollisionOptionsList();
-            Core.InitializeCollisionAgents(femaleList, collisionOptions);
-            loadingCharacter = false;
-        }
-
         [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "LoadCharaFbxDataAsync")]
         public static void ChaControl_LoadCharaFbxDataAsync(ChaControl __instance)
         {
             Core.RemovePCollidersFromCoordinate(__instance);
         }
 
-        [HarmonyPostfix, HarmonyPatch(typeof(HScene), "SetStartVoice")]
-        public static void HScene_PostSetStartVoice(HScene __instance)
+        [HarmonyPostfix, HarmonyPatch(typeof(HSceneProc), "Start")]
+        public static void HScene_PostStart()
         {
+            Console.WriteLine("HSceneProc Start");
+
+            hSceneStarted = true;
+            inHScene = false;
+        }
+
+        [HarmonyPostfix, HarmonyPatch(typeof(HSceneProc), "Update")]
+        public static void HScene_PostUpdate(HSceneProc __instance, List<ChaControl> ___lstFemale, ChaControl ___male, ChaControl ___male1)
+        {
+            if (!hSceneStarted || !__instance.enabled || inHScene)
+                return;
+
+            hSceneProc = __instance;
+
             List<DanOptions> danOptions = PopulateDanOptionsList();
             List<CollisionOptions> collisionOptions = PopulateCollisionOptionsList();
 
-            hScene = __instance;
+            if (___lstFemale == null || ___lstFemale.Count == 0)
+                return;
 
-            ChaControl[] femaleArray = hScene.GetFemales();
             List<ChaControl> femaleList = new List<ChaControl>();
-            foreach (var character in femaleArray)
-            {
-                if (character == null)
-                    continue;
-                femaleList.Add(character);
-            }
 
-            ChaControl[] maleArray = hScene.GetMales();
+            foreach (var female in ___lstFemale)
+                if (female != null)
+                    femaleList.Add(female);
+            
             List<ChaControl> maleList = new List<ChaControl>();
-            foreach (var character in maleArray)
-            {
-                if (character == null)
-                    continue;
-                maleList.Add(character);
-            }
+            if (___male != null)
+                maleList.Add(___male);
+
+            if (___male1 != null)
+                maleList.Add(___male1);
 
             Core.InitializeAgents(maleList, femaleList, danOptions, collisionOptions);
             inHScene = true;
+            hSceneStarted = false;
         }
 
         private static List<DanOptions> PopulateDanOptionsList()
@@ -242,107 +207,97 @@ namespace HS2_BetterPenetration
 
             for (int femaleNum = 0; femaleNum < FemaleLimit; femaleNum++)
             {
-                collisionOptions.Add(new CollisionOptions(_useSelfColliders, _kokanOffsetForward.Value, _kokanOffsetUp.Value, _headOffsetForward.Value, _headOffsetUp.Value, _useKokanFix.Value,
-                    _kokanFixPositionZ.Value, _kokanFixPositionY.Value, _kokanFixRotationX.Value, _clippingDepth.Value, frontInfo, backInfo));
+                collisionOptions.Add(new CollisionOptions(_useSelfColliders, _kokanOffsetForward.Value, _kokanOffsetUp.Value, _headOffsetForward.Value, _headOffsetUp.Value,
+                    false, 0, 0, 0, _clippingDepth.Value, frontInfo, backInfo));
             }
 
             return collisionOptions;
         }
 
-        [HarmonyPrefix, HarmonyPatch(typeof(HScene), "ChangeAnimation")]
-        private static void HScene_PreChangeAnimation(HScene.AnimationListInfo _info)
+        [HarmonyPrefix, HarmonyPatch(typeof(HSceneProc), "ChangeAnimator")]
+        private static void HSceneProc_PreChangeAnimator(HSceneProc.AnimationListInfo _nextAinmInfo)
         {
-            if (!inHScene || _info == null || _info.fileFemale == null)
+            Console.WriteLine("HSceneProc ChangeAnimator");
+
+            if (!inHScene || _nextAinmInfo == null || _nextAinmInfo.pathFemaleBase.file == null)
                 return;
 
-            Core.OnChangeAnimation(_info.fileFemale);
+            Console.WriteLine($"_nextAinmInfo {_nextAinmInfo.pathFemaleBase.file}");
+
+            Core.OnChangeAnimation(_nextAinmInfo.pathFemaleBase.file);
         }
-		
-        [HarmonyPostfix, HarmonyPatch(typeof(H_Lookat_dan), "setInfo")]
-        private static void H_Lookat_dan_PostSetInfo(H_Lookat_dan __instance, System.Text.StringBuilder ___assetName, ChaControl ___male)
+
+
+        [HarmonyPostfix, HarmonyPatch(typeof(Lookat_dan), "SetInfo")]
+        private static void H_Lookat_dan_PostSetInfo(Lookat_dan __instance, ChaControl ___male)
         {
-            if (!inHScene || loadingCharacter || __instance == null || __instance.strPlayMotion == null)
+ 
+            if (!inHScene || loadingCharacter || __instance == null || __instance.strPlayMotion == null || ___male == null)
                 return;
 
             int maleNum = 0;
-            if (___male != null && ___male.chaID != 99)
+            if (___male != null && ___male.chaID != 0)
                 maleNum = 1;
 
             twoDans = false;
-            if (___assetName != null && ___assetName.Length != 0 && ___assetName.ToString().Contains("m2f"))
-                twoDans = true;
+     //       if (___assetName != null && ___assetName.Length != 0 && ___assetName.ToString().Contains("m2f"))
+     //           twoDans = true;
 
             Core.LookAtDanSetup(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, maleNum, __instance.numFemale, twoDans);
         }
 
-        [HarmonyPostfix, HarmonyPatch(typeof(H_Lookat_dan), "LateUpdate")]
-        public static void H_Lookat_dan_PostLateUpdate(H_Lookat_dan __instance, ChaControl ___male)
+        [HarmonyPostfix, HarmonyPatch(typeof(Lookat_dan), "LateUpdate")]
+        public static void Lookat_dan_PostLateUpdate(Lookat_dan __instance, ChaControl ___male)
         {
             if (!inHScene || loadingCharacter || __instance == null || __instance.strPlayMotion == null || ___male == null)
                 return;
 
             int maleNum = 0;
 
-            if (___male.chaID != 99)
+            if (___male.chaID != 0)
             {
                 if (!twoDans)
                     return;
                 maleNum = 1;
             }
 
-            Core.LookAtDanUpdate(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, hScene.NowChangeAnim, maleNum, __instance.numFemale);
+            Core.LookAtDanUpdate(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, false, maleNum, __instance.numFemale);
         }
 
         private static void SceneManager_sceneLoaded(Scene scene, LoadSceneMode lsm)
         {
-            if (lsm != LoadSceneMode.Single || patched || scene.name != "HScene")
+            Console.WriteLine($"SceneManager_sceneLoaded {scene.name}");
+
+            if (patched || scene.name != "HProc")
                 return;
 
-            harmony.PatchAll(typeof(HS2_BetterPenetration));
+            harmony.PatchAll(typeof(KK_BetterPenetration));
             patched = true;
-
-            Console.WriteLine("HS2_BetterPenetration: Searching for Uncensor Selector");
-            Chainloader.PluginInfos.TryGetValue("com.deathweasel.bepinex.uncensorselector", out PluginInfo pluginInfo);
-            if (pluginInfo != null && pluginInfo.Instance != null)
-            {
-                Type nestedType = pluginInfo.Instance.GetType().GetNestedType("UncensorSelectorController", AccessTools.all);
-                if (nestedType != null)
-                {
-                    Console.WriteLine("HS2_BetterPenetration: UncensorSelector found, trying to patch");
-                    MethodInfo methodInfo = AccessTools.Method(nestedType, "ReloadCharacterBody", null, null);
-                    if (methodInfo != null)
-                    {
-                        harmony.Patch(methodInfo, new HarmonyMethod(typeof(HS2_BetterPenetration), "BeforeCharacterReload"), new HarmonyMethod(typeof(HS2_BetterPenetration), "AfterCharacterReload"), null, null);
-                        Console.WriteLine("HS2_BetterPenetration: UncensorSelector patched correctly");
-                    }
-                }
-            }
         }
 
         private static void SceneManager_sceneUnloaded(Scene scene)
         {
-            if (!patched || scene.name != "HScene")
+            Console.WriteLine($"SceneManager_sceneUnloaded {scene.name}");
+
+            if (!patched || scene.name != "HProc")
                 return;
-                
+
             Core.OnEndScene();
 
-            harmony.UnpatchAll(nameof(HS2_BetterPenetration));
+            harmony.UnpatchAll(nameof(KK_BetterPenetration));
             patched = false;
             inHScene = false;
-            loadingCharacter = false;
 
-            if (hScene == null)
+            if (hSceneProc == null)
                 return;
 
-            foreach (var lookat in hScene.ctrlLookAts)
-            {
-                if (lookat == null)
-                    continue;
+            if (hSceneProc.lookDan != null)
+                hSceneProc.lookDan.transLookAtNull = null;
 
-                lookat.transLookAtNull = null;
-            }
+            if (hSceneProc.lookDan1 != null)
+                hSceneProc.lookDan1.transLookAtNull = null;
 
-            hScene = null;
+            hSceneProc = null;
         }
     }
 }

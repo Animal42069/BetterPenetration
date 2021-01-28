@@ -1,0 +1,5 @@
+E:\Users\Kevin\Source\Repos\BetterPenetration\KK_BetterPenetration\obj\Debug\KK_BetterPenetration.csproj.CoreCompileInputs.cache
+E:\Program Files (x86)\Koikatsu\BepInEx\plugins\KK_BetterPenetration.dll
+E:\Users\Kevin\Source\Repos\BetterPenetration\KK_BetterPenetration\obj\Debug\KK_BetterPenetration.dll
+E:\Program Files (x86)\Koikatsu\BepInEx\plugins\KK_BetterPenetration.dll.config
+E:\Users\Kevin\Source\Repos\BetterPenetration\KK_BetterPenetration\obj\Debug\KK_BetterPenetration.csprojAssemblyReference.cache

@@ -1,9 +1,8 @@
 ﻿using System;
 using UnityEngine;
 
-namespace HS2_BetterPenetration
+namespace Core_BetterPenetration
 {
-
     // Creates a Plane defined by two non-parallel lines
     class TwistedPlane
     {
@@ -38,21 +37,21 @@ namespace HS2_BetterPenetration
             v = 0;
             t = 0;
 
-            for (Geometry.Axis axis = Geometry.Axis.X; axis <= Geometry.Axis.Z; axis++)
+            for (MathHelpers.Axis axis = MathHelpers.Axis.X; axis <= MathHelpers.Axis.Z; axis++)
             {
-                if (axis == Geometry.Axis.X)
+                if (axis == MathHelpers.Axis.X)
                 {
                     Cu = FVxLV.x + TWxLV.x * u;
-                    if (!Geometry.ApproximatelyZero(Cu))
+                    if (!MathHelpers.ApproximatelyZero(Cu))
                     {
                         v = (OFxLV.x + LVxFW.x * u) / Cu;
                         break;
                     }
                 }
-                else if (axis == Geometry.Axis.Y)
+                else if (axis == MathHelpers.Axis.Y)
                 {
                     Cu = FVxLV.y + TWxLV.y * u;
-                    if (!Geometry.ApproximatelyZero(Cu))
+                    if (!MathHelpers.ApproximatelyZero(Cu))
                     {
                         v = (OFxLV.y + LVxFW.y * u) / Cu;
                         break;
@@ -61,7 +60,7 @@ namespace HS2_BetterPenetration
                 else
                 {
                     Cu = FVxLV.z + TWxLV.z * u;
-                    if (!Geometry.ApproximatelyZero(Cu))
+                    if (!MathHelpers.ApproximatelyZero(Cu))
                     {
                         v = (OFxLV.z + LVxFW.z * u) / Cu;
                         break;
@@ -69,14 +68,14 @@ namespace HS2_BetterPenetration
                 }
             }
 
-            if (Geometry.ApproximatelyZero(Cu))
+            if (MathHelpers.ApproximatelyZero(Cu))
                 return false;
 
-            if (!Geometry.ApproximatelyZero(lineVector.x))
+            if (!MathHelpers.ApproximatelyZero(lineVector.x))
                 t = (-offsetVector.x + firstVector.x * v + (forwardVector.x + twistVector.x * v) * u) / lineVector.x;
-            else if (!Geometry.ApproximatelyZero(lineVector.y))
+            else if (!MathHelpers.ApproximatelyZero(lineVector.y))
                 t = (-offsetVector.y + firstVector.y * v + (forwardVector.y + twistVector.y * v) * u) / lineVector.y;
-            else if (!Geometry.ApproximatelyZero(lineVector.z))
+            else if (!MathHelpers.ApproximatelyZero(lineVector.z))
                 t = (-offsetVector.z + firstVector.z * v + (forwardVector.z + twistVector.z * v) * u) / lineVector.z;
             else
                 return false;
@@ -101,7 +100,7 @@ namespace HS2_BetterPenetration
             double quadraticA = lineVector.x * TVxFW.x + lineVector.y * TVxFW.y + lineVector.z * TVxFW.z;
             double quadraticB = lineVector.x * (FVxFW.x + OFxTW.x) + lineVector.y * (FVxFW.y + OFxTW.y) + lineVector.z * (FVxFW.z + OFxTW.z);
             double quadraticC = lineVector.x * OFxFV.x + lineVector.y * OFxFV.y + lineVector.z * OFxFV.z;
-            if (Geometry.SolveQuadratic(quadraticA, quadraticB, quadraticC, out double u1, out double u2) == false)
+            if (MathHelpers.SolveQuadratic(quadraticA, quadraticB, quadraticC, out double u1, out double u2) == false)
                 return false;
 
             double t1 = 0, t2 = 0;
@@ -132,14 +131,20 @@ namespace HS2_BetterPenetration
 
             float t = 0;
             if (bIntersect1Found)
+            {
+                Console.WriteLine($"t1 {t1}");
                 t = (float)t1;
+            }
 
             if (bIntersect2Found && (!bIntersect1Found || (bIntersect1Found && t2 < t1)))
+            {
+                Console.WriteLine($"t2 {t2}");
                 t = (float)t2;
+            }
 
             intersectionPoint = lineStart + lineVector * t;
-            Vector3 intersectFirst = Geometry.CastSegmentToSegment(lineStart, lineVector, firstOrigin, firstVector);
-            Vector3 intersectSecond = Geometry.CastSegmentToSegment(lineStart, lineVector, secondOrigin, secondVector);
+            Vector3 intersectFirst = MathHelpers.CastSegmentToSegment(lineStart, lineVector, firstOrigin, firstVector);
+            Vector3 intersectSecond = MathHelpers.CastSegmentToSegment(lineStart, lineVector, secondOrigin, secondVector);
 
             intersectForwardVector = Vector3.Normalize(intersectSecond - intersectFirst);
             distanceToSecondVector = Vector3.Distance(intersectSecond, intersectionPoint);
@@ -155,8 +160,8 @@ namespace HS2_BetterPenetration
 
             // create a normal plane approximation to determine side, not the most accurate but close enough
             Vector3 planeRightVector = Vector3.Normalize(firstVector + secondVector);
-            Vector3 planeUpVector = Vector3.Normalize(Vector3.Cross(planeRightVector, forwardVector));
-            Plane upPlane = new Plane(planeUpVector, firstOrigin + forwardVector / 2);
+            Vector3 planeUpVector = Vector3.Normalize(Vector3.Cross(planeRightVector, lineVector));
+            Plane upPlane = new Plane(planeUpVector, firstOrigin + lineVector / 2);
             bool bAbovePlane = upPlane.GetSide(lineEnd);
             if (!bAbovePlane)
             {
@@ -164,7 +169,14 @@ namespace HS2_BetterPenetration
                 return lineEnd;
             }
 
-            bool bIntersectFound = this.IntersectLineOnTwistedPlane(lineStart, lineEnd, bExtendPlaneBeyondStart, bExtendPlaneBeyondEnd, out Vector3 hitPoint, out Vector3 lineForwardVector, out float distanceToEdgeOfPlane);
+            /*     Console.WriteLine($"upPlane.normal {upPlane.normal}");
+                 Console.WriteLine($"upPlane.distance {upPlane.distance}");
+                 Console.WriteLine($"bAbovePlane {bAbovePlane}");
+                 Console.WriteLine($"IntersectLineOnTwistedPlane");
+                 Console.WriteLine($"lineStart {lineStart}");
+                 Console.WriteLine($"lineStart {lineEnd}");
+            */
+            bool bIntersectFound = IntersectLineOnTwistedPlane(lineStart, lineEnd, bExtendPlaneBeyondStart, bExtendPlaneBeyondEnd, out Vector3 hitPoint, out Vector3 lineForwardVector, out float distanceToEdgeOfPlane);
 
             if (!bIntersectFound)
             {
@@ -172,7 +184,9 @@ namespace HS2_BetterPenetration
                 return lineEnd;
             }
 
+        //    Console.WriteLine("bIntersectFound");
             double hitDistance = Vector3.Distance(hitPoint, lineStart);
+         //   Console.WriteLine($"hitDistance {hitDistance} lineLength {lineLength} minLineLength {minLineLength}");
             if (hitDistance > lineLength)
             {
                 bExtendPlaneBeyondStart = false;
@@ -188,11 +202,20 @@ namespace HS2_BetterPenetration
             }
 
             lineLength = minLineLength;
-            double angleLineToPlane = (double)Geometry.DegToRad(Vector3.Angle(lineVector, -lineForwardVector));
-            double angleNewLineToPlane = (double)Math.Asin(hitDistance * Math.Sin(angleLineToPlane) / lineLength);
-            double angleLineToNewLine = (double)Math.PI - angleLineToPlane - angleNewLineToPlane;
-            float distanceAlongPlane = (float)(lineLength * Math.Sin(angleLineToNewLine) / Math.Sin(angleLineToPlane));
-  
+
+            double angleLineToPlane = (double)MathHelpers.DegToRad(Vector3.Angle(lineVector, -lineForwardVector));
+            MathHelpers.SolveSSATriangle(lineLength, hitDistance, angleLineToPlane, out double distanceAlongPlane, out _, out _);
+           
+
+     //           double angleLineToPlane = (double)MathHelpers.DegToRad(Vector3.Angle(lineVector, -lineForwardVector));
+      //      double angleNewLineToPlane = (double)Math.Asin(hitDistance * Math.Sin(angleLineToPlane) / lineLength);
+     //       double angleLineToNewLine = (double)Math.PI - angleLineToPlane - angleNewLineToPlane;
+     //       float distanceAlongPlane = (float)(lineLength * Math.Sin(angleLineToNewLine) / Math.Sin(angleLineToPlane));
+
+       //     Console.WriteLine($"hitPoint {hitPoint.x:F3}, {hitPoint.y:F3}, {hitPoint.z:F3}");
+       //     Console.WriteLine($"lineForwardVector {lineForwardVector.x:F3}, {lineForwardVector.y:F3}, {lineForwardVector.z:F3}");
+       //     Console.WriteLine($"bExtendPlaneBeyondEnd {bExtendPlaneBeyondEnd} distanceAlongPlane {distanceAlongPlane} distanceToEdgeOfPlane {distanceToEdgeOfPlane}");
+
             if (!bExtendPlaneBeyondEnd)
             {
                 if (distanceAlongPlane > distanceToEdgeOfPlane)
@@ -203,8 +226,8 @@ namespace HS2_BetterPenetration
                     return newLineEnd;
                 }
             }
-
-            newLineEnd = hitPoint + distanceAlongPlane * lineForwardVector;
+         
+            newLineEnd = hitPoint + (float)distanceAlongPlane * lineForwardVector;
             bHitPointFound = true;
             bExtendPlaneBeyondStart = false;
             return newLineEnd;

@@ -1,9 +1,9 @@
 ﻿using System;
 using UnityEngine;
 
-namespace AI_BetterPenetration
+namespace Core_BetterPenetration
 {
-    public static class Geometry
+    public static class MathHelpers
     {
         public enum Axis
         {
@@ -76,5 +76,18 @@ namespace AI_BetterPenetration
             return (value > -0.0001 && value < 0.0001);
         }
 
+        public static void SolveSSATriangle(double sideA, double sideB, double angleA, out double sideC, out double angleB, out double angleC)
+        {
+            sideC = 0;
+            angleB = 0;
+            angleC = 0;
+
+            if (ApproximatelyZero(sideA) || ApproximatelyZero(sideB) || ApproximatelyZero(angleA))
+                return;
+
+            angleB = Math.Asin(Math.Sin(angleA) * sideB / sideA);
+            angleC = Math.PI - angleA - angleB;
+            sideC = sideA * Math.Sin(angleC) / Math.Sin(angleA);
+        }
     }
 }

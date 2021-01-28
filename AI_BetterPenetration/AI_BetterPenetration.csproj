@@ -8,7 +8,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>AI_BetterPenetration</RootNamespace>
     <AssemblyName>AI_BetterPenetration</AssemblyName>
-    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
@@ -29,13 +29,14 @@
     <BootstrapperEnabled>true</BootstrapperEnabled>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>embedded</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\bin\</OutputPath>
+    <OutputPath>..\..\..\..\..\..\Program Files %28x86%29\AI-Shoujo\BepInEx\Plugins\</OutputPath>
     <DefineConstants>TRACE;DEBUG;AI</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -44,7 +45,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>embedded</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>..\bin\</OutputPath>
+    <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE;AI</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -60,11 +61,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AI_BetterPenetration.cs" />
-    <Compile Include="ConstrainPoints.cs" />
-    <Compile Include="DanPoints.cs" />
-    <Compile Include="Geometry.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TwistedPlane.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.6">
@@ -79,8 +76,8 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="0Harmony, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\IllusionLibs.BepInEx.Harmony.2.0.6\lib\net35\0Harmony.dll</HintPath>
+    <Reference Include="0Harmony, Version=2.2.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\IllusionLibs.BepInEx.Harmony.2.2.0.1\lib\net35\0Harmony.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Assembly-CSharp, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
@@ -91,12 +88,12 @@
       <HintPath>..\packages\IllusionLibs.AIGirl.Assembly-CSharp-firstpass.2020.5.29.2\lib\net46\Assembly-CSharp-firstpass.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="BepInEx, Version=5.3.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\IllusionLibs.BepInEx.5.3.0\lib\net35\BepInEx.dll</HintPath>
+    <Reference Include="BepInEx, Version=5.4.4.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\IllusionLibs.BepInEx.5.4.4\lib\net35\BepInEx.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="BepInEx.Harmony, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\IllusionLibs.BepInEx.Harmony.2.0.6\lib\net35\BepInEx.Harmony.dll</HintPath>
+      <HintPath>..\packages\IllusionLibs.BepInEx.Harmony.2.2.0.1\lib\net35\BepInEx.Harmony.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
@@ -108,6 +105,7 @@
       <Private>False</Private>
     </Reference>
   </ItemGroup>
+  <Import Project="..\Core_BetterPenetration\Core_BetterPenetration.projitems" Label="Shared" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\IllusionLibs.AIGirl.UnityEngine.CoreModule.2018.2.21.3\build\IllusionLibs.AIGirl.UnityEngine.CoreModule.targets" Condition="Exists('..\packages\IllusionLibs.AIGirl.UnityEngine.CoreModule.2018.2.21.3\build\IllusionLibs.AIGirl.UnityEngine.CoreModule.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
@@ -117,7 +115,9 @@
     <Error Condition="!Exists('..\packages\IllusionLibs.AIGirl.UnityEngine.CoreModule.2018.2.21.3\build\IllusionLibs.AIGirl.UnityEngine.CoreModule.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\IllusionLibs.AIGirl.UnityEngine.CoreModule.2018.2.21.3\build\IllusionLibs.AIGirl.UnityEngine.CoreModule.targets'))" />
     <Error Condition="!Exists('..\packages\IllusionLibs.AIShoujo.Assembly-CSharp.2019.12.20.2\build\IllusionLibs.AIShoujo.Assembly-CSharp.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\IllusionLibs.AIShoujo.Assembly-CSharp.2019.12.20.2\build\IllusionLibs.AIShoujo.Assembly-CSharp.targets'))" />
     <Error Condition="!Exists('..\packages\IllusionLibs.AIGirl.Assembly-CSharp-firstpass.2020.5.29.2\build\IllusionLibs.AIGirl.Assembly-CSharp-firstpass.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\IllusionLibs.AIGirl.Assembly-CSharp-firstpass.2020.5.29.2\build\IllusionLibs.AIGirl.Assembly-CSharp-firstpass.targets'))" />
+    <Error Condition="!Exists('..\packages\IllusionLibs.BepInEx.Harmony.2.2.0.1\build\IllusionLibs.BepInEx.Harmony.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\IllusionLibs.BepInEx.Harmony.2.2.0.1\build\IllusionLibs.BepInEx.Harmony.targets'))" />
   </Target>
   <Import Project="..\packages\IllusionLibs.AIShoujo.Assembly-CSharp.2019.12.20.2\build\IllusionLibs.AIShoujo.Assembly-CSharp.targets" Condition="Exists('..\packages\IllusionLibs.AIShoujo.Assembly-CSharp.2019.12.20.2\build\IllusionLibs.AIShoujo.Assembly-CSharp.targets')" />
   <Import Project="..\packages\IllusionLibs.AIGirl.Assembly-CSharp-firstpass.2020.5.29.2\build\IllusionLibs.AIGirl.Assembly-CSharp-firstpass.targets" Condition="Exists('..\packages\IllusionLibs.AIGirl.Assembly-CSharp-firstpass.2020.5.29.2\build\IllusionLibs.AIGirl.Assembly-CSharp-firstpass.targets')" />
+  <Import Project="..\packages\IllusionLibs.BepInEx.Harmony.2.2.0.1\build\IllusionLibs.BepInEx.Harmony.targets" Condition="Exists('..\packages\IllusionLibs.BepInEx.Harmony.2.2.0.1\build\IllusionLibs.BepInEx.Harmony.targets')" />
 </Project>

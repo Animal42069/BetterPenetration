@@ -1,18 +1,20 @@
 ﻿using UnityEngine;
 
-namespace HS2_BetterPenetration
+namespace Core_BetterPenetration
 {
     class DanPoints
     {
         public Transform danStart;
         public Transform danEnd;
         public Transform danTop;
+        public Transform[] danMid;
 
-        public DanPoints(Transform start, Transform end, Transform top)
+        public DanPoints(Transform start, Transform end, Transform top, Transform[] mid = null)
         {
             danStart = start;
             danEnd = end;
             danTop = top;
+            danMid = mid;
         }
     }
 }
