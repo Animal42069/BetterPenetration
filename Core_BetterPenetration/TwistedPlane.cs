@@ -131,16 +131,10 @@ namespace Core_BetterPenetration
 
             float t = 0;
             if (bIntersect1Found)
-            {
-                Console.WriteLine($"t1 {t1}");
                 t = (float)t1;
-            }
 
             if (bIntersect2Found && (!bIntersect1Found || (bIntersect1Found && t2 < t1)))
-            {
-                Console.WriteLine($"t2 {t2}");
                 t = (float)t2;
-            }
 
             intersectionPoint = lineStart + lineVector * t;
             Vector3 intersectFirst = MathHelpers.CastSegmentToSegment(lineStart, lineVector, firstOrigin, firstVector);
@@ -152,7 +146,7 @@ namespace Core_BetterPenetration
             return true;
         }
 
-        public Vector3 ConstrainLineToTwistedPlane(Vector3 lineStart, Vector3 lineEnd, ref float lineLength, float minLineLength, ref bool bExtendPlaneBeyondStart, bool bExtendPlaneBeyondEnd, out bool bHitPointFound)
+        public Vector3 ConstrainLineToTwistedPlane(Vector3 lineStart, Vector3 lineEnd, float lineLength, ref bool bExtendPlaneBeyondStart, bool bExtendPlaneBeyondEnd, out bool bHitPointFound)
         {
             Vector3 newLineEnd;
             Vector3 lineVector = Vector3.Normalize(lineEnd - lineStart);
@@ -160,8 +154,8 @@ namespace Core_BetterPenetration
 
             // create a normal plane approximation to determine side, not the most accurate but close enough
             Vector3 planeRightVector = Vector3.Normalize(firstVector + secondVector);
-            Vector3 planeUpVector = Vector3.Normalize(Vector3.Cross(planeRightVector, lineVector));
-            Plane upPlane = new Plane(planeUpVector, firstOrigin + lineVector / 2);
+            Vector3 planeUpVector = Vector3.Normalize(Vector3.Cross(planeRightVector, forwardVector));
+            Plane upPlane = new Plane(planeUpVector, firstOrigin + forwardVector / 2);
             bool bAbovePlane = upPlane.GetSide(lineEnd);
             if (!bAbovePlane)
             {
@@ -169,14 +163,7 @@ namespace Core_BetterPenetration
                 return lineEnd;
             }
 
-            /*     Console.WriteLine($"upPlane.normal {upPlane.normal}");
-                 Console.WriteLine($"upPlane.distance {upPlane.distance}");
-                 Console.WriteLine($"bAbovePlane {bAbovePlane}");
-                 Console.WriteLine($"IntersectLineOnTwistedPlane");
-                 Console.WriteLine($"lineStart {lineStart}");
-                 Console.WriteLine($"lineStart {lineEnd}");
-            */
-            bool bIntersectFound = IntersectLineOnTwistedPlane(lineStart, lineEnd, bExtendPlaneBeyondStart, bExtendPlaneBeyondEnd, out Vector3 hitPoint, out Vector3 lineForwardVector, out float distanceToEdgeOfPlane);
+            bool bIntersectFound = this.IntersectLineOnTwistedPlane(lineStart, lineEnd, bExtendPlaneBeyondStart, bExtendPlaneBeyondEnd, out Vector3 hitPoint, out Vector3 lineForwardVector, out float distanceToEdgeOfPlane);
 
             if (!bIntersectFound)
             {
@@ -184,16 +171,14 @@ namespace Core_BetterPenetration
                 return lineEnd;
             }
 
-        //    Console.WriteLine("bIntersectFound");
             double hitDistance = Vector3.Distance(hitPoint, lineStart);
-         //   Console.WriteLine($"hitDistance {hitDistance} lineLength {lineLength} minLineLength {minLineLength}");
             if (hitDistance > lineLength)
             {
                 bExtendPlaneBeyondStart = false;
                 return lineEnd;
             }
 
-            if (hitDistance > minLineLength)
+     /*       if (hitDistance > minLineLength)
             {
                 lineLength = (float)hitDistance;
                 bHitPointFound = true;
@@ -201,21 +186,14 @@ namespace Core_BetterPenetration
                 return hitPoint;
             }
 
-            lineLength = minLineLength;
-
+            lineLength = minLineLength;*/
             double angleLineToPlane = (double)MathHelpers.DegToRad(Vector3.Angle(lineVector, -lineForwardVector));
             MathHelpers.SolveSSATriangle(lineLength, hitDistance, angleLineToPlane, out double distanceAlongPlane, out _, out _);
-           
-
-     //           double angleLineToPlane = (double)MathHelpers.DegToRad(Vector3.Angle(lineVector, -lineForwardVector));
-      //      double angleNewLineToPlane = (double)Math.Asin(hitDistance * Math.Sin(angleLineToPlane) / lineLength);
-     //       double angleLineToNewLine = (double)Math.PI - angleLineToPlane - angleNewLineToPlane;
-     //       float distanceAlongPlane = (float)(lineLength * Math.Sin(angleLineToNewLine) / Math.Sin(angleLineToPlane));
-
-       //     Console.WriteLine($"hitPoint {hitPoint.x:F3}, {hitPoint.y:F3}, {hitPoint.z:F3}");
-       //     Console.WriteLine($"lineForwardVector {lineForwardVector.x:F3}, {lineForwardVector.y:F3}, {lineForwardVector.z:F3}");
-       //     Console.WriteLine($"bExtendPlaneBeyondEnd {bExtendPlaneBeyondEnd} distanceAlongPlane {distanceAlongPlane} distanceToEdgeOfPlane {distanceToEdgeOfPlane}");
-
+/*
+            double angleNewLineToPlane = (double)Math.Asin(hitDistance * Math.Sin(angleLineToPlane) / lineLength);
+            double angleLineToNewLine = (double)Math.PI - angleLineToPlane - angleNewLineToPlane;
+            float distanceAlongPlane = (float)(lineLength * Math.Sin(angleLineToNewLine) / Math.Sin(angleLineToPlane));
+  */
             if (!bExtendPlaneBeyondEnd)
             {
                 if (distanceAlongPlane > distanceToEdgeOfPlane)
@@ -226,7 +204,7 @@ namespace Core_BetterPenetration
                     return newLineEnd;
                 }
             }
-         
+
             newLineEnd = hitPoint + (float)distanceAlongPlane * lineForwardVector;
             bHitPointFound = true;
             bExtendPlaneBeyondStart = false;

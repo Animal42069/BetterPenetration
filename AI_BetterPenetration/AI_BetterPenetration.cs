@@ -28,14 +28,14 @@ namespace AI_BetterPenetration
         private static readonly List<bool> frontPointsInward = new List<bool> { false, false, false, false };
         private static readonly List<bool> backPointsInward = new List<bool> { false, false, true, true };
 
-        private static ConfigEntry<float> _danSoftness;
         private static ConfigEntry<float> _danColliderHeadLength;
         private static ConfigEntry<float> _danColliderRadius;
         private static ConfigEntry<float> _danColliderVerticalCenter;
         private static ConfigEntry<float> _fingerColliderLength;
         private static ConfigEntry<float> _fingerColliderRadius;
-        private static ConfigEntry<float> _telescopeThreshold;
-        private static ConfigEntry<bool> _forceTelescope;
+        private static ConfigEntry<float> _danLengthSquishFactor;
+        private static ConfigEntry<float> _danGirthSquishFactor;
+        private static ConfigEntry<float> _danSquishThreshold;
         private static ConfigEntry<bool> _useFingerColliders;
 
         private static ConfigEntry<float> _clippingDepth;
@@ -68,11 +68,11 @@ namespace AI_BetterPenetration
             { UpdateDanColliders(); };
             (_danColliderVerticalCenter = Config.Bind("Male Options", "Penis Collider: Vertical Center", -0.03f, "Vertical Center of the shaft collider")).SettingChanged += (s, e) =>
             { UpdateDanColliders(); };
-            (_danSoftness = Config.Bind("Male Options", "Penis: Softness", 0.15f, "Set the softness of the penis.  A value of 0 means maximum hardness, the penis will remain the same length at all times.  A value greater than 0 will cause the penis to begin to telescope after penetration.  A small value can make it appear there is friction during penetration.")).SettingChanged += (s, e) =>
+            (_danLengthSquishFactor = Config.Bind("Male Options", "Penis: Squish Length Factor", 0.6f, new ConfigDescription("How much the length of the penis squishes after it has passed the squish threshold", new AcceptableValueRange<float>(0, 1)))).SettingChanged += (s, e) =>
             { UpdateDanOptions(); };
-            (_telescopeThreshold = Config.Bind("Male Options", "Limiter: Telescope Threshold", 0.6f, "Allow the penis to begin telescoping after it has penetrated a certain amount. 0 = never telescope, 0.5 = allow telescoping after the halfway point, 1 = always allow telescoping.")).SettingChanged += (s, e) =>
+            (_danGirthSquishFactor = Config.Bind("Male Options", "Penis: Squish Girth Factor", 0.25f, new ConfigDescription("How much the girth of the penis squishes after it has passed the squish threshold", new AcceptableValueRange<float>(0, 1)))).SettingChanged += (s, e) =>
             { UpdateDanOptions(); };
-            (_forceTelescope = Config.Bind("Male Options", "Limiter: Telescope Always", true, "Force the penis to always telescope at the threshold point, instead of only doing it when it prevents clipping.")).SettingChanged += (s, e) =>
+            (_danSquishThreshold = Config.Bind("Male Options", "Penis: Squish Threshold", 0.2f, new ConfigDescription("Allows the penis to begin squishing (shorten length increase girth) after this amount of the penis has penetrated.", new AcceptableValueRange<float>(0, 1)))).SettingChanged += (s, e) =>
             { UpdateDanOptions(); };
             (_useFingerColliders = Config.Bind("Male Options", "Finger Collider: Enable", true, "Use finger colliders")).SettingChanged += (s, e) =>
             { UpdateDanOptions(); };
@@ -127,8 +127,7 @@ namespace AI_BetterPenetration
             if (!inHScene)
                 return;
 
-            for (int index = 0; index < MaleLimit; index++)
-                Core.UpdateDanOptions(0, _danSoftness.Value, _telescopeThreshold.Value, _forceTelescope.Value, _useFingerColliders.Value);
+            Core.UpdateDanOptions(0, _danLengthSquishFactor.Value, _danGirthSquishFactor.Value, _danSquishThreshold.Value, _useFingerColliders.Value);
         }
 
         private static void UpdateCollisionOptions()
@@ -172,6 +171,7 @@ namespace AI_BetterPenetration
                     continue;
                 maleList.Add(character);
             }
+
             Core.InitializeAgents(maleList, femaleList, danOptions, collisionOptions);
             inHScene = true;
         }
@@ -181,7 +181,7 @@ namespace AI_BetterPenetration
             List<DanOptions> danOptions = new List<DanOptions>
             {
                 new DanOptions(_danColliderVerticalCenter.Value, _danColliderRadius.Value, _danColliderHeadLength.Value,
-                _danSoftness.Value, _telescopeThreshold.Value, _forceTelescope.Value,
+                 _danLengthSquishFactor.Value, _danGirthSquishFactor.Value, _danSquishThreshold.Value,
                 _fingerColliderRadius.Value, _fingerColliderLength.Value, _useFingerColliders.Value)
             };
 
@@ -221,7 +221,7 @@ namespace AI_BetterPenetration
         [HarmonyPostfix, HarmonyPatch(typeof(H_Lookat_dan), "setInfo")]
         private static void H_Lookat_dan_PostSetInfo(H_Lookat_dan __instance)
         {
-            if (!inHScene || loadingCharacter || __instance == null || __instance.strPlayMotion == null)
+            if (!inHScene || loadingCharacter || __instance.strPlayMotion == null)
                 return;
 
             Core.LookAtDanSetup(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, 0, 0, false);
@@ -230,7 +230,7 @@ namespace AI_BetterPenetration
         [HarmonyPostfix, HarmonyPatch(typeof(H_Lookat_dan), "LateUpdate")]
         public static void H_Lookat_dan_PostLateUpdate(H_Lookat_dan __instance)
         {
-            if (!inHScene || loadingCharacter || hScene == null || __instance == null || __instance.strPlayMotion == null)
+            if (!inHScene || loadingCharacter || hScene == null || __instance.strPlayMotion == null)
                 return;
 
             Core.LookAtDanUpdate(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, hScene.NowChangeAnim, 0, 0);

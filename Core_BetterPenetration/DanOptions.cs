@@ -5,23 +5,23 @@
         public float danVerticalCenter;
         public float danRadius;
         public float danHeadLength;
-        public float danSoftness;
-        public float telescopeThreshold;
-        public bool forceTelescope;
+        public float danLengthSquish;
+        public float danGirthSquish;
+        public float squishThreshold;
         public float fingerRadius;
         public float fingerLength;
         public bool useFingerColliders;
 
-        public DanOptions(float danVerticalCenter, float danRadius, float danHeadLength, float danSoftness,
-            float telescopeThreshold, bool forceTelescope,
+        public DanOptions(float danVerticalCenter, float danRadius, float danHeadLength, 
+            float danLengthSquish, float danGirthSquish, float squishThreshold,
             float fingerRadius, float fingerLength, bool useFingerColliders)
         {
             this.danVerticalCenter = danVerticalCenter;
             this.danRadius = danRadius;
             this.danHeadLength = danHeadLength;
-            this.danSoftness = danSoftness;
-            this.telescopeThreshold = telescopeThreshold;
-            this.forceTelescope = forceTelescope;
+            this.danLengthSquish = danLengthSquish;
+            this.danGirthSquish = danGirthSquish;
+            this.squishThreshold = squishThreshold;
             this.fingerRadius = fingerRadius;
             this.fingerLength = fingerLength;
             this.useFingerColliders = useFingerColliders;

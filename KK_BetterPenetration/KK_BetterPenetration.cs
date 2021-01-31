@@ -23,14 +23,14 @@ namespace KK_BetterPenetration
         private static readonly List<bool> frontPointsInward = new List<bool> { false, false, false,};
         private static readonly List<bool> backPointsInward = new List<bool> { false, true, true};
 
-        private static readonly ConfigEntry<float>[] _danSoftness = new ConfigEntry<float>[MaleLimit];
         private static readonly ConfigEntry<float>[] _danColliderHeadLength = new ConfigEntry<float>[MaleLimit];
         private static readonly ConfigEntry<float>[] _danColliderRadius = new ConfigEntry<float>[MaleLimit];
         private static readonly ConfigEntry<float>[] _danColliderVerticalCenter = new ConfigEntry<float>[MaleLimit];
         private static readonly ConfigEntry<float>[] _fingerColliderLength = new ConfigEntry<float>[MaleLimit];
         private static readonly ConfigEntry<float>[] _fingerColliderRadius = new ConfigEntry<float>[MaleLimit];
-        private static readonly ConfigEntry<float>[] _telescopeThreshold = new ConfigEntry<float>[MaleLimit];
-        private static readonly ConfigEntry<bool>[] _forceTelescope = new ConfigEntry<bool>[MaleLimit];
+        private static readonly ConfigEntry<float>[] _danLengthSquishFactor = new ConfigEntry<float>[MaleLimit];
+        private static readonly ConfigEntry<float>[] _danGirthSquishFactor = new ConfigEntry<float>[MaleLimit];
+        private static readonly ConfigEntry<float>[] _danSquishThreshold = new ConfigEntry<float>[MaleLimit];
         private static readonly ConfigEntry<bool>[] _useFingerColliders = new ConfigEntry<bool>[MaleLimit];
 
         private static ConfigEntry<float> _clippingDepth;
@@ -63,11 +63,11 @@ namespace KK_BetterPenetration
                 { UpdateDanColliders(); };
                 (_danColliderVerticalCenter[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis Collider: Vertical Center", -0.003f, "Vertical Center of the shaft collider")).SettingChanged += (s, e) =>
                 { UpdateDanColliders(); };
-                (_danSoftness[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis: Softness", 0.15f, "Set the softness of the penis.  A value of 0 means maximum hardness, the penis will remain the same length at all times.  A value greater than 0 will cause the penis to begin to telescope after penetration.  A small value can make it appear there is friction during penetration.")).SettingChanged += (s, e) =>
+                (_danLengthSquishFactor[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis: Squish Length Factor", 0.5f, new ConfigDescription("How much the length of the penis squishes after it has passed the squish threshold", new AcceptableValueRange<float>(0, 1)))).SettingChanged += (s, e) =>
                 { UpdateDanOptions(); };
-                (_telescopeThreshold[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Limiter: Telescope Threshold", 0.6f, "Allow the penis to begin telescoping after it has penetrated a certain amount. 0 = never telescope, 0.5 = allow telescoping after the halfway point, 1 = always allow telescoping.")).SettingChanged += (s, e) =>
+                (_danGirthSquishFactor[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis: Squish Girth Factor", 1.1f, new ConfigDescription("How much the girth of the penis squishes after it has passed the squish threshold", new AcceptableValueRange<float>(1, 2)))).SettingChanged += (s, e) =>
                 { UpdateDanOptions(); };
-                (_forceTelescope[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Limiter: Telescope Always", true, "Force the penis to always telescope at the threshold point, instead of only doing it when it prevents clipping.")).SettingChanged += (s, e) =>
+                (_danSquishThreshold[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis: Squish Threshold", 0.2f, new ConfigDescription("Allows the penis to begin squishing (shorten length increase girth) after this amount of the penis has penetrated.", new AcceptableValueRange<float>(0, 1)))).SettingChanged += (s, e) =>
                 { UpdateDanOptions(); };
                 (_useFingerColliders[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Finger Collider: Enable", true, "Use finger colliders")).SettingChanged += (s, e) =>
                 { UpdateDanOptions(); };
@@ -119,7 +119,7 @@ namespace KK_BetterPenetration
                 return;
 
             for (int index = 0; index < MaleLimit; index++)
-                Core.UpdateDanOptions(index, _danSoftness[index].Value, _telescopeThreshold[index].Value, _forceTelescope[index].Value, _useFingerColliders[index].Value);
+                Core.UpdateDanOptions(index, _danLengthSquishFactor[index].Value, _danGirthSquishFactor[index].Value, _danSquishThreshold[index].Value, _useFingerColliders[index].Value);
         }
 
         private static void UpdateCollisionOptions()
@@ -186,7 +186,7 @@ namespace KK_BetterPenetration
             for (int maleNum = 0; maleNum < MaleLimit; maleNum++)
             {
                 danOptions.Add(new DanOptions(_danColliderVerticalCenter[maleNum].Value, _danColliderRadius[maleNum].Value, _danColliderHeadLength[maleNum].Value,
-                    _danSoftness[maleNum].Value, _telescopeThreshold[maleNum].Value, _forceTelescope[maleNum].Value,
+                    _danLengthSquishFactor[maleNum].Value, _danGirthSquishFactor[maleNum].Value, _danSquishThreshold[maleNum].Value,
                     _fingerColliderRadius[maleNum].Value, _fingerColliderLength[maleNum].Value, _useFingerColliders[maleNum].Value));
             }
 

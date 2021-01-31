@@ -24,19 +24,19 @@ namespace Core_BetterPenetration
             //           return;
 
             //        hScene = scene;
-            Console.WriteLine("InitializeAgents");
+      /*      Console.WriteLine("InitializeAgents");
             Console.WriteLine($"danCharacterList {danCharacterList.Count}");
             Console.WriteLine($"collisionCharacterList {collisionCharacterList.Count}");
             Console.WriteLine($"danOptions {danOptions.Count}");
             Console.WriteLine($"collisionOptions {collisionOptions.Count}");
-
+      */
             InitializeDanAgents(danCharacterList, danOptions);
             InitializeCollisionAgents(collisionCharacterList, collisionOptions);
         }
 
         private static void InitializeDanAgents(List<ChaControl> danCharacterList, List<DanOptions> danOptions)
         {
-            Console.WriteLine("InitializeDanAgents");
+    //        Console.WriteLine("InitializeDanAgents");
 
             danAgents = new List<DanAgent>();
             changingAnimations = new List<bool>();
@@ -55,7 +55,7 @@ namespace Core_BetterPenetration
 
         public static void InitializeCollisionAgents(List<ChaControl> collisionCharacterList, List<CollisionOptions> collisionOptions)
         {
-            Console.WriteLine("InitializeCollisionAgents");
+     //       Console.WriteLine("InitializeCollisionAgents");
 
             collisionAgents = new List<CollisionAgent>();
 
@@ -159,12 +159,12 @@ namespace Core_BetterPenetration
             danAgents[maleNum].UpdateFingerColliders(fingerRadius, fingerLength);
         }
 
-        public static void UpdateDanOptions(int maleNum, float danSoftness, float telescopeThreshold, bool forceTelescope, bool useFingerColliders)
+        public static void UpdateDanOptions(int maleNum, float danLengthSquish, float danGirthSquish, float squishThreshold, bool useFingerColliders)
         {
             if (maleNum >= danAgents.Count || danAgents[maleNum] == null)
                 return;
 
-            danAgents[maleNum].UpdateDanOptions(danSoftness, telescopeThreshold, forceTelescope, useFingerColliders);
+            danAgents[maleNum].UpdateDanOptions(danLengthSquish, danGirthSquish, squishThreshold, useFingerColliders);
         }
 
         public static void UpdateCollisionOptions(int femaleNum, CollisionOptions options)

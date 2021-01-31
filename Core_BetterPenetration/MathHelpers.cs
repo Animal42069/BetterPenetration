@@ -88,6 +88,24 @@ namespace Core_BetterPenetration
             angleB = Math.Asin(Math.Sin(angleA) * sideB / sideA);
             angleC = Math.PI - angleA - angleB;
             sideC = sideA * Math.Sin(angleC) / Math.Sin(angleA);
+
+   //         Console.WriteLine($"SolveSSA sideA {sideA} sideB {sideB} sideC {sideC}");
+    //        Console.WriteLine($"SolveSSA angleA {MathHelpers.RadToDeg(angleA)} angleB {MathHelpers.RadToDeg(angleB)} angleC {MathHelpers.RadToDeg(angleC)}");
+        }
+
+        // Return True if Vectors are close enough to each other
+        public static bool VectorsEqual(Vector3 firstVector, Vector3 secondVector, float threshold = 0.01f)
+        {
+            if (Math.Abs(firstVector.x - secondVector.x) > threshold)
+                return false;
+
+            if (Math.Abs(firstVector.y - secondVector.y) > threshold)
+                return false;
+
+            if (Math.Abs(firstVector.z - secondVector.z) > threshold)
+                return false;
+
+            return true;
         }
     }
 }

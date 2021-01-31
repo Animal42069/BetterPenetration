@@ -14,7 +14,7 @@ namespace Core_BetterPenetration
         private DanPoints m_danPoints;
         private DanOptions m_danOptions;
         private Transform m_referenceTarget;
-        private DynamicBoneCollider m_danCollider;
+        private List<DynamicBoneCollider> m_danColliders;
         private DynamicBoneCollider m_indexCollider;
         private DynamicBoneCollider m_middleCollider;
         private DynamicBoneCollider m_ringCollider;
@@ -23,15 +23,15 @@ namespace Core_BetterPenetration
         private bool m_danPenetration = false;
 #if HS2 || AI
         private float m_baseDanLength = 1.8f;
-        private float m_baseDanCenter = 0.95f;
+        private float m_baseSectionHalfLength = 0.95f;
 #elif KK
         private float m_baseDanLength = 0.18f;
-        private float m_baseDanCenter = 0.095f;
+        private float m_baseSectionHalfLength = 0.095f;
 #endif
 
         public DanAgent(ChaControl character, DanOptions options)
         {
-            Console.WriteLine("Initialize DanAgent");
+      //      Console.WriteLine("Initialize DanAgent");
 
             Initialize(character, options);
         }
@@ -42,6 +42,7 @@ namespace Core_BetterPenetration
             m_bpDanPointsFound = false;
             m_danPenetration = false;
             m_danOptions = options;
+            m_danColliders = new List<DynamicBoneCollider>();
 
             if (character == null)
                 return;
@@ -74,17 +75,45 @@ namespace Core_BetterPenetration
                 m_baseDanLength = Vector3.Distance(dan101.position, dan109.position);
                 if (MathHelpers.ApproximatelyZero(m_baseDanLength))
                     m_baseDanLength = 1.8f;
-                m_baseDanCenter = m_danPoints.danEnd.localPosition.z / 2;
-                if (MathHelpers.ApproximatelyZero(m_baseDanCenter))
-                    m_baseDanCenter = 0.95f;       
 
-                m_danCollider = InitializeCollider(dan101, m_danOptions.danRadius, ((m_baseDanCenter + m_danOptions.danHeadLength) * 2), 
-                    DynamicBoneCollider.Direction.Z, m_danOptions.danVerticalCenter, m_baseDanCenter);
+                m_baseSectionHalfLength = m_danPoints.danEnd.localPosition.z / (2 * (m_danPoints.danPoints.Count - 1));
+                if (MathHelpers.ApproximatelyZero(m_baseSectionHalfLength))
+                    m_baseSectionHalfLength = 1.9f / (2 * (m_danPoints.danPoints.Count - 1));
+
+                for (int danPoint = 1; danPoint < m_danPoints.danPoints.Count; danPoint++)
+                {
+                    m_danColliders.Add(InitializeCollider(m_danPoints.danPoints[danPoint - 1], m_danOptions.danRadius * m_danPoints.danLossyScale[danPoint].x, ((m_baseSectionHalfLength + m_danOptions.danHeadLength) * 2),
+                        DynamicBoneCollider.Direction.Z, m_danOptions.danVerticalCenter, m_baseSectionHalfLength));
+                }
+
+
+       /*         if (!m_bpDanPointsFound)
+                {
+                    m_baseSectionHalfLength = m_danPoints.danEnd.localPosition.z / 2;
+                    if (MathHelpers.ApproximatelyZero(m_baseSectionHalfLength))
+                        m_baseSectionHalfLength = 0.95f;
+
+                    m_danColliders.Add(InitializeCollider(m_danPoints.danStart, m_danOptions.danRadius * m_danPoints.danLossyScale[0].x, ((m_baseSectionHalfLength + m_danOptions.danHeadLength) * 2),
+                        DynamicBoneCollider.Direction.Z, m_danOptions.danVerticalCenter, m_baseSectionHalfLength));
+                }
+                else
+                {
+                    m_baseSectionHalfLength = m_danPoints.danEnd.localPosition.z / (2 * (m_danPoints.danPoints.Count - 1));
+                    if (MathHelpers.ApproximatelyZero(m_baseSectionHalfLength))
+                        m_baseSectionHalfLength = 0.2375f;
+
+                    for (int danPoint = 1; danPoint < m_danPoints.danPoints.Count; danPoint++)
+                    {
+                        m_danColliders.Add(InitializeCollider(m_danPoints.danPoints[danPoint - 1], m_danOptions.danRadius * m_danPoints.danLossyScale[danPoint].x, ((m_baseSectionHalfLength + m_danOptions.danHeadLength) * 2),
+                            DynamicBoneCollider.Direction.Z, m_danOptions.danVerticalCenter, m_baseSectionHalfLength));
+                    }
+                }*/
             }
 
             UpdateFingerColliders(m_danOptions.fingerRadius, m_danOptions.fingerLength);
 
-            Console.WriteLine("bDansFound " + m_danPointsFound);
+            Console.WriteLine("Dan Found " + m_danPointsFound);
+            Console.WriteLine("BP Dan Found " + m_bpDanPointsFound);
         }
 
         private DynamicBoneCollider InitializeCollider(Transform parent, float radius, float length,
@@ -104,16 +133,24 @@ namespace Core_BetterPenetration
             collider.m_Radius = radius;
             collider.m_Height = length;
 
+     /*       Console.WriteLine($"InitializeCollider {parent.name}");
+            Console.WriteLine($"m_Radius {collider.m_Radius}");
+            Console.WriteLine($"m_Height {collider.m_Height}");
+            Console.WriteLine($"m_Center {collider.m_Center.z}");
+     */
             return collider;
         }
 
         public void UpdateDanCollider(float danRadius, float danHeadLength, float danVerticalCenter)
         {
-            if (!m_danPointsFound)
+            if (!m_danPointsFound || m_danColliders.Count < 1 || m_danColliders.Count >= m_danPoints.danPoints.Count)
                 return;
 
-            m_danCollider = InitializeCollider(m_danPoints.danStart, danRadius, ((m_baseDanCenter + danHeadLength) * 2),
-                DynamicBoneCollider.Direction.Z, danVerticalCenter, m_baseDanCenter);
+            for (int danCollider = 0; danCollider < m_danColliders.Count; danCollider++)
+            {
+                m_danColliders[danCollider] = InitializeCollider(m_danPoints.danPoints[danCollider], m_danOptions.danRadius * m_danPoints.danLossyScale[danCollider + 1].x, ((m_baseSectionHalfLength + m_danOptions.danHeadLength) * 2),
+                    DynamicBoneCollider.Direction.Z, m_danOptions.danVerticalCenter, m_baseSectionHalfLength);
+            }
 
             m_danOptions.danRadius = danRadius;
             m_danOptions.danHeadLength = danHeadLength;
@@ -137,11 +174,11 @@ namespace Core_BetterPenetration
             m_danOptions.fingerLength = fingerLength;
         }
 
-        public void UpdateDanOptions(float danSoftness, float telescopeThreshold, bool forceTelescope, bool useFingerColliders)
+        public void UpdateDanOptions(float danLengthSquish, float danGirthSquish, float squishThreshold, bool useFingerColliders)
         {
-            m_danOptions.danSoftness = danSoftness;
-            m_danOptions.telescopeThreshold = telescopeThreshold;
-            m_danOptions.forceTelescope = forceTelescope;
+            m_danOptions.danLengthSquish = danLengthSquish;
+            m_danOptions.danGirthSquish = danGirthSquish;
+            m_danOptions.squishThreshold = squishThreshold;
             m_danOptions.useFingerColliders = useFingerColliders;
         }
 
@@ -186,6 +223,7 @@ namespace Core_BetterPenetration
                 dan109_pos = ConstrainDanToPull(dan101_pos, danVector, danDistanceToTarget, out danLength);
             }
 
+
             if (!m_bpDanPointsFound)
             {
                 Vector3 danForwardVector = Vector3.Normalize(dan109_pos - dan101_pos);
@@ -196,302 +234,282 @@ namespace Core_BetterPenetration
             }
             else
             {
+                Vector3 outsideVector = danVector;
+                Vector3 insideVector = Vector3.Normalize(dan109_pos - lookTarget);
+                List<Vector3> danPoints = new List<Vector3>();
+           //     danPoints.Add(dan101_pos);
+                foreach (var point in m_danPoints.danPoints)
+                    danPoints.Add(point.position);
+           //     danPoints.Add(dan109_pos);
+                float danSegmentLength = danLength / (danPoints.Count - 1);
+
+                //        Console.WriteLine()
+
+        //        float lengthScaleFactor = danLength / m_baseDanLength;
+                float girthScaleFactor = 1 + (m_baseDanLength / danLength - 1) * m_danOptions.danGirthSquish;
+
+    
+                m_danPoints.danPoints[0].localScale = new Vector3(m_danPoints.danScale[0].x * girthScaleFactor, m_danPoints.danScale[0].y * girthScaleFactor, m_danPoints.danScale[0].z/* * lengthScaleFactor*/);
+                m_danPoints.danPoints[1].localScale = new Vector3(m_danPoints.danScale[1].x * girthScaleFactor, m_danPoints.danScale[1].y * girthScaleFactor, m_danPoints.danScale[1].z);
+                m_danPoints.danPoints[2].localScale = new Vector3(m_danPoints.danScale[2].x * (1 - (1 - 1 / girthScaleFactor) / 2), m_danPoints.danScale[2].y * (1 - (1 - 1 / girthScaleFactor) / 2), m_danPoints.danScale[2].z);
+                m_danPoints.danPoints[3].localScale = new Vector3(m_danPoints.danScale[3].x * (1 / girthScaleFactor), m_danPoints.danScale[3].y * (1 / girthScaleFactor), m_danPoints.danScale[3].z);
+                m_danPoints.danPoints[4].localScale = new Vector3(m_danPoints.danScale[4].x * (1 / girthScaleFactor), m_danPoints.danScale[4].y * (1 / girthScaleFactor), m_danPoints.danScale[4].z);
+
+                m_danColliders[0].m_Center = new Vector3(m_danColliders[0].m_Center.x, m_danColliders[0].m_Center.y, danSegmentLength / 2);
+                m_danColliders[1].m_Center = new Vector3(m_danColliders[1].m_Center.x, m_danColliders[1].m_Center.y, danSegmentLength / 2);
+                m_danColliders[2].m_Center = new Vector3(m_danColliders[2].m_Center.x, m_danColliders[2].m_Center.y, danSegmentLength / 2);
+                m_danColliders[3].m_Center = new Vector3(m_danColliders[3].m_Center.x, m_danColliders[3].m_Center.y, danSegmentLength / 2);
+
+                //  m_danPoints.danMid[0].localScale = new Vector3(girthScaleFactor, girthScaleFactor, m_danPoints.danMid[0].localScale.z);
+
+       /*         Console.WriteLine($"m_danPoints.danStart.localScale {m_danPoints.danStart.localScale.z:F3}");
+                Console.WriteLine($"girthScaleFactor {girthScaleFactor:F3}");
+                Console.WriteLine($"1 - (1 - 1 / girthScaleFactor) / 2 {(1 - (1 - 1 / girthScaleFactor) / 2):F3}");
+                Console.WriteLine($"1 / girthScaleFactor {(1 / girthScaleFactor):F3}");
                 Console.WriteLine($"dan101_pos {dan101_pos.x:F3}, {dan101_pos.y:F3}, {dan101_pos.z:F3}");
                 Console.WriteLine($"dan109_pos {dan109_pos.x:F3}, {dan109_pos.y:F3}, {dan109_pos.z:F3}");
                 Console.WriteLine($"lookTarget {lookTarget.x:F3}, {lookTarget.y:F3}, {lookTarget.z:F3}");
                 Console.WriteLine($"danDistanceToTarget {danDistanceToTarget}");
                 Console.WriteLine($"danLength {danLength}");
-
-                Vector3 outsideVector = danVector;
-                Vector3 insideVector = Vector3.Normalize(dan109_pos - lookTarget);
-                float danSegmentLength = danLength / 4;
-
+                Console.WriteLine($"danSegmentLength {danSegmentLength}");
                 Console.WriteLine($"outsideVector {outsideVector.x:F3}, {outsideVector.y:F3}, {outsideVector.z:F3}");
                 Console.WriteLine($"insideVector {insideVector.x:F3}, {insideVector.y:F3}, {insideVector.z:F3}");
-
-                if (danDistanceToTarget >= danSegmentLength * 4)
+       */
+                if (MathHelpers.VectorsEqual(outsideVector, insideVector, 0.001f) || danLength <= danDistanceToTarget)
                 {
-                    m_danPoints.danMid[0].position = m_danPoints.danStart.position + outsideVector * danSegmentLength;
-                    m_danPoints.danMid[1].position = m_danPoints.danMid[0].position + outsideVector * danSegmentLength;
-                    m_danPoints.danMid[2].position = m_danPoints.danMid[1].position + outsideVector * danSegmentLength;
-                    m_danPoints.danEnd.position = m_danPoints.danMid[2].position + outsideVector * danSegmentLength;
-                }
-                else if (danDistanceToTarget >= danSegmentLength * 3)
-                {
-                    m_danPoints.danMid[0].position = m_danPoints.danStart.position + outsideVector * danSegmentLength;
-                    m_danPoints.danMid[1].position = m_danPoints.danMid[0].position + outsideVector * danSegmentLength;
-                    m_danPoints.danMid[2].position = m_danPoints.danMid[1].position + outsideVector * danSegmentLength;
+                    Vector3 danForwardVector = Vector3.Normalize(dan109_pos - dan101_pos);
 
-                    float outsideDistance = danDistanceToTarget - danSegmentLength * 3;
-                    double angleOutsideToInside = (double)MathHelpers.DegToRad(Vector3.Angle(outsideVector, -insideVector));
-                    MathHelpers.SolveSSATriangle(danLength, outsideDistance, angleOutsideToInside, out double distanceAlongInside, out _, out _);
-                    m_danPoints.danEnd.position = lookTarget + insideVector * (float)distanceAlongInside;
-                }
-                else if (danDistanceToTarget >= danSegmentLength * 2)
-                {
-                    m_danPoints.danMid[0].position = m_danPoints.danStart.position + outsideVector * danSegmentLength;
-                    m_danPoints.danMid[1].position = m_danPoints.danMid[0].position + outsideVector * danSegmentLength;
-
-                    float outsideDistance = danDistanceToTarget - danSegmentLength * 2;
-                    double angleOutsideToInside = (double)MathHelpers.DegToRad(Vector3.Angle(outsideVector, -insideVector));
-                    MathHelpers.SolveSSATriangle(danLength, outsideDistance, angleOutsideToInside, out double distanceAlongInside, out _, out _);
-                    m_danPoints.danMid[2].position = lookTarget + insideVector * (float)distanceAlongInside;
-
-                    //    m_danPoints.danMid[2].position =
-                    m_danPoints.danEnd.position = m_danPoints.danMid[2].position + insideVector * danSegmentLength;
-                }
-                else if (danDistanceToTarget >= danSegmentLength)
-                {
-                    m_danPoints.danMid[0].position = m_danPoints.danStart.position + outsideVector * danSegmentLength;
-
-                    float outsideDistance = danDistanceToTarget - danSegmentLength;
-                    double angleOutsideToInside = (double)MathHelpers.DegToRad(Vector3.Angle(outsideVector, -insideVector));
-                    MathHelpers.SolveSSATriangle(danLength, outsideDistance, angleOutsideToInside, out double distanceAlongInside, out _, out _);
-                    m_danPoints.danMid[1].position = lookTarget + insideVector * (float)distanceAlongInside;
-
-                    //   m_danPoints.danMid[1].position =
-                    m_danPoints.danMid[2].position = m_danPoints.danMid[1].position + insideVector * danSegmentLength;
-                    m_danPoints.danEnd.position = m_danPoints.danMid[2].position + insideVector * danSegmentLength;
-                }
-                else if (!MathHelpers.ApproximatelyZero(danDistanceToTarget))
-                {
-                    float outsideDistance = danDistanceToTarget;
-                    double angleOutsideToInside = (double)MathHelpers.DegToRad(Vector3.Angle(outsideVector, -insideVector));
-                    MathHelpers.SolveSSATriangle(danLength, outsideDistance, angleOutsideToInside, out double distanceAlongInside, out _, out _);
-                    m_danPoints.danMid[0].position = lookTarget + insideVector * (float)distanceAlongInside;
-
-                    //    m_danPoints.danMid[0].position =
-                    m_danPoints.danMid[1].position = m_danPoints.danMid[0].position + insideVector * danSegmentLength;
-                    m_danPoints.danMid[2].position = m_danPoints.danMid[1].position + insideVector * danSegmentLength;
-                    m_danPoints.danEnd.position = m_danPoints.danMid[2].position + insideVector * danSegmentLength;
+                    for (int point = 1; point < danPoints.Count; point++)
+                        danPoints[point] = danPoints[point - 1] + danForwardVector * danSegmentLength;
                 }
                 else
                 {
-                    m_danPoints.danMid[0].position = m_danPoints.danStart.position + insideVector * danSegmentLength;
-                    m_danPoints.danMid[1].position = m_danPoints.danMid[0].position + insideVector * danSegmentLength;
-                    m_danPoints.danMid[2].position = m_danPoints.danMid[1].position + insideVector * danSegmentLength;
-                    m_danPoints.danEnd.position = m_danPoints.danMid[2].position + insideVector * danSegmentLength;
+                    for (int point = 1; point < danPoints.Count; point++)
+                    {
+                        if (danSegmentLength * (point - 1) >= danDistanceToTarget)
+                        {
+                            danPoints[point] = danPoints[point - 1] + insideVector * danSegmentLength;
+                        }
+                        else if (danSegmentLength * point >= danDistanceToTarget)
+                        {
+                            float outsideDistance = danDistanceToTarget - danSegmentLength * (point - 1);
+                            double angleOutsideToInside = (double)MathHelpers.DegToRad(Vector3.Angle(outsideVector, -insideVector));
+                            MathHelpers.SolveSSATriangle(danSegmentLength, outsideDistance, angleOutsideToInside, out double distanceAlongInside, out _, out _);
+                            //       Console.WriteLine($"outsideDistance {outsideDistance}, angleOutsideToInside {MathHelpers.RadToDeg(angleOutsideToInside)}, distanceAlongInside {distanceAlongInside}");
+                            danPoints[point] = lookTarget + insideVector * (float)distanceAlongInside;
+                        }
+                        else
+                        {
+                            danPoints[point] = danPoints[point - 1] + outsideVector * danSegmentLength;
+                        }
+
+       /*                 if (danDistanceToTarget >= danSegmentLength * point)
+                        {
+                            danPoints[point] = danPoints[point - 1] + outsideVector * danSegmentLength;
+                        }
+                        else if (danDistanceToTarget <= danSegmentLength * point)
+                        {
+                            danPoints[point] = danPoints[point - 1] + insideVector * danSegmentLength;
+                        }
+                        else
+                        {
+                            float outsideDistance = danDistanceToTarget - danSegmentLength * (point - 1);
+                            double angleOutsideToInside = (double)MathHelpers.DegToRad(Vector3.Angle(outsideVector, -insideVector));
+                            MathHelpers.SolveSSATriangle(danSegmentLength, outsideDistance, angleOutsideToInside, out double distanceAlongInside, out _, out _);
+                            //       Console.WriteLine($"outsideDistance {outsideDistance}, angleOutsideToInside {MathHelpers.RadToDeg(angleOutsideToInside)}, distanceAlongInside {distanceAlongInside}");
+                            danPoints[point] = lookTarget + insideVector * (float)distanceAlongInside;
+                        }*/
+                    }
                 }
 
-                Console.WriteLine($"m_danPoints.danMid[0].position {m_danPoints.danMid[0].position.x:F3}, {m_danPoints.danMid[0].position.y:F3}, {m_danPoints.danMid[0].position.z:F3}");
-                Console.WriteLine($"m_danPoints.danMid[1].position {m_danPoints.danMid[1].position.x:F3}, {m_danPoints.danMid[1].position.y:F3}, {m_danPoints.danMid[1].position.z:F3}");
-                Console.WriteLine($"m_danPoints.danMid[2].position {m_danPoints.danMid[2].position.x:F3}, {m_danPoints.danMid[2].position.y:F3}, {m_danPoints.danMid[2].position.z:F3}");
-                Console.WriteLine($"m_danPoints.danEnd.position {m_danPoints.danEnd.position.x:F3}, {m_danPoints.danEnd.position.y:F3}, {m_danPoints.danEnd.position.z:F3}");
+                for (int point = 0; point < danPoints.Count - 1; point++)
+                {
+                    Vector3 forwardVector = Vector3.Normalize(danPoints[point + 1] - danPoints[point]);
+                    Quaternion danQuaternion = Quaternion.LookRotation(forwardVector, Vector3.Cross(forwardVector, m_danPoints.danTop.right));
+                    m_danPoints.danPoints[point].SetPositionAndRotation(danPoints[point], danQuaternion);
 
+               /*     if (point == 0)
+                        m_danPoints.danStart.rotation = danQuaternion;
+                    else
+                        m_danPoints.danMid[point - 1].SetPositionAndRotation(danPoints[point], danQuaternion);
+               */
+                    if (point == danPoints.Count - 2)
+                        m_danPoints.danPoints[point + 1].SetPositionAndRotation(danPoints[point + 1], danQuaternion);
+                }
 
-                Vector3 dan101ForwardVector = Vector3.Normalize(m_danPoints.danMid[0].position - m_danPoints.danStart.position);
-                Quaternion dan101Quaternion = Quaternion.LookRotation(dan101ForwardVector, Vector3.Cross(dan101ForwardVector, m_danPoints.danTop.right));
-                m_danPoints.danStart.rotation = dan101Quaternion;
+       //         m_danPoints.danTop.localEulerAngles = m_danPoints.danStart.localEulerAngles;
 
-                Vector3 dan103ForwardVector = Vector3.Normalize(m_danPoints.danMid[1].position - m_danPoints.danMid[0].position);
-                Quaternion dan103Quaternion = Quaternion.LookRotation(dan103ForwardVector, Vector3.Cross(dan103ForwardVector, m_danPoints.danTop.right));
-                m_danPoints.danMid[0].rotation = dan103Quaternion;
+      /*          Console.WriteLine($"dan101_pos {m_danPoints.danPoints[0].position.x:F3}, {m_danPoints.danPoints[0].position.y:F3}, {m_danPoints.danPoints[0].position.z:F3}");
+                Console.WriteLine($"dan103_pos {m_danPoints.danPoints[1].position.x:F3}, {m_danPoints.danPoints[1].position.y:F3}, {m_danPoints.danPoints[1].position.z:F3}");
+                Console.WriteLine($"dan105_pos {m_danPoints.danPoints[2].position.x:F3}, {m_danPoints.danPoints[2].position.y:F3}, {m_danPoints.danPoints[2].position.z:F3}");
+                Console.WriteLine($"dan107_pos {m_danPoints.danPoints[3].position.x:F3}, {m_danPoints.danPoints[3].position.y:F3}, {m_danPoints.danPoints[3].position.z:F3}");
+                Console.WriteLine($"dan109_pos {m_danPoints.danPoints[4].position.x:F3}, {m_danPoints.danPoints[4].position.y:F3}, {m_danPoints.danPoints[4].position.z:F3}");
+      */
 
-                Vector3 dan105ForwardVector = Vector3.Normalize(m_danPoints.danMid[2].position - m_danPoints.danMid[1].position);
-                Quaternion dan105Quaternion = Quaternion.LookRotation(dan105ForwardVector, Vector3.Cross(dan105ForwardVector, m_danPoints.danTop.right));
-                m_danPoints.danMid[1].rotation = dan105Quaternion;
+                /*         Console.WriteLine($"dan101_pos {dan101_pos.x:F3}, {dan101_pos.y:F3}, {dan101_pos.z:F3}");
+                         Console.WriteLine($"dan109_pos {dan109_pos.x:F3}, {dan109_pos.y:F3}, {dan109_pos.z:F3}");
+                         Console.WriteLine($"lookTarget {lookTarget.x:F3}, {lookTarget.y:F3}, {lookTarget.z:F3}");
+                         Console.WriteLine($"danDistanceToTarget {danDistanceToTarget}");
+                         Console.WriteLine($"danLength {danLength}");
+                         Console.WriteLine($"danSegmentLength {danSegmentLength}");
+                         Console.WriteLine($"outsideVector {outsideVector.x:F3}, {outsideVector.y:F3}, {outsideVector.z:F3}");
+                         Console.WriteLine($"insideVector {insideVector.x:F3}, {insideVector.y:F3}, {insideVector.z:F3}");
+                */
+                /*       if (danDistanceToTarget >= danSegmentLength * 4)
+                       {
+                           dan103_pos = dan101_pos + outsideVector * danSegmentLength;
+                           dan105_pos = dan103_pos + outsideVector * danSegmentLength;
+                           dan107_pos = dan105_pos + outsideVector * danSegmentLength;
+                           dan109_pos = dan107_pos + outsideVector * danSegmentLength;
+                       }
+                       else if (danDistanceToTarget >= danSegmentLength * 3)
+                       {
+                           dan103_pos = dan101_pos + outsideVector * danSegmentLength;
+                           dan105_pos = dan103_pos + outsideVector * danSegmentLength;
+                           dan107_pos = dan105_pos + outsideVector * danSegmentLength;
 
-                Vector3 dan107ForwardVector = Vector3.Normalize(m_danPoints.danMid[3].position - m_danPoints.danMid[2].position);
-                Quaternion dan107Quaternion = Quaternion.LookRotation(dan107ForwardVector, Vector3.Cross(dan107ForwardVector, m_danPoints.danTop.right));
-                m_danPoints.danMid[2].rotation = dan107Quaternion;
+                           if (MathHelpers.VectorsEqual(outsideVector, insideVector, 0.001f))
+                           {
+                               dan109_pos = dan107_pos + insideVector * danSegmentLength;
+                           }
+                           else
+                           {
+                               float outsideDistance = danDistanceToTarget - danSegmentLength * 3;
+                               double angleOutsideToInside = (double)MathHelpers.DegToRad(Vector3.Angle(outsideVector, -insideVector));
+                               MathHelpers.SolveSSATriangle(danSegmentLength, outsideDistance, angleOutsideToInside, out double distanceAlongInside, out _, out _);
+                               Console.WriteLine($"outsideDistance {outsideDistance}, angleOutsideToInside {MathHelpers.RadToDeg(angleOutsideToInside)}, distanceAlongInside {distanceAlongInside}");
+                               dan109_pos = lookTarget + insideVector * (float)distanceAlongInside;
+                           }
+                       }
+                       else if (danDistanceToTarget >= danSegmentLength * 2)
+                       {
+                           dan103_pos = dan101_pos + outsideVector * danSegmentLength;
+                           dan105_pos = dan103_pos + outsideVector * danSegmentLength;
 
-                Vector3 dan109ForwardVector = Vector3.Normalize(m_danPoints.danEnd.position - m_danPoints.danMid[3].position);
-                Quaternion dan109Quaternion = Quaternion.LookRotation(dan109ForwardVector, Vector3.Cross(dan109ForwardVector, m_danPoints.danTop.right));
-                m_danPoints.danEnd.rotation = dan109Quaternion;
+                           if (MathHelpers.VectorsEqual(outsideVector, insideVector, 0.001f))
+                           {
+                               dan107_pos = dan105_pos + insideVector * danSegmentLength;
+                           }
+                           else
+                           {
+                               float outsideDistance = danDistanceToTarget - danSegmentLength * 2;
+                               double angleOutsideToInside = (double)MathHelpers.DegToRad(Vector3.Angle(outsideVector, -insideVector));
+                               MathHelpers.SolveSSATriangle(danSegmentLength, outsideDistance, angleOutsideToInside, out double distanceAlongInside, out _, out _);
+                               Console.WriteLine($"outsideDistance {outsideDistance}, angleOutsideToInside {MathHelpers.RadToDeg(angleOutsideToInside)}, distanceAlongInside {distanceAlongInside}");
+                               dan107_pos = lookTarget + insideVector * (float)distanceAlongInside;
+                           }
+                           //    m_danPoints.danMid[2].position =
+                           dan109_pos = dan107_pos + insideVector * danSegmentLength;
+                       }
+                       else if (danDistanceToTarget >= danSegmentLength)
+                       {
+                           dan103_pos = dan101_pos + outsideVector * danSegmentLength;
 
+                           if (MathHelpers.VectorsEqual(outsideVector, insideVector, 0.001f))
+                           {
+                               dan105_pos = dan103_pos + insideVector * danSegmentLength;
+                           }
+                           else
+                           {
+                               float outsideDistance = danDistanceToTarget - danSegmentLength;
+                               double angleOutsideToInside = (double)MathHelpers.DegToRad(Vector3.Angle(outsideVector, -insideVector));
+                               MathHelpers.SolveSSATriangle(danSegmentLength, outsideDistance, angleOutsideToInside, out double distanceAlongInside, out _, out _);
+                               Console.WriteLine($"outsideDistance {outsideDistance}, angleOutsideToInside {MathHelpers.RadToDeg(angleOutsideToInside)}, distanceAlongInside {distanceAlongInside}");
+                               dan105_pos = lookTarget + insideVector * (float)distanceAlongInside;
+                           }
+                           //   m_danPoints.danMid[1].position =
+                           dan107_pos = dan105_pos + insideVector * danSegmentLength;
+                           dan109_pos = dan107_pos + insideVector * danSegmentLength;
+                       }
+                       else if (!MathHelpers.ApproximatelyZero(danDistanceToTarget))
+                       {
+                           if (MathHelpers.VectorsEqual(outsideVector, insideVector, 0.001f))
+                           {
+                               dan103_pos = dan101_pos + insideVector * danSegmentLength;
+                           }
+                           else
+                           {
+                               float outsideDistance = danDistanceToTarget;
+                               double angleOutsideToInside = (double)MathHelpers.DegToRad(Vector3.Angle(outsideVector, -insideVector));
+                               MathHelpers.SolveSSATriangle(danSegmentLength, outsideDistance, angleOutsideToInside, out double distanceAlongInside, out _, out _);
+                               Console.WriteLine($"outsideDistance {outsideDistance}, angleOutsideToInside {MathHelpers.RadToDeg(angleOutsideToInside)}, distanceAlongInside {distanceAlongInside}");
+                               dan103_pos = lookTarget + insideVector * (float)distanceAlongInside;
+                           }
+                           //    m_danPoints.danMid[0].position =
+                           dan105_pos = dan103_pos + insideVector * danSegmentLength;
+                           dan107_pos = dan105_pos + insideVector * danSegmentLength;
+                           dan109_pos = dan107_pos + insideVector * danSegmentLength;
+                       }
+                       else
+                       {
+                           dan103_pos = dan101_pos + insideVector * danSegmentLength;
+                           dan105_pos = dan103_pos + insideVector * danSegmentLength;
+                           dan107_pos = dan105_pos + insideVector * danSegmentLength;
+                           dan109_pos = dan107_pos + insideVector * danSegmentLength;
+                       }
 
+                       Console.WriteLine($"dan103_pos {dan103_pos.x:F3}, {dan103_pos.y:F3}, {dan103_pos.z:F3}");
+                       Console.WriteLine($"dan105_pos {dan105_pos.x:F3}, {dan105_pos.y:F3}, {dan105_pos.z:F3}");
+                       Console.WriteLine($"dan107_pos {dan107_pos.x:F3}, {dan107_pos.y:F3}, {dan107_pos.z:F3}");
+                       Console.WriteLine($"dan109_pos {dan109_pos.x:F3}, {dan109_pos.y:F3}, {dan109_pos.z:F3}");
+                */
+
+                /*          Vector3 dan101ForwardVector = Vector3.Normalize(dan103_pos - dan101_pos);
+                          Quaternion dan101Quaternion = Quaternion.LookRotation(dan101ForwardVector, Vector3.Cross(dan101ForwardVector, m_danPoints.danTop.right));
+                          m_danPoints.danStart.rotation = dan101Quaternion;
+
+                          Vector3 dan103ForwardVector = Vector3.Normalize(dan105_pos - dan103_pos);
+                          Quaternion dan103Quaternion = Quaternion.LookRotation(dan103ForwardVector, Vector3.Cross(dan103ForwardVector, m_danPoints.danTop.right));
+                          m_danPoints.danMid[0].SetPositionAndRotation(dan103_pos, dan103Quaternion);
+
+                          Vector3 dan105ForwardVector = Vector3.Normalize(dan107_pos - dan105_pos);
+                          Quaternion dan105Quaternion = Quaternion.LookRotation(dan105ForwardVector, Vector3.Cross(dan105ForwardVector, m_danPoints.danTop.right));
+                          m_danPoints.danMid[1].SetPositionAndRotation(dan105_pos, dan105Quaternion);
+
+                          Vector3 dan107ForwardVector = Vector3.Normalize(dan109_pos - dan107_pos);
+                          Quaternion dan107Quaternion = Quaternion.LookRotation(dan107ForwardVector, Vector3.Cross(dan107ForwardVector, m_danPoints.danTop.right));
+                          m_danPoints.danMid[2].SetPositionAndRotation(dan107_pos, dan107Quaternion);
+                          m_danPoints.danEnd.SetPositionAndRotation(dan109_pos, dan107Quaternion);*/
             }
-
-        //    }
-       /*     else
-            {
-                if (m_danPenetration)
-                {
-                    if (m_referenceTarget.name == LookTargets.KokanTarget || m_referenceTarget.name == LookTargets.AnaTarget || m_referenceTarget.name == LookTargets.BPKokanTarget)
-                    {
-                        ConstrainBPDanToBody(targetAgent, lookTarget, danDistanceToTarget);
-                    }
-                    else if (m_referenceTarget.name == LookTargets.HeadTarget)
-                    {
-                        ConstrainDanToHead(targetAgent, dan101_pos, lookTarget, danVector, danDistanceToTarget);
-                    }
-                }
-                else if ((m_referenceTarget.name == LookTargets.KokanTarget) && (m_baseDanLength > danDistanceToTarget))
-                {
-                    ConstrainDanToPull(dan101_pos, danVector, danDistanceToTarget);
-                }
-            }*/
         }
 
         private Vector3 ConstrainDanToBody(CollisionAgent target, Vector3 dan101_pos, Vector3 lookTarget, Vector3 danVector, float danDistanceToTarget, out float danLength)
         {
-            Console.WriteLine("ConstrainDanToBody");
+     //       Console.WriteLine("ConstrainDanToBody");
 
             danLength = m_baseDanLength;
-            Plane kokanPlane = new Plane(m_danPoints.danStart.forward, lookTarget);
+     //       Plane kokanPlane = new Plane(m_danPoints.danStart.forward, lookTarget);
 
-            if (m_baseDanLength > danDistanceToTarget)
-                danLength = m_baseDanLength - (m_baseDanLength - danDistanceToTarget) * m_danOptions.danSoftness;
+            if (m_baseDanLength - danDistanceToTarget > m_baseDanLength * m_danOptions.squishThreshold)
+                danLength = m_baseDanLength - (m_baseDanLength - danDistanceToTarget - m_baseDanLength * m_danOptions.squishThreshold) * m_danOptions.danLengthSquish;
+            //    danLength = danDistanceToTarget + (m_baseDanLength - danDistanceToTarget) * m_danOptions.danLengthSquish;
+            //       danLength = m_baseDanLength - (m_baseDanLength - danDistanceToTarget) * m_danOptions.danSoftness;
 
-            if (kokanPlane.GetSide(dan101_pos))
-                danLength = m_baseDanLength * (1 - m_danOptions.danSoftness);
+            //         if (kokanPlane.GetSide(dan101_pos))
+            //             danLength = m_baseDanLength * m_danOptions.squishThreshold + m_baseDanLength * (1 - m_danOptions.squishThreshold) * m_danOptions.danLengthSquish;
 
-            float minDanLength = danDistanceToTarget + (danLength * (1 - m_danOptions.telescopeThreshold));
+            //      float minDanLength = danDistanceToTarget + (danLength * (1 - m_danOptions.telescopeThreshold));
 
-            if (minDanLength > danLength)
-                minDanLength = danLength;
+            //       if (minDanLength > danLength)
+            //          minDanLength = danLength;
 
-            if (m_danOptions.forceTelescope)
-                danLength = minDanLength;
+            //      if (m_danOptions.forceTelescope)
+            //           danLength = minDanLength;
+
+       /*     Console.WriteLine($"m_baseDanLength {m_baseDanLength}");
+            Console.WriteLine($"danDistanceToTarget {danDistanceToTarget}");
+            Console.WriteLine($"danLength {danLength}");
+       */
 
             Vector3 adjustedDan109 = dan101_pos + danVector * danLength;
             bool constrainPointFound = false;
 
-            //   List<Vector3> adjustedDanPoints = new List<Vector3>();
-            //   adjustedDanPoints.Add(dan101_pos);
-            //   adjustedDanPoints.Add(adjustedDan109);
-
-            adjustedDan109 = ConstrainDanToCollisionPoints(dan101_pos, adjustedDan109, ref danLength, minDanLength, ref constrainPointFound, target.m_collisionPoints.frontCollisionPoints, target.m_collisionOptions.clippingDepth, true);
-            adjustedDan109 = ConstrainDanToCollisionPoints(dan101_pos, adjustedDan109, ref danLength, minDanLength, ref constrainPointFound, target.m_collisionPoints.backCollisionPoints, target.m_collisionOptions.clippingDepth, false);
+            adjustedDan109 = ConstrainDanToCollisionPoints(dan101_pos, adjustedDan109, danLength, ref constrainPointFound, target.m_collisionPoints.frontCollisionPoints, target.m_collisionOptions.clippingDepth, true);
+            adjustedDan109 = ConstrainDanToCollisionPoints(dan101_pos, adjustedDan109, danLength, ref constrainPointFound, target.m_collisionPoints.backCollisionPoints, target.m_collisionOptions.clippingDepth, false);
             return adjustedDan109;
         }
 
- /*       private void ConstrainBPDanToBody(CollisionAgent target, Vector3 lookTarget, Vector3 danVector, float danDistanceToTarget)
-        {
-            Console.WriteLine("ConstrainBPDanToBody");
-
-            float targetDanLength = m_baseDanLength;
-            Plane kokanPlane = new Plane(m_danPoints.danStart.forward, lookTarget);
-
-            if (m_baseDanLength > danDistanceToTarget)
-                targetDanLength = m_baseDanLength - (m_baseDanLength - danDistanceToTarget) * m_danOptions.danSoftness;
-
-            if (kokanPlane.GetSide(m_danPoints.danStart.position))
-                targetDanLength = m_baseDanLength * (1 - m_danOptions.danSoftness);
-
-            float minDanLength = danDistanceToTarget + (targetDanLength * (1 - m_danOptions.telescopeThreshold));
-
-            if (minDanLength > targetDanLength)
-                minDanLength = targetDanLength;
-
-            if (m_danOptions.forceTelescope)
-                targetDanLength = minDanLength;
-
-      //      targetDanLength = targetDanLength / 4;
-       //     minDanLength = minDanLength / 4;
-            Vector3 adjustedDan101 = m_danPoints.danStart.position;
-
-            Vector3 adjustedDan109 = adjustedDan101 + danVector * targetDanLength;
-            bool constrainPointFound = false;
-            adjustedDan109 = ConstrainDanToCollisionPoints(adjustedDan101, adjustedDan109, ref targetDanLength, minDanLength, ref constrainPointFound, target.m_collisionPoints.frontCollisionPoints, target.m_collisionOptions.clippingDepth, true);
-            adjustedDan109 = ConstrainDanToCollisionPoints(adjustedDan101, adjustedDan109, ref targetDanLength, minDanLength, ref constrainPointFound, target.m_collisionPoints.backCollisionPoints, target.m_collisionOptions.clippingDepth, false);
-
-
-
-            List<Vector3> adjustedDanPoints = new List<Vector3>();
-            Vector3 forwardVector = Vector3.Normalize(lookTarget - adjustedDan101);
-            adjustedDanPoints.Add(adjustedDan101);
-            adjustedDanPoints.Add(adjustedDan101 + forwardVector * targetDanLength);
-            adjustedDanPoints.Add(adjustedDan101 + forwardVector * targetDanLength * 2);
-            adjustedDanPoints.Add(adjustedDan101 + forwardVector * targetDanLength * 3);
-            adjustedDanPoints.Add(adjustedDan101 + forwardVector * targetDanLength * 4);
-
-            int i = 1;
-            foreach(var point in adjustedDanPoints)
-                Console.WriteLine($"dan10{i++} {point.x:F3} , {point.y:F3} , {point.z:F3}");
-
-
- //           bool constrainPointFound = false;
-   //         ConstrainDanToCollisionPoints(ref adjustedDanPoints, ref targetDanLength, minDanLength, ref constrainPointFound, target.m_collisionPoints.frontCollisionPoints, target.m_collisionOptions.clippingDepth, true, true);
-   //         ConstrainDanToCollisionPoints(ref adjustedDanPoints, ref targetDanLength, minDanLength, ref constrainPointFound, target.m_collisionPoints.backCollisionPoints, target.m_collisionOptions.clippingDepth, false, true);
-
-            /*
-                        Vector3 dan103Vector = Vector3.Normalize(lookTarget - adjustedDan101);
-                        Vector3 adjustedDan103 = adjustedDan101 + dan103Vector * targetDanLength;
-                        bool constrainPointFound = false;
-                        Vector3 forwardVector = dan103Vector;
-                        if (danDistanceToTarget < targetDanLength)
-                        {
-                            adjustedDan103 = ConstrainDanToCollisionPoints(adjustedDan101, adjustedDan103, ref targetDanLength, minDanLength, ref constrainPointFound, target.m_collisionPoints.frontCollisionPoints, target.m_collisionOptions.clippingDepth, true, ref forwardVector);
-                            adjustedDan103 = ConstrainDanToCollisionPoints(adjustedDan101, adjustedDan103, ref targetDanLength, minDanLength, ref constrainPointFound, target.m_collisionPoints.backCollisionPoints, target.m_collisionOptions.clippingDepth, false, ref forwardVector);
-                        }
-
-                        Vector3 dan105Vector = Vector3.Normalize(adjustedDan103 - adjustedDan101);
-                        if (constrainPointFound)
-                            dan105Vector = forwardVector;
-                        Vector3 adjustedDan105 = adjustedDan103 + dan105Vector * targetDanLength;
-                        if (danDistanceToTarget < 2 * targetDanLength)
-                        {
-                            constrainPointFound = false;
-                            adjustedDan105 = ConstrainDanToCollisionPoints(adjustedDan103, adjustedDan105, ref targetDanLength, minDanLength, ref constrainPointFound, target.m_collisionPoints.frontCollisionPoints, target.m_collisionOptions.clippingDepth, true, ref forwardVector, true);
-                            adjustedDan105 = ConstrainDanToCollisionPoints(adjustedDan103, adjustedDan105, ref targetDanLength, minDanLength, ref constrainPointFound, target.m_collisionPoints.backCollisionPoints, target.m_collisionOptions.clippingDepth, false, ref forwardVector, true);
-                        }
-
-                        Vector3 dan107Vector = Vector3.Normalize(adjustedDan105 - adjustedDan103);
-                        if (constrainPointFound)
-                            dan107Vector = forwardVector;
-                        Vector3 adjustedDan107 = adjustedDan105 + dan107Vector * targetDanLength;
-
-                        if (danDistanceToTarget < 3 * targetDanLength)
-                        {
-                            constrainPointFound = false;
-                            adjustedDan107 = ConstrainDanToCollisionPoints(adjustedDan105, adjustedDan107, ref targetDanLength, minDanLength, ref constrainPointFound, target.m_collisionPoints.frontCollisionPoints, target.m_collisionOptions.clippingDepth, true, ref forwardVector);
-                            adjustedDan107 = ConstrainDanToCollisionPoints(adjustedDan105, adjustedDan107, ref targetDanLength, minDanLength, ref constrainPointFound, target.m_collisionPoints.backCollisionPoints, target.m_collisionOptions.clippingDepth, false, ref forwardVector);
-                        }
-
-                        Vector3 dan109Vector = Vector3.Normalize(adjustedDan107 - adjustedDan105);
-                        if (constrainPointFound)
-                            dan109Vector = forwardVector;
-                        Vector3 adjustedDan109 = adjustedDan107 + dan109Vector * targetDanLength;
-                        if (danDistanceToTarget < 4 * targetDanLength)
-                        {
-                            constrainPointFound = false;
-                            adjustedDan109 = ConstrainDanToCollisionPoints(adjustedDan107, adjustedDan109, ref targetDanLength, minDanLength, ref constrainPointFound, target.m_collisionPoints.frontCollisionPoints, target.m_collisionOptions.clippingDepth, true, ref forwardVector);
-                            adjustedDan109 = ConstrainDanToCollisionPoints(adjustedDan107, adjustedDan109, ref targetDanLength, minDanLength, ref constrainPointFound, target.m_collisionPoints.backCollisionPoints, target.m_collisionOptions.clippingDepth, false, ref forwardVector);
-                        }*/
-            /*        Console.WriteLine($"danDistanceToTarget {danDistanceToTarget}");
-                    Console.WriteLine($"targetDanLength {targetDanLength}");
-                    Console.WriteLine($"lookTarget {lookTarget.x:F2} , {lookTarget.y:F2} , {lookTarget.z:F2}");
-                    Console.WriteLine($"adjustedDan101 {adjustedDan101.x:F2} , {adjustedDan101.y:F2} , {adjustedDan101.z:F2}");
-                    Console.WriteLine($"adjustedDan103 {adjustedDan103.x:F2} , {adjustedDan103.y:F2} , {adjustedDan103.z:F2}");
-                    Console.WriteLine($"adjustedDan105 {adjustedDan105.x:F2} , {adjustedDan105.y:F2} , {adjustedDan105.z:F2}");
-                    Console.WriteLine($"adjustedDan107 {adjustedDan107.x:F2} , {adjustedDan107.y:F2} , {adjustedDan107.z:F2}");
-                    Console.WriteLine($"adjustedDan109 {adjustedDan109.x:F2} , {adjustedDan109.y:F2} , {adjustedDan109.z:F2}");
-
-                    Console.WriteLine($"dan103Vector {dan103Vector.x:F2} , {dan103Vector.y:F2} , {dan103Vector.z:F2}");
-                    Console.WriteLine($"dan105Vector {dan105Vector.x:F2} , {dan105Vector.y:F2} , {dan105Vector.z:F2}");
-                    Console.WriteLine($"dan107Vector {dan107Vector.x:F2} , {dan107Vector.y:F2} , {dan107Vector.z:F2}");
-                    Console.WriteLine($"dan109Vector {dan109Vector.x:F2} , {dan109Vector.y:F2} , {dan109Vector.z:F2}");
-            
-
-            Console.WriteLine($"danDistanceToTarget {danDistanceToTarget}");
-            Console.WriteLine($"targetDanLength {targetDanLength}");
-            Console.WriteLine($"lookTarget {lookTarget.x:F3} , {lookTarget.y:F3} , {lookTarget.z:F3}");
-
-            i = 1;
-            foreach (var point in adjustedDanPoints)
-                Console.WriteLine($"dan10{i++} {point.x:F3} , {point.y:F3} , {point.z:F3}");
-
-            Vector3 dan101ForwardVector = Vector3.Normalize(adjustedDanPoints[1] - adjustedDanPoints[0]);
-            Quaternion dan101Quaternion = Quaternion.LookRotation(dan101ForwardVector, Vector3.Cross(dan101ForwardVector, m_danPoints.danTop.right));
-            m_danPoints.danStart.rotation = dan101Quaternion;
-
-            Vector3 dan103ForwardVector = Vector3.Normalize(adjustedDanPoints[2] - adjustedDanPoints[1]);
-            Quaternion dan103Quaternion = Quaternion.LookRotation(dan103ForwardVector, Vector3.Cross(dan103ForwardVector, m_danPoints.danTop.right));
-            m_danPoints.danMid[0].SetPositionAndRotation(adjustedDanPoints[1], dan103Quaternion);
-
-            Vector3 dan105ForwardVector = Vector3.Normalize(adjustedDanPoints[3] - adjustedDanPoints[2]);
-            Quaternion dan105Quaternion = Quaternion.LookRotation(dan105ForwardVector, Vector3.Cross(dan105ForwardVector, m_danPoints.danTop.right));
-            m_danPoints.danMid[1].SetPositionAndRotation(adjustedDanPoints[2], dan105Quaternion);
-
-            Vector3 dan107ForwardVector = Vector3.Normalize(adjustedDanPoints[4] - adjustedDanPoints[3]);
-            Quaternion dan107Quaternion = Quaternion.LookRotation(dan107ForwardVector, Vector3.Cross(dan107ForwardVector, m_danPoints.danTop.right));
-            m_danPoints.danMid[2].SetPositionAndRotation(adjustedDanPoints[3], dan107Quaternion);
-
-            m_danPoints.danEnd.SetPositionAndRotation(adjustedDanPoints[4], dan107Quaternion);
-        }*/
-
-        private Vector3 ConstrainDanToCollisionPoints(Vector3 danStart, Vector3 danEnd, ref float targetLength, float minLength, ref bool constrainPointFound, List<CollisionPoint> collisionPoints, float clippingDepth, bool frontSide)
+        private Vector3 ConstrainDanToCollisionPoints(Vector3 danStart, Vector3 danEnd, float targetLength, ref bool constrainPointFound, List<CollisionPoint> collisionPoints, float clippingDepth, bool frontSide)
         {
             Vector3 adjustedDanEnd = danEnd;
             if (constrainPointFound)
@@ -509,60 +527,60 @@ namespace Core_BetterPenetration
                 else
                     collisionPointPositions.Add(collisionPoint.transform.position - (clippingDepth + collisionPoint.info.offset) * collisionPoint.transform.forward);
 
-           /*     if (print)
+     /*          if (true)
                 {
                     if (!frontSide)
-             //           Console.WriteLine($"FrontHitPoint{collisionPointPositions.Count}: {collisionPointPositions[collisionPointPositions.Count - 1].x:F3}, {collisionPointPositions[collisionPointPositions.Count - 1].y:F3}, {collisionPointPositions[collisionPointPositions.Count - 1].z:F3}");
-             //       else
+                        Console.WriteLine($"FrontHitPoint{collisionPointPositions.Count}: {collisionPointPositions[collisionPointPositions.Count - 1].x:F3}, {collisionPointPositions[collisionPointPositions.Count - 1].y:F3}, {collisionPointPositions[collisionPointPositions.Count - 1].z:F3}");
+                    else
                         Console.WriteLine($"BackHitPoint{collisionPointPositions.Count}: {collisionPointPositions[collisionPointPositions.Count - 1].x:F3}, {collisionPointPositions[collisionPointPositions.Count - 1].y:F3}, {collisionPointPositions[collisionPointPositions.Count - 1].z:F3}");
                 }*/
             }
 
-      //      int currentCollisionPoint = 1;
+            //      int currentCollisionPoint = 1;
 
-      //      for (int danIndex = 1; danIndex < adjustedDanPoints.Count; danIndex++)
-       //     {
-      //          constainPastFarSide = false;
+            //      for (int danIndex = 1; danIndex < adjustedDanPoints.Count; danIndex++)
+            //     {
+            //          constainPastFarSide = false;
 
-                for (int index = 1; index < collisionPoints.Count; index++)
-                {
+            for (int index = 1; index < collisionPoints.Count; index++)
+            {
                 if (constrainPointFound)
                     break;
 
-                    CollisionPoint nearPoint = collisionPoints[index - 1];
-                    CollisionPoint farPoint = collisionPoints[index];
+                CollisionPoint nearPoint = collisionPoints[index - 1];
+                CollisionPoint farPoint = collisionPoints[index];
 
-                    Vector3 nearVectorRight = nearPoint.transform.right;
-                    Vector3 farVectorRight = farPoint.transform.right;
+                Vector3 nearVectorRight = nearPoint.transform.right;
+                Vector3 farVectorRight = farPoint.transform.right;
 
-                    if (frontSide == nearPoint.info.inward)
-                        nearVectorRight = -nearVectorRight;
+                if (frontSide == nearPoint.info.inward)
+                    nearVectorRight = -nearVectorRight;
 
-                    if (frontSide == farPoint.info.inward)
-                        farVectorRight = -farVectorRight;
+                if (frontSide == farPoint.info.inward)
+                    farVectorRight = -farVectorRight;
 
-                    TwistedPlane hPlane = new TwistedPlane(collisionPointPositions[index - 1], nearVectorRight, collisionPointPositions[index], farVectorRight);
+                TwistedPlane hPlane = new TwistedPlane(collisionPointPositions[index - 1], nearVectorRight, collisionPointPositions[index], farVectorRight);
 
-                    if (index == collisionPoints.Count - 1)
-                        constainPastFarSide = true;
+                if (index == collisionPoints.Count - 1)
+                    constainPastFarSide = true;
 
-                    adjustedDanEnd = hPlane.ConstrainLineToTwistedPlane(danStart, danEnd, ref targetLength, minLength, ref constainPastNearSide, constainPastFarSide, out constrainPointFound);
-              //      if (!frontSide)
-               //         Console.WriteLine($"ConstrainDanToCollisionPoints danIndex {danIndex} collision index {index} constrainPointFound {constrainPointFound} adjustmentMade {adjustmentMade}");
-               //     Console.WriteLine($"forwardVector {forwardVector}");
+                adjustedDanEnd = hPlane.ConstrainLineToTwistedPlane(danStart, danEnd, targetLength, ref constainPastNearSide, constainPastFarSide, out constrainPointFound);
+                //      if (!frontSide)
+                //         Console.WriteLine($"ConstrainDanToCollisionPoints danIndex {danIndex} collision index {index} constrainPointFound {constrainPointFound} adjustmentMade {adjustmentMade}");
+                //     Console.WriteLine($"forwardVector {forwardVector}");
 
-               //     if (constrainPointFound)
-              //      {
-                    //    if (adjustmentMade)
-                    //    {
-                     //       for (int nextDanIndex = danIndex + 1; nextDanIndex < adjustedDanPoints.Count; nextDanIndex++)
-                    //            adjustedDanPoints[nextDanIndex] = adjustedDanPoints[danIndex] + forwardVector * targetLength * (nextDanIndex - danIndex);
-                    //    }
+                //     if (constrainPointFound)
+                //      {
+                //    if (adjustmentMade)
+                //    {
+                //       for (int nextDanIndex = danIndex + 1; nextDanIndex < adjustedDanPoints.Count; nextDanIndex++)
+                //            adjustedDanPoints[nextDanIndex] = adjustedDanPoints[danIndex] + forwardVector * targetLength * (nextDanIndex - danIndex);
+                //    }
 
-              //          currentCollisionPoint = index;
-               //         break;
-               //     }
-            //    }
+                //          currentCollisionPoint = index;
+                //         break;
+                //     }
+                //    }
             }
 
             return adjustedDanEnd;
@@ -570,44 +588,72 @@ namespace Core_BetterPenetration
 
         private Vector3 ConstrainDanToHead(CollisionAgent target, Vector3 dan101_pos, Vector3 lookTarget, Vector3 danVector, float danDistanceToTarget, out float danLength)
         {
-            float maxDistance;
+            //    float maxDistance;
+
+         //   Console.WriteLine("ConstrainDanToHead");
 
             Vector3 headCollisionPoint = target.m_collisionPoints.headCollisionPoint.position;
 
             float danDistanceToLimit = Vector3.Distance(dan101_pos, headCollisionPoint);
             float targetDistanceToLimit = Vector3.Distance(lookTarget, headCollisionPoint);
 
+            danLength = m_baseDanLength;
+
             if (danDistanceToLimit < targetDistanceToLimit)
+                danDistanceToTarget = 0;
+         //   {
+             //   danLength = m_baseDanLength * m_danOptions.squishThreshold + m_baseDanLength * (1 - m_danOptions.squishThreshold) * m_danOptions.danLengthSquish;
+          //      danLength = m_baseDanLength * (1 - (1 - m_danOptions.squishThreshold) * m_danOptions.danLengthSquish);
+                //         danLength = m_baseDanLength * (1 - m_danOptions.danSoftness);
+                //        maxDistance = danDistanceToLimit;
+         //   }
+        //    else 
+            if (m_baseDanLength - danDistanceToTarget > m_baseDanLength * m_danOptions.squishThreshold)
             {
-                danLength = m_baseDanLength * (1 - m_danOptions.danSoftness);
-                maxDistance = danDistanceToLimit;
-            }
-            else
-            {
-                if (m_baseDanLength > danDistanceToTarget)
+                //            danLength = danDistanceToTarget + (m_baseDanLength - danDistanceToTarget) * m_danOptions.danLengthSquish;
+                danLength = m_baseDanLength - (m_baseDanLength - danDistanceToTarget - m_baseDanLength * m_danOptions.squishThreshold) * m_danOptions.danLengthSquish;
+
+           /*     if (m_baseDanLength > danDistanceToTarget)
                     danLength = m_baseDanLength - (m_baseDanLength - danDistanceToTarget) * m_danOptions.danSoftness;
                 else
                     danLength = m_baseDanLength;
-                maxDistance = danDistanceToTarget + targetDistanceToLimit;
+                maxDistance = danDistanceToTarget + targetDistanceToLimit;*/
             }
 
-            if (danLength > maxDistance)
-                danLength = maxDistance;
+     /*       Console.WriteLine($"m_baseDanLength {m_baseDanLength}");
+            Console.WriteLine($"danDistanceToLimit {danDistanceToLimit}");
+            Console.WriteLine($"targetDistanceToLimit {targetDistanceToLimit}");
+            Console.WriteLine($"danDistanceToTarget {danDistanceToTarget}");
+            Console.WriteLine($"danLength {danLength}");
+     */
+            //     if (danLength > maxDistance)
+            //         danLength = maxDistance;
 
             return (dan101_pos + danVector * danLength);
         }
 
         private Vector3 ConstrainDanToPull(Vector3 dan101_pos, Vector3 danVector, float danDistanceToTarget, out float danLength)
         {
-            danLength = m_baseDanLength - (m_baseDanLength - danDistanceToTarget) * m_danOptions.danSoftness;
-            float minDanLength = danDistanceToTarget + (danLength * (1 - m_danOptions.telescopeThreshold));
+       //     Console.WriteLine("ConstrainDanToPull");
 
-            if (minDanLength > danLength)
-                minDanLength = danLength;
+            danLength = m_baseDanLength;
+            if (m_baseDanLength - danDistanceToTarget > m_baseDanLength * m_danOptions.squishThreshold)
+                danLength = m_baseDanLength - (m_baseDanLength - danDistanceToTarget - m_baseDanLength * m_danOptions.squishThreshold) * m_danOptions.danLengthSquish;
+            //      danLength = danDistanceToTarget + (m_baseDanLength - danDistanceToTarget) * m_danOptions.danLengthSquish;
 
-            if (m_danOptions.forceTelescope)
-                danLength = minDanLength;
+       //     Console.WriteLine($"m_baseDanLength {m_baseDanLength}");
+      //      Console.WriteLine($"danDistanceToTarget {danDistanceToTarget}");
+       //     Console.WriteLine($"danLength {danLength}");
 
+            /*     danLength = m_baseDanLength - (m_baseDanLength - danDistanceToTarget) * m_danOptions.danSoftness;
+                 float minDanLength = danDistanceToTarget + (danLength * (1 - m_danOptions.telescopeThreshold));
+
+                 if (minDanLength > danLength)
+                     minDanLength = danLength;
+
+                 if (m_danOptions.forceTelescope)
+                     danLength = minDanLength;
+            */
             return (dan101_pos + danVector * danLength);
         }
 
@@ -671,19 +717,25 @@ namespace Core_BetterPenetration
 
         private void AddDanColliders(CollisionAgent target)
         {
-            foreach (DynamicBone dynamicBone in target.m_kokanDynamicBones)
+            foreach (var danCollider in m_danColliders)
             {
-                if (m_danCollider != null && !dynamicBone.m_Colliders.Contains(m_danCollider))
-                    dynamicBone.m_Colliders.Add(m_danCollider);
+                foreach (DynamicBone dynamicBone in target.m_kokanDynamicBones)
+                {
+                    if (danCollider != null && !dynamicBone.m_Colliders.Contains(danCollider))
+                        dynamicBone.m_Colliders.Add(danCollider);
+                }
             }
         }
 
         private void RemoveDanColliders(CollisionAgent target)
         {
-            foreach (DynamicBone dynamicBone in target.m_kokanDynamicBones)
+            foreach (var danCollider in m_danColliders)
             {
-                if (m_danCollider != null)
-                    dynamicBone.m_Colliders.Remove(m_danCollider);
+                foreach (DynamicBone dynamicBone in target.m_kokanDynamicBones)
+                {
+                    if (danCollider != null)
+                        dynamicBone.m_Colliders.Remove(danCollider);
+                }
             }
         }
 
@@ -694,7 +746,7 @@ namespace Core_BetterPenetration
                 if (m_indexCollider != null && !dynamicBone.m_Colliders.Contains(m_indexCollider))
                     dynamicBone.m_Colliders.Add(m_indexCollider);
 
-                if (m_middleCollider!= null && !dynamicBone.m_Colliders.Contains(m_middleCollider))
+                if (m_middleCollider != null && !dynamicBone.m_Colliders.Contains(m_middleCollider))
                     dynamicBone.m_Colliders.Add(m_middleCollider);
 
                 if (m_ringCollider != null && !dynamicBone.m_Colliders.Contains(m_ringCollider))
@@ -736,7 +788,8 @@ namespace Core_BetterPenetration
 
             ClearTarget();
 
-            UnityEngine.Object.Destroy(m_danCollider);
+            foreach (var danCollider in m_danColliders)
+                UnityEngine.Object.Destroy(danCollider);
             UnityEngine.Object.Destroy(m_indexCollider);
             UnityEngine.Object.Destroy(m_middleCollider);
             UnityEngine.Object.Destroy(m_ringCollider);
