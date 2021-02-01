@@ -14,6 +14,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)DanOptions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CollisionPoints.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)DanPoint.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)DanPoints.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MathHelpers.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)DanAgent.cs" />

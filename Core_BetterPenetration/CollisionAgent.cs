@@ -16,6 +16,8 @@ namespace Core_BetterPenetration
         private bool m_collisionPointsFound = false;
 
         public Transform m_bpKokanTarget;
+        public Transform m_innerTarget;
+        public Transform m_innerHeadTarget;
         public Transform m_kokanBone;
         public List<DynamicBone> m_kokanDynamicBones = new List<DynamicBone>();
 
@@ -53,7 +55,7 @@ namespace Core_BetterPenetration
                 Transform backHPoint = m_collisionCharacter.GetComponentsInChildren<Transform>().FirstOrDefault(x => x.name != null && x.name.Contains(options.backCollisonInfo[index].name));
                 backHPoints.Add(new CollisionPoint(backHPoint, options.backCollisonInfo[index]));
             }
-            Transform backOfHead = m_collisionCharacter.GetComponentsInChildren<Transform>().FirstOrDefault(x => x.name != null && x.name.Contains(BoneNames.headLimit));
+            Transform backOfHead = m_collisionCharacter.GetComponentsInChildren<Transform>().FirstOrDefault(x => x.name != null && x.name.Contains(BoneNames.HeadLimit));
 
             m_bpKokanTarget = m_collisionCharacter.GetComponentsInChildren<Transform>().FirstOrDefault(x => x.name != null && x.name.Equals(LookTargets.BPKokanTarget));
             if (m_bpKokanTarget != null)
@@ -62,6 +64,9 @@ namespace Core_BetterPenetration
                 frontHPoints[0].transform = m_bpKokanTarget;
                 frontHPoints[0].info.name = LookTargets.BPKokanTarget;
             }
+
+            m_innerTarget = m_collisionCharacter.GetComponentsInChildren<Transform>().FirstOrDefault(x => x.name != null && x.name.Equals(LookTargets.InnerTarget));
+            m_innerHeadTarget = m_collisionCharacter.GetComponentsInChildren<Transform>().FirstOrDefault(x => x.name != null && x.name.Contains(LookTargets.InnerHeadTarget));
 
             if (frontHPoints.Count == options.frontCollisionInfo.Count && backHPoints.Count == options.backCollisonInfo.Count && backOfHead != null)
             {

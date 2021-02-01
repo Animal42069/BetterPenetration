@@ -37,6 +37,7 @@ namespace AI_BetterPenetration
         private static ConfigEntry<float> _danGirthSquishFactor;
         private static ConfigEntry<float> _danSquishThreshold;
         private static ConfigEntry<bool> _useFingerColliders;
+        private static ConfigEntry<bool> _simplifyPenetration;
 
         private static ConfigEntry<float> _clippingDepth;
         private static ConfigEntry<float> _kokanOffsetForward;
@@ -75,6 +76,8 @@ namespace AI_BetterPenetration
             (_danSquishThreshold = Config.Bind("Male Options", "Penis: Squish Threshold", 0.2f, new ConfigDescription("Allows the penis to begin squishing (shorten length increase girth) after this amount of the penis has penetrated.", new AcceptableValueRange<float>(0, 1)))).SettingChanged += (s, e) =>
             { UpdateDanOptions(); };
             (_useFingerColliders = Config.Bind("Male Options", "Finger Collider: Enable", true, "Use finger colliders")).SettingChanged += (s, e) =>
+            { UpdateDanOptions(); };
+            (_simplifyPenetration = Config.Bind("Male Options", "Simplify Penetration Calculation", false, "Simplifys penetration calclation by always having it target the same internal point.  Only valid for BP penis uncensors.")).SettingChanged += (s, e) =>
             { UpdateDanOptions(); };
 
             (_clippingDepth = Config.Bind("Female Options", "Clipping Depth", 0.25f, "Set how close to body surface to limit penis for clipping purposes. Smaller values will result in more clipping through the body, larger values will make the shaft wander further away from the intended penetration point.")).SettingChanged += (s, e) =>
@@ -127,7 +130,7 @@ namespace AI_BetterPenetration
             if (!inHScene)
                 return;
 
-            Core.UpdateDanOptions(0, _danLengthSquishFactor.Value, _danGirthSquishFactor.Value, _danSquishThreshold.Value, _useFingerColliders.Value);
+            Core.UpdateDanOptions(0, _danLengthSquishFactor.Value, _danGirthSquishFactor.Value, _danSquishThreshold.Value, _useFingerColliders.Value, _simplifyPenetration.Value);
         }
 
         private static void UpdateCollisionOptions()
@@ -182,7 +185,7 @@ namespace AI_BetterPenetration
             {
                 new DanOptions(_danColliderVerticalCenter.Value, _danColliderRadius.Value, _danColliderHeadLength.Value,
                  _danLengthSquishFactor.Value, _danGirthSquishFactor.Value, _danSquishThreshold.Value,
-                _fingerColliderRadius.Value, _fingerColliderLength.Value, _useFingerColliders.Value)
+                _fingerColliderRadius.Value, _fingerColliderLength.Value, _useFingerColliders.Value, _simplifyPenetration.Value)
             };
 
             return danOptions;

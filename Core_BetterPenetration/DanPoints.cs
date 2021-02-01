@@ -6,39 +6,63 @@ namespace Core_BetterPenetration
     class DanPoints
     {
         public Transform danTop;
-        public Transform danStart;
-        public Transform danEnd;
-        public List<Transform> danPoints;
-        public List<Vector3> danScale;
-        public List<Vector3> danLossyScale;
+        public List<DanPoint> danPoints;
 
         public DanPoints(Transform start, Transform end, Transform top, Transform[] mid = null)
         {
-            danStart = start;
-            danEnd = end;
             danTop = top;
 
-            danPoints = new List<Transform>();
-            danScale = new List<Vector3>();
-            danLossyScale = new List<Vector3>();
-
-            danPoints.Add(start);
-            danScale.Add(start.localScale);
-            danLossyScale.Add(start.lossyScale);
-
+            danPoints = new List<DanPoint>();
+            danPoints.Add(new DanPoint(start));
             if (mid != null)
             {
                 foreach (var midPoint in mid)
-                {
-                    danPoints.Add(midPoint);
-                    danScale.Add(midPoint.localScale);
-                    danLossyScale.Add(midPoint.lossyScale);
-                }
+                    danPoints.Add(new DanPoint(midPoint));
+            }
+            danPoints.Add(new DanPoint(end));
+        }
+
+        public void AimDanPoints(List<Vector3> newDanPositions)
+        {
+            if (newDanPositions.Count != danPoints.Count)
+                return;
+
+            Quaternion danQuaternion = Quaternion.identity;
+            for (int point = 0; point < danPoints.Count - 1; point++)
+            {
+                Vector3 forwardVector = Vector3.Normalize(newDanPositions[point + 1] - newDanPositions[point]);
+                danQuaternion = Quaternion.LookRotation(forwardVector, Vector3.Cross(forwardVector, danTop.right));
+                danPoints[point].transform.SetPositionAndRotation(newDanPositions[point], danQuaternion);
             }
 
-            danPoints.Add(end);
-            danScale.Add(end.localScale);
-            danLossyScale.Add(end.lossyScale);
+            danPoints[danPoints.Count - 1].transform.SetPositionAndRotation(newDanPositions[danPoints.Count - 1], danQuaternion);
+        }
+
+        public void SquishDanGirth(float girthScaleFactor)
+        {
+            float halfGirthScaleFactor = (1 - (1 - 1 / girthScaleFactor) / 2);
+            float inverseGirthScaleFactor = 1 / girthScaleFactor;
+
+            for (int point = 0; point < danPoints.Count; point++)
+            {
+                if (point <= danPoints.Count / 3)
+                    danPoints[point].ScaleDanGirth(girthScaleFactor);
+                else if (point >= danPoints.Count * 2 / 3)
+                    danPoints[point].ScaleDanGirth(inverseGirthScaleFactor);
+                else
+                    danPoints[point].ScaleDanGirth(halfGirthScaleFactor);
+            }
+        }
+
+        public void ResetDanPoints()
+        {
+            foreach (var danPoint in danPoints)
+                danPoint.ResetDanPoint();
+        }
+
+        public Vector3 GetDanStartPosition()
+        {
+            return danPoints[0].transform.position;
         }
     }
 }

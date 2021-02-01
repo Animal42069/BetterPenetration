@@ -11,10 +11,11 @@
         public float fingerRadius;
         public float fingerLength;
         public bool useFingerColliders;
+        public bool simplifyPenetration;
 
         public DanOptions(float danVerticalCenter, float danRadius, float danHeadLength, 
             float danLengthSquish, float danGirthSquish, float squishThreshold,
-            float fingerRadius, float fingerLength, bool useFingerColliders)
+            float fingerRadius, float fingerLength, bool useFingerColliders, bool simplifyPenetration)
         {
             this.danVerticalCenter = danVerticalCenter;
             this.danRadius = danRadius;
@@ -25,6 +26,7 @@
             this.fingerRadius = fingerRadius;
             this.fingerLength = fingerLength;
             this.useFingerColliders = useFingerColliders;
+            this.simplifyPenetration = simplifyPenetration;
         }
     }
 }

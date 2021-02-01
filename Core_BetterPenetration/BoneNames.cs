@@ -9,11 +9,13 @@ namespace Core_BetterPenetration
         public const string KokanTarget = "k_f_kokan_00";
         public const string BPKokanTarget = "cf_J_Vagina_root";
         public const string AnaTarget = "k_f_ana_00";
+        public const string InnerTarget = "cf_J_Kosi01";
+        public const string InnerHeadTarget = "cf_J_Head";
     }
 
     static class BoneNames
     {
-        public const string headLimit = "cf_J_Head";
+        public const string HeadLimit = "cf_J_Head";
         public const string KokanBone = "cf_J_Kokan";
         public const string DanBase = "cm_J_dan101_00";
         public const string DanMid0 = "cm_J_dan103_00";
@@ -24,7 +26,7 @@ namespace Core_BetterPenetration
         public const string IndexFinger = "cf_J_Hand_Index03_R";
         public const string MiddleFinger = "cf_J_Hand_Middle03_R";
         public const string RingFinger = "cf_J_Hand_Ring03_R";
-        public const string BPBone = "cf_J_Vagina";
+        public const string BPBone = "cf_J_Vagina";     
 
         public static readonly List<string> frontCollisionList = new List<string> { LookTargets.KokanTarget, "cf_J_sk_00_02", "N_Waist_f", "k_f_spine03_03" };
         public static readonly List<string> backCollisionList = new List<string> { LookTargets.AnaTarget, "cf_J_sk_04_02", "N_Waist_b", "N_Back" };
@@ -48,11 +50,13 @@ namespace Core_BetterPenetration
         public const string KokanTarget = "k_f_kokan_00";
         public const string BPKokanTarget = "cf_J_Vagina_root";
         public const string AnaTarget = "k_f_ana_00";
+        public const string InnerTarget = "cf_J_Kosi01";
+        public const string InnerHeadTarget = "cf_J_Head";
     }
 
     static class BoneNames
     {
-        public const string headLimit = "cf_j_head";
+        public const string HeadLimit = "cf_j_head";
         public const string KokanBone = "cf_j_kokan";
         public const string DanBase = "cm_J_dan101_00";
         public const string DanMid0 = "cm_J_dan103_00";

@@ -159,12 +159,12 @@ namespace Core_BetterPenetration
             danAgents[maleNum].UpdateFingerColliders(fingerRadius, fingerLength);
         }
 
-        public static void UpdateDanOptions(int maleNum, float danLengthSquish, float danGirthSquish, float squishThreshold, bool useFingerColliders)
+        public static void UpdateDanOptions(int maleNum, float danLengthSquish, float danGirthSquish, float squishThreshold, bool useFingerColliders, bool simplifyPenetration)
         {
             if (maleNum >= danAgents.Count || danAgents[maleNum] == null)
                 return;
 
-            danAgents[maleNum].UpdateDanOptions(danLengthSquish, danGirthSquish, squishThreshold, useFingerColliders);
+            danAgents[maleNum].UpdateDanOptions(danLengthSquish, danGirthSquish, squishThreshold, useFingerColliders, simplifyPenetration);
         }
 
         public static void UpdateCollisionOptions(int femaleNum, CollisionOptions options)
@@ -185,7 +185,7 @@ namespace Core_BetterPenetration
                 foreach (var socketAgent in collisionAgents)
                     danAgent.RemoveColliders(socketAgent);
 
-                danAgent.DestroyColliders();
+                danAgent.ClearDanAgent();
             }
 
             danAgents = null;
