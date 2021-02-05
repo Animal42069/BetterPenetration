@@ -12,8 +12,7 @@ namespace Core_BetterPenetration
         {
             danTop = top;
 
-            danPoints = new List<DanPoint>();
-            danPoints.Add(new DanPoint(start));
+            danPoints = new List<DanPoint> { new DanPoint(start) };
             if (mid != null)
             {
                 foreach (var midPoint in mid)
@@ -58,6 +57,10 @@ namespace Core_BetterPenetration
         {
             foreach (var danPoint in danPoints)
                 danPoint.ResetDanPoint();
+
+            Quaternion danRotation = danPoints[0].transform.rotation;
+            for (int point = 1; point < danPoints.Count - 1; point++)
+                danPoints[point].transform.rotation = danRotation;
         }
 
         public Vector3 GetDanStartPosition()

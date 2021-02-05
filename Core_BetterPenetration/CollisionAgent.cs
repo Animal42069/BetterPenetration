@@ -32,8 +32,8 @@ namespace Core_BetterPenetration
         {
             m_collisionOptions = options;
 
-            List<CollisionPoint> frontHPoints = new List<CollisionPoint>();
-            List<CollisionPoint> backHPoints = new List<CollisionPoint>();
+            List<CollisionPoint> frontCollisionPoints = new List<CollisionPoint>();
+            List<CollisionPoint> backCollisionPoints = new List<CollisionPoint>();
             m_collisionPointsFound = false;
 
             if (character == null)
@@ -47,31 +47,31 @@ namespace Core_BetterPenetration
 
             for (int index = 0; index < options.frontCollisionInfo.Count; index++)
             {
-                Transform frontHPoint = m_collisionCharacter.GetComponentsInChildren<Transform>().FirstOrDefault(x => x.name != null && x.name.Contains(options.frontCollisionInfo[index].name));
-                frontHPoints.Add(new CollisionPoint(frontHPoint, options.frontCollisionInfo[index]));
+                Transform frontCollisionPoint = m_collisionCharacter.GetComponentsInChildren<Transform>().FirstOrDefault(x => x.name != null && x.name.Contains(options.frontCollisionInfo[index].name));
+                frontCollisionPoints.Add(new CollisionPoint(frontCollisionPoint, options.frontCollisionInfo[index]));
             }
             for (int index = 0; index < options.backCollisonInfo.Count; index++)
             {
-                Transform backHPoint = m_collisionCharacter.GetComponentsInChildren<Transform>().FirstOrDefault(x => x.name != null && x.name.Contains(options.backCollisonInfo[index].name));
-                backHPoints.Add(new CollisionPoint(backHPoint, options.backCollisonInfo[index]));
+                Transform backCollisionPoint = m_collisionCharacter.GetComponentsInChildren<Transform>().FirstOrDefault(x => x.name != null && x.name.Contains(options.backCollisonInfo[index].name));
+                backCollisionPoints.Add(new CollisionPoint(backCollisionPoint, options.backCollisonInfo[index]));
             }
-            Transform backOfHead = m_collisionCharacter.GetComponentsInChildren<Transform>().FirstOrDefault(x => x.name != null && x.name.Contains(BoneNames.HeadLimit));
+            Transform headCollisionPoint = m_collisionCharacter.GetComponentsInChildren<Transform>().FirstOrDefault(x => x.name != null && x.name.Contains(BoneNames.HeadLimit));
 
             m_bpKokanTarget = m_collisionCharacter.GetComponentsInChildren<Transform>().FirstOrDefault(x => x.name != null && x.name.Equals(LookTargets.BPKokanTarget));
             if (m_bpKokanTarget != null)
             {
                 Console.WriteLine("BP Target Found " + m_bpKokanTarget.name);
-                frontHPoints[0].transform = m_bpKokanTarget;
-                frontHPoints[0].info.name = LookTargets.BPKokanTarget;
+                frontCollisionPoints[0].transform = m_bpKokanTarget;
+                frontCollisionPoints[0].info.name = LookTargets.BPKokanTarget;
             }
 
             m_innerTarget = m_collisionCharacter.GetComponentsInChildren<Transform>().FirstOrDefault(x => x.name != null && x.name.Equals(LookTargets.InnerTarget));
             m_innerHeadTarget = m_collisionCharacter.GetComponentsInChildren<Transform>().FirstOrDefault(x => x.name != null && x.name.Contains(LookTargets.InnerHeadTarget));
 
-            if (frontHPoints.Count == options.frontCollisionInfo.Count && backHPoints.Count == options.backCollisonInfo.Count && backOfHead != null)
+            if (frontCollisionPoints.Count == options.frontCollisionInfo.Count && backCollisionPoints.Count == options.backCollisonInfo.Count && headCollisionPoint != null)
             {
                 m_collisionPointsFound = true;
-                m_collisionPoints = new CollisionPoints(frontHPoints, backHPoints, backOfHead);
+                m_collisionPoints = new CollisionPoints(frontCollisionPoints, backCollisionPoints, headCollisionPoint);
             }
 
             Console.WriteLine("constrainPointsFound " + m_collisionPointsFound);

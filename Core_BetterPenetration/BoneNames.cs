@@ -29,7 +29,7 @@ namespace Core_BetterPenetration
         public const string BPBone = "cf_J_Vagina";     
 
         public static readonly List<string> frontCollisionList = new List<string> { LookTargets.KokanTarget, "cf_J_sk_00_02", "N_Waist_f", "k_f_spine03_03" };
-        public static readonly List<string> backCollisionList = new List<string> { LookTargets.AnaTarget, "cf_J_sk_04_02", "N_Waist_b", "N_Back" };
+        public static readonly List<string> backCollisionList = new List<string> { LookTargets.AnaTarget, "N_Waist_b", "N_Back" };
 
         public static readonly List<string> animationAdjustmentList = new List<string> { "ais_f_00", "ais_f_01", "ais_f_12", "ais_f_19", "ais_f_20" };
 

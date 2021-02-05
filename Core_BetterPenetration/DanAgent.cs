@@ -142,13 +142,15 @@ namespace Core_BetterPenetration
             m_danOptions.fingerLength = fingerLength;
         }
 
-        public void UpdateDanOptions(float danLengthSquish, float danGirthSquish, float squishThreshold, bool useFingerColliders, bool simplifyPenetration)
+        public void UpdateDanOptions(float danLengthSquish, float danGirthSquish, float squishThreshold, bool squishOralGirth, bool useFingerColliders, bool simplifyPenetration, bool simplifyOral)
         {
             m_danOptions.danLengthSquish = danLengthSquish;
             m_danOptions.danGirthSquish = danGirthSquish;
             m_danOptions.squishThreshold = squishThreshold;
+            m_danOptions.squishOralGirth = squishOralGirth;
             m_danOptions.useFingerColliders = useFingerColliders;
             m_danOptions.simplifyPenetration = simplifyPenetration;
+            m_danOptions.simplifyOral = simplifyOral;
         }
 
         public void SetDanTarget(CollisionAgent targetAgent)
@@ -159,7 +161,7 @@ namespace Core_BetterPenetration
             Vector3 danStartPosition = m_danPoints.GetDanStartPosition();
             Vector3 danTarget = m_referenceTarget.position;
 
-            if (m_referenceTarget.name == LookTargets.KokanTarget || m_referenceTarget.name == LookTargets.BPKokanTarget)
+            if (m_referenceTarget.name == LookTargets.KokanTarget)
                 danTarget += (m_referenceTarget.forward * targetAgent.m_collisionOptions.kokanForwardOffset) + (m_referenceTarget.up * targetAgent.m_collisionOptions.kokanUpOffset);
             else if (m_referenceTarget.name == LookTargets.HeadTarget)
                 danTarget += (m_referenceTarget.forward * targetAgent.m_collisionOptions.headForwardOffset) + (m_referenceTarget.up * targetAgent.m_collisionOptions.headUpOffset);
@@ -172,6 +174,10 @@ namespace Core_BetterPenetration
 
             float danDistanceToTarget = Vector3.Distance(danStartPosition, danTarget);
             float adjustedDanLength = GetSquishedDanLength(danDistanceToTarget);
+            float girthScaleFactor = 1 + (m_baseDanLength / adjustedDanLength - 1) * m_danOptions.danGirthSquish;
+
+            if (m_referenceTarget.name != LookTargets.HeadTarget || m_danOptions.squishOralGirth)
+                m_danPoints.SquishDanGirth(girthScaleFactor);
 
             if (m_referenceTarget.name == LookTargets.KokanTarget || m_referenceTarget.name == LookTargets.AnaTarget || m_referenceTarget.name == LookTargets.BPKokanTarget)
                 adjustedDanLength = GetMaxDanLength(adjustedDanLength, danTarget, targetAgent.m_innerTarget.position, danDistanceToTarget);
@@ -179,9 +185,6 @@ namespace Core_BetterPenetration
                 adjustedDanLength = GetMaxDanLength(adjustedDanLength, danTarget, targetAgent.m_innerHeadTarget.position, danDistanceToTarget);
 
             danEndTarget = ConstrainDan(danStartPosition, danTargetVector, danEndTarget, adjustedDanLength, danDistanceToTarget, targetAgent);
-
-            float girthScaleFactor = 1 + (m_baseDanLength / adjustedDanLength - 1) * m_danOptions.danGirthSquish;
-            m_danPoints.SquishDanGirth(girthScaleFactor);
             ScaleDanColliders(adjustedDanLength);
 
             List<Vector3> adjustedDanPoints = AdjustDanPointsToTargets(danTarget, danEndTarget, adjustedDanLength, danDistanceToTarget);
@@ -201,7 +204,7 @@ namespace Core_BetterPenetration
                 }
                 else if (m_referenceTarget.name == LookTargets.HeadTarget)
                 {
-                    if (m_danOptions.simplifyPenetration && m_bpDanPointsFound)
+                    if (m_danOptions.simplifyOral && m_bpDanPointsFound)
                         danEndTarget = targetAgent.m_innerHeadTarget.position;
                     else
                         danEndTarget = ConstrainDanToHead(danStart, danTargetVector, danLength);
@@ -285,8 +288,10 @@ namespace Core_BetterPenetration
         private float GetSquishedDanLength(float danDistanceToTarget)
         {
             float danLength = m_baseDanLength;
-            if ((m_baseDanLength >= danDistanceToTarget) && (m_baseDanLength - danDistanceToTarget > m_baseDanLength * m_danOptions.squishThreshold))
-                danLength = m_baseDanLength - (m_baseDanLength - danDistanceToTarget - m_baseDanLength * m_danOptions.squishThreshold) * m_danOptions.danLengthSquish;
+            float innerSquishDistance = m_baseDanLength - m_baseDanLength * m_danOptions.squishThreshold - danDistanceToTarget;
+
+            if (innerSquishDistance > 0)
+                danLength = m_baseDanLength - (innerSquishDistance) * m_danOptions.danLengthSquish;
 
             return danLength;
         }
@@ -294,10 +299,6 @@ namespace Core_BetterPenetration
         private float GetMaxDanLength(float danLength, Vector3 lookTarget, Vector3 limitPoint, float danDistanceToTarget)
         {
             float maxDanLength = danLength;
-
-            //        Vector3 headCollisionPoint = targetAgent.m_collisionPoints.headCollisionPoint.position;
-
-            //       float danDistanceToTarget = Vector3.Distance(dan101_pos, lookTarget);
             float targetDistanceToLimit = Vector3.Distance(lookTarget, limitPoint);
 
             if (maxDanLength > danDistanceToTarget + targetDistanceToLimit)
@@ -484,12 +485,6 @@ namespace Core_BetterPenetration
         {
             m_danPoints.ResetDanPoints();
             ScaleDanColliders(m_baseDanLength);
-
-   /*         m_danPoints.SquishDanGirth(1);
-            ScaleDanColliders(m_baseDanLength);
-            Vector3 danEndTarget = m_danPoints.danPoints[0].position + m_danPoints.danPoints[0].forward * m_baseDanLength;
-            List<Vector3> adjustedDanPoints = AdjustDanPointsToTargets(danEndTarget, danEndTarget, m_baseDanLength, m_baseDanLength);
-            m_danPoints.AimDanPoints(adjustedDanPoints);*/
         }
 
         public void RemoveColliders(CollisionAgent target)
