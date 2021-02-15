@@ -8,6 +8,7 @@
         public float danLengthSquish;
         public float danGirthSquish;
         public float squishThreshold;
+#if !AI_STUDIO && ! HS2_STUDIO
         public float fingerRadius;
         public float fingerLength;
         public bool useFingerColliders;
@@ -33,5 +34,17 @@
             this.simplifyOral = simplifyOral;
             this.squishOralGirth = squishOralGirth;
         }
+#else
+        public DanOptions(float danVerticalCenter, float danRadius, float danHeadLength,
+            float danLengthSquish, float danGirthSquish, float squishThreshold)
+        {
+            this.danVerticalCenter = danVerticalCenter;
+            this.danRadius = danRadius;
+            this.danHeadLength = danHeadLength;
+            this.danLengthSquish = danLengthSquish;
+            this.danGirthSquish = danGirthSquish;
+            this.squishThreshold = squishThreshold;
+        }
+#endif
     }
 }

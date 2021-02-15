@@ -1,0 +1,108 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{7008D2E3-1C29-4786-A4F6-7CFD6D6D8AD9}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>AI_Studio_BetterPenetration</RootNamespace>
+    <AssemblyName>AI_Studio_BetterPenetration</AssemblyName>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\..\..\..\..\..\Program Files %28x86%29\AI-Shoujo\BepInEx\Plugins\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;AI_STUDIO</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE;AI_STUDIO</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="0Harmony, Version=2.2.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\IllusionLibs.BepInEx.Harmony.2.2.0.1\lib\net35\0Harmony.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="AIAPI, Version=1.15.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\IllusionModdingAPI.AIAPI.1.15.0\lib\net46\AIAPI.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="AI_ExtensibleSaveFormat, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\ExtensibleSaveFormat.AIGirl.16.2.1\lib\net46\AI_ExtensibleSaveFormat.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Assembly-CSharp, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\IllusionLibs.AIGirl.Assembly-CSharp.2020.5.29.2\lib\net46\Assembly-CSharp.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="BepInEx, Version=5.4.4.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\IllusionLibs.BepInEx.5.4.4\lib\net35\BepInEx.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="BepInEx.Harmony, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\IllusionLibs.BepInEx.Harmony.2.2.0.1\lib\net35\BepInEx.Harmony.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="ConfigurationManager, Version=16.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\BepInEx.ConfigurationManager.16.1.0\lib\net35\ConfigurationManager.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+    <Reference Include="UniRx, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\IllusionLibs.AIGirl.UniRx.2020.5.29.2\lib\net46\UniRx.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\IllusionLibs.AIGirl.UnityEngine.CoreModule.2018.2.21.3\lib\net46\UnityEngine.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\IllusionLibs.AIGirl.UnityEngine.CoreModule.2018.2.21.3\lib\net46\UnityEngine.CoreModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AI_Studio_BetterPenetration.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Better Penetration Studio Instructions.pdf" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="..\Core_BetterPenetration\Core_BetterPenetration.projitems" Label="Shared" />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="..\packages\IllusionLibs.BepInEx.Harmony.2.2.0.1\build\IllusionLibs.BepInEx.Harmony.targets" Condition="Exists('..\packages\IllusionLibs.BepInEx.Harmony.2.2.0.1\build\IllusionLibs.BepInEx.Harmony.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\IllusionLibs.BepInEx.Harmony.2.2.0.1\build\IllusionLibs.BepInEx.Harmony.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\IllusionLibs.BepInEx.Harmony.2.2.0.1\build\IllusionLibs.BepInEx.Harmony.targets'))" />
+    <Error Condition="!Exists('..\packages\IllusionLibs.AIGirl.Assembly-CSharp.2020.5.29.2\build\IllusionLibs.AIGirl.Assembly-CSharp.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\IllusionLibs.AIGirl.Assembly-CSharp.2020.5.29.2\build\IllusionLibs.AIGirl.Assembly-CSharp.targets'))" />
+    <Error Condition="!Exists('..\packages\IllusionLibs.AIGirl.UniRx.2020.5.29.2\build\IllusionLibs.AIGirl.UniRx.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\IllusionLibs.AIGirl.UniRx.2020.5.29.2\build\IllusionLibs.AIGirl.UniRx.targets'))" />
+    <Error Condition="!Exists('..\packages\IllusionLibs.AIGirl.UnityEngine.CoreModule.2018.2.21.3\build\IllusionLibs.AIGirl.UnityEngine.CoreModule.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\IllusionLibs.AIGirl.UnityEngine.CoreModule.2018.2.21.3\build\IllusionLibs.AIGirl.UnityEngine.CoreModule.targets'))" />
+  </Target>
+  <Import Project="..\packages\IllusionLibs.AIGirl.Assembly-CSharp.2020.5.29.2\build\IllusionLibs.AIGirl.Assembly-CSharp.targets" Condition="Exists('..\packages\IllusionLibs.AIGirl.Assembly-CSharp.2020.5.29.2\build\IllusionLibs.AIGirl.Assembly-CSharp.targets')" />
+  <Import Project="..\packages\IllusionLibs.AIGirl.UniRx.2020.5.29.2\build\IllusionLibs.AIGirl.UniRx.targets" Condition="Exists('..\packages\IllusionLibs.AIGirl.UniRx.2020.5.29.2\build\IllusionLibs.AIGirl.UniRx.targets')" />
+  <Import Project="..\packages\IllusionLibs.AIGirl.UnityEngine.CoreModule.2018.2.21.3\build\IllusionLibs.AIGirl.UnityEngine.CoreModule.targets" Condition="Exists('..\packages\IllusionLibs.AIGirl.UnityEngine.CoreModule.2018.2.21.3\build\IllusionLibs.AIGirl.UnityEngine.CoreModule.targets')" />
+</Project>

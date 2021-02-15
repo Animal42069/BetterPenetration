@@ -11,10 +11,20 @@ Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Core_BetterPenetration", "C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_BetterPenetration", "KK_BetterPenetration\KK_BetterPenetration.csproj", "{13F643E0-45CA-483E-ADFA-32634A22787E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HS2_Studio_BetterPenetration", "HS2_Studio_BetterPenetration\HS2_Studio_BetterPenetration.csproj", "{06A2BE07-7AB5-46CD-8A77-FDE1BFDE687C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AI_Studio_BetterPenetrationControls", "AI_Studio_BetterPenetrationControls\AI_Studio_BetterPenetrationControls.csproj", "{A895A98D-20D6-4CD9-AB43-3542947D71B7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HS2_Studio_BetterPenetrationControls", "HS2_Studio_BetterPenetrationControls\HS2_Studio_BetterPenetrationControls.csproj", "{A3511273-E8FA-44E5-8890-BB1920707F5F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AI_Studio_BetterPenetration", "AI_Studio_BetterPenetration\AI_Studio_BetterPenetration.csproj", "{7008D2E3-1C29-4786-A4F6-7CFD6D6D8AD9}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		Core_BetterPenetration\Core_BetterPenetration.projitems*{052b343b-8793-481b-b053-0a99b09a0b52}*SharedItemsImports = 4
+		Core_BetterPenetration\Core_BetterPenetration.projitems*{06a2be07-7ab5-46cd-8a77-fde1bfde687c}*SharedItemsImports = 4
 		Core_BetterPenetration\Core_BetterPenetration.projitems*{13f643e0-45ca-483e-adfa-32634a22787e}*SharedItemsImports = 4
+		Core_BetterPenetration\Core_BetterPenetration.projitems*{7008d2e3-1c29-4786-a4f6-7cfd6d6d8ad9}*SharedItemsImports = 4
 		Core_BetterPenetration\Core_BetterPenetration.projitems*{ccd25b62-1040-4727-a0b5-78335fcf9f01}*SharedItemsImports = 13
 		Core_BetterPenetration\Core_BetterPenetration.projitems*{f5e096bb-2509-4431-972e-148500210d06}*SharedItemsImports = 4
 	EndGlobalSection
@@ -35,6 +45,22 @@ Global
 		{13F643E0-45CA-483E-ADFA-32634A22787E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{13F643E0-45CA-483E-ADFA-32634A22787E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{13F643E0-45CA-483E-ADFA-32634A22787E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{06A2BE07-7AB5-46CD-8A77-FDE1BFDE687C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{06A2BE07-7AB5-46CD-8A77-FDE1BFDE687C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{06A2BE07-7AB5-46CD-8A77-FDE1BFDE687C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{06A2BE07-7AB5-46CD-8A77-FDE1BFDE687C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A895A98D-20D6-4CD9-AB43-3542947D71B7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A895A98D-20D6-4CD9-AB43-3542947D71B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A895A98D-20D6-4CD9-AB43-3542947D71B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A895A98D-20D6-4CD9-AB43-3542947D71B7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A3511273-E8FA-44E5-8890-BB1920707F5F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A3511273-E8FA-44E5-8890-BB1920707F5F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A3511273-E8FA-44E5-8890-BB1920707F5F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A3511273-E8FA-44E5-8890-BB1920707F5F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7008D2E3-1C29-4786-A4F6-7CFD6D6D8AD9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7008D2E3-1C29-4786-A4F6-7CFD6D6D8AD9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7008D2E3-1C29-4786-A4F6-7CFD6D6D8AD9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7008D2E3-1C29-4786-A4F6-7CFD6D6D8AD9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -6,12 +6,12 @@ namespace Core_BetterPenetration
     // Creates a Plane defined by two non-parallel lines
     class TwistedPlane
     {
-        public Vector3 firstOrigin;
-        public Vector3 firstVector;
-        public Vector3 secondOrigin;
-        public Vector3 secondVector;
-        public Vector3 forwardVector;
-        public Vector3 twistVector;
+        private Vector3 firstOrigin;
+        private Vector3 firstVector;
+        private Vector3 secondOrigin;
+        private Vector3 secondVector;
+        private Vector3 forwardVector;
+        private Vector3 twistVector;
 
         public TwistedPlane(Vector3 firstOrig, Vector3 firstVec, Vector3 secondOrig, Vector3 secondVec)
         {
@@ -23,15 +23,7 @@ namespace Core_BetterPenetration
             twistVector = secondVec - firstVec;
         }
 
-        public Vector3 GetPoint(float tDistAlongFirstVector, float tDistAlongForwardVector)
-        {
-            return (firstOrigin * (1 - tDistAlongForwardVector)
-                  + firstVector * tDistAlongFirstVector * (1 - tDistAlongForwardVector)
-                  + secondOrigin * tDistAlongForwardVector
-                  + secondVector * tDistAlongFirstVector * tDistAlongForwardVector);
-        }
-
-        public bool FindIntersectValues(Vector3 lineVector, Vector3 offsetVector, Vector3 FVxLV, Vector3 TWxLV, Vector3 OFxLV, Vector3 LVxFW, double u, out double v, out double t)
+        private bool FindIntersectValues(Vector3 lineVector, Vector3 offsetVector, Vector3 FVxLV, Vector3 TWxLV, Vector3 OFxLV, Vector3 LVxFW, double u, out double v, out double t)
         {
             double Cu = 0;
             v = 0;
@@ -84,7 +76,7 @@ namespace Core_BetterPenetration
         }
 
         // return true if they interstect
-        public bool IntersectLineOnTwistedPlane(Vector3 lineStart, Vector3 lineEnd, bool bExtendPlaneBeyondFirstVector, bool bExtendPlaneBeyoneSecondVector, out Vector3 intersectionPoint, out Vector3 intersectForwardVector, out float distanceToSecondVector)
+        private bool IntersectLineOnTwistedPlane(Vector3 lineStart, Vector3 lineEnd, bool bExtendPlaneBeyondFirstVector, bool bExtendPlaneBeyoneSecondVector, out Vector3 intersectionPoint, out Vector3 intersectForwardVector, out float distanceToSecondVector)
         {
             distanceToSecondVector = 0;
             intersectForwardVector = forwardVector;
@@ -146,7 +138,7 @@ namespace Core_BetterPenetration
             return true;
         }
 
-        public Vector3 ConstrainLineToTwistedPlane(Vector3 lineStart, Vector3 lineEnd, float lineLength, ref bool bExtendPlaneBeyondStart, bool bExtendPlaneBeyondEnd, out bool bHitPointFound)
+        internal Vector3 ConstrainLineToTwistedPlane(Vector3 lineStart, Vector3 lineEnd, float lineLength, ref bool bExtendPlaneBeyondStart, bool bExtendPlaneBeyondEnd, out bool bHitPointFound)
         {
             Vector3 newLineEnd;
             Vector3 lineVector = Vector3.Normalize(lineEnd - lineStart);
@@ -178,22 +170,9 @@ namespace Core_BetterPenetration
                 return lineEnd;
             }
 
-     /*       if (hitDistance > minLineLength)
-            {
-                lineLength = (float)hitDistance;
-                bHitPointFound = true;
-                bExtendPlaneBeyondStart = false;
-                return hitPoint;
-            }
-
-            lineLength = minLineLength;*/
             double angleLineToPlane = (double)MathHelpers.DegToRad(Vector3.Angle(lineVector, -lineForwardVector));
             MathHelpers.SolveSSATriangle(lineLength, hitDistance, angleLineToPlane, out double distanceAlongPlane, out _, out _);
-/*
-            double angleNewLineToPlane = (double)Math.Asin(hitDistance * Math.Sin(angleLineToPlane) / lineLength);
-            double angleLineToNewLine = (double)Math.PI - angleLineToPlane - angleNewLineToPlane;
-            float distanceAlongPlane = (float)(lineLength * Math.Sin(angleLineToNewLine) / Math.Sin(angleLineToPlane));
-  */
+
             if (!bExtendPlaneBeyondEnd)
             {
                 if (distanceAlongPlane > distanceToEdgeOfPlane)

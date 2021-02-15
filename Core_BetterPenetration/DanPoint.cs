@@ -1,14 +1,13 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Core_BetterPenetration
 {
     class DanPoint
     {
-        public Transform transform;
-        public Vector3 defaultLocalPosition;
-        public Vector3 defaultLocalScale;
-        public Vector3 defaultLossyScale;
+        internal Transform transform;
+        internal Vector3 defaultLocalPosition;
+        internal Vector3 defaultLocalScale;
+        internal Vector3 defaultLossyScale;
 
         public DanPoint(Transform point)
         {
@@ -18,13 +17,13 @@ namespace Core_BetterPenetration
             this.defaultLossyScale = point.lossyScale;
         }
 
-        public void ResetDanPoint()
+        internal void ResetDanPoint()
         {
             transform.localPosition = defaultLocalPosition;
             transform.localScale = defaultLocalScale;
         }
 
-        public void ScaleDanGirth(float girthScale)
+        internal void ScaleDanGirth(float girthScale)
         {
             transform.localScale = new Vector3(defaultLocalScale.x * girthScale, defaultLocalScale.y * girthScale, defaultLocalScale.z);
         }

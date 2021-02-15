@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Core_BetterPenetration
 {
-    public static class MathHelpers
+    internal static class MathHelpers
     {
         public enum Axis
         {
@@ -13,7 +13,7 @@ namespace Core_BetterPenetration
         }
 
         // Casts a point onto an infinite line defined by two points on the line
-        public static Vector3 CastToSegment(Vector3 position, Vector3 lineStart, Vector3 lineVector)
+        private static Vector3 CastToSegment(Vector3 position, Vector3 lineStart, Vector3 lineVector)
         {
             Vector3 lineEnd = lineStart + lineVector;
             float normDistAlongSegment = Vector3.Dot(position - lineStart, lineVector) / Vector3.Magnitude(lineVector);
@@ -22,7 +22,7 @@ namespace Core_BetterPenetration
 
         // Finds the point on segment C to D that is closest to segment A to B
         // SEGMENT C D must be normalized
-        public static Vector3 CastSegmentToSegment(Vector3 projFromStart, Vector3 projFromVector, Vector3 projToStart, Vector3 projToVector)
+        internal static Vector3 CastSegmentToSegment(Vector3 projFromStart, Vector3 projFromVector, Vector3 projToStart, Vector3 projToVector)
         {
             Vector3 projFromEnd = projFromStart + projFromVector;
             Vector3 inPlaneStart = projFromStart - Vector3.Dot(projFromStart - projToStart, projToVector) * projToVector;
@@ -37,18 +37,18 @@ namespace Core_BetterPenetration
             return CastToSegment(projFromStart + projFromVector * normDistAlongLine, projToStart, projToVector);
         }
 
-        public static double DegToRad(double degrees)
+        internal static double DegToRad(double degrees)
         {
             return (degrees * Math.PI / 180);
         }
 
-        public static double RadToDeg(double radians)
+        internal static double RadToDeg(double radians)
         {
             return (radians * 180 / Math.PI);
         }
 
         // returns the two solutions of a quadratic equation
-        public static bool SolveQuadratic(double quadA, double quadB, double quadC, out double solution1, out double solution2)
+        internal static bool SolveQuadratic(double quadA, double quadB, double quadC, out double solution1, out double solution2)
         {
             solution1 = solution2 = 0;
             if (ApproximatelyZero(quadA))
@@ -71,12 +71,12 @@ namespace Core_BetterPenetration
             return false;
         }
 
-        public static bool ApproximatelyZero(double value)
+        internal static bool ApproximatelyZero(double value)
         {
             return (value > -0.0001 && value < 0.0001);
         }
 
-        public static void SolveSSATriangle(double sideA, double sideB, double angleA, out double sideC, out double angleB, out double angleC)
+        internal static void SolveSSATriangle(double sideA, double sideB, double angleA, out double sideC, out double angleB, out double angleC)
         {
             sideC = 0;
             angleB = 0;
@@ -88,13 +88,10 @@ namespace Core_BetterPenetration
             angleB = Math.Asin(Math.Sin(angleA) * sideB / sideA);
             angleC = Math.PI - angleA - angleB;
             sideC = sideA * Math.Sin(angleC) / Math.Sin(angleA);
-
-   //         Console.WriteLine($"SolveSSA sideA {sideA} sideB {sideB} sideC {sideC}");
-    //        Console.WriteLine($"SolveSSA angleA {MathHelpers.RadToDeg(angleA)} angleB {MathHelpers.RadToDeg(angleB)} angleC {MathHelpers.RadToDeg(angleC)}");
-        }
+       }
 
         // Return True if Vectors are close enough to each other
-        public static bool VectorsEqual(Vector3 firstVector, Vector3 secondVector, float threshold = 0.01f)
+        internal static bool VectorsEqual(Vector3 firstVector, Vector3 secondVector, float threshold = 0.01f)
         {
             if (Math.Abs(firstVector.x - secondVector.x) > threshold)
                 return false;

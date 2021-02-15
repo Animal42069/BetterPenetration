@@ -146,7 +146,7 @@ namespace KK_BetterPenetration
         [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "LoadCharaFbxDataAsync")]
         public static void ChaControl_LoadCharaFbxDataAsync(ChaControl __instance)
         {
-            Core.RemovePCollidersFromCoordinate(__instance);
+            Core.RemoveCollidersFromCoordinate(__instance);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(HSceneProc), "Start")]

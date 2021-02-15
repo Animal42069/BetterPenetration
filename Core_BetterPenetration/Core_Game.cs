@@ -1,6 +1,5 @@
-﻿using System;
+﻿#if !HS2_STUDIO && !AI_STUDIO
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 #if HS2 || AI
@@ -22,7 +21,7 @@ namespace Core_BetterPenetration
             InitializeCollisionAgents(collisionCharacterList, collisionOptions);
         }
 
-        private static void InitializeDanAgents(List<ChaControl> danCharacterList, List<DanOptions> danOptions)
+        public static void InitializeDanAgents(List<ChaControl> danCharacterList, List<DanOptions> danOptions)
         {
             danAgents = new List<DanAgent>();
             changingAnimations = new List<bool>();
@@ -36,6 +35,17 @@ namespace Core_BetterPenetration
                 danAgents.Add(new DanAgent(character, danOptions[characterNum]));
                 changingAnimations.Add(false);
                 characterNum++;
+            }
+        }
+
+        public static void ClearDanAgents()
+        {
+            foreach (var agent in danAgents)
+            {
+                if (agent == null)
+                    continue;
+
+                agent.ClearDanAgent();
             }
         }
 
@@ -174,7 +184,7 @@ namespace Core_BetterPenetration
             changingAnimations = null;
         }
 
-        public static void RemovePCollidersFromCoordinate(ChaControl character)
+        public static void RemoveCollidersFromCoordinate(ChaControl character)
         {
             var dynamicBones = character.GetComponentsInChildren<DynamicBone>(true);
 
@@ -195,3 +205,4 @@ namespace Core_BetterPenetration
         }
     }
 }
+#endif

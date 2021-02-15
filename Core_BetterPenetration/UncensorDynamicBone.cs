@@ -2,31 +2,28 @@
 {
     class UncensorDynamicBone
     {
-        public enum DynamicBoneDirection
+        internal enum DynamicBoneDirection
         {
             X,
             Z,
             XZ
         };
 
-        public string name;
-        public DynamicBoneDirection direction;
-        public string selfColliderName;
-        public float selfColliderHeight;
-        public float selfColliderRadius;
+        internal DynamicBoneDirection direction;
+        internal string selfColliderName;
+        internal float selfColliderHeight;
+        internal float selfColliderRadius;
 
-        public UncensorDynamicBone(string boneName, DynamicBoneDirection direction)
+        public UncensorDynamicBone(DynamicBoneDirection direction)
         {
-            name = boneName;
             this.direction = direction;
             selfColliderName = null;
             selfColliderHeight = 0;
             selfColliderRadius = 0;
         }
 
-        public UncensorDynamicBone(string boneName, DynamicBoneDirection direction, string collderName, float colliderHeight, float colliderRadius)
+        public UncensorDynamicBone(DynamicBoneDirection direction, string collderName, float colliderHeight, float colliderRadius)
         {
-            name = boneName;
             this.direction = direction;
             selfColliderName = collderName;
             selfColliderHeight = colliderHeight;

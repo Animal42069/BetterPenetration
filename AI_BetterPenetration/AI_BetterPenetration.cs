@@ -1,14 +1,10 @@
 ﻿using BepInEx;
 using BepInEx.Configuration;
-using BepInEx.Bootstrap;
 using HarmonyLib;
-using System;
 using System.Collections.Generic;
 using Manager;
-using System.Reflection;
 using AIChara;
 using Core_BetterPenetration;
-using System.Linq;
 
 namespace AI_BetterPenetration
 {
@@ -18,7 +14,7 @@ namespace AI_BetterPenetration
     [BepInProcess("AI-Syoujyo")]
     public class AI_BetterPenetration : BaseUnityPlugin
     {
-        public const string VERSION = "3.0.0.1";
+        internal const string VERSION = "3.0.0.1";
         private const int MaleLimit = 1;
         private const int FemaleLimit = 2;
         private const bool _useSelfColliders = false;
@@ -150,13 +146,13 @@ namespace AI_BetterPenetration
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "LoadCharaFbxDataAsync")]
-        public static void ChaControl_LoadCharaFbxDataAsync(ChaControl __instance)
+        private static void ChaControl_LoadCharaFbxDataAsync(ChaControl __instance)
         {
-            Core.RemovePCollidersFromCoordinate(__instance);
+            Core.RemoveCollidersFromCoordinate(__instance);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(HScene), "SetStartVoice")]
-        public static void HScene_PostSetStartVoice(HScene __instance)
+        private static void HScene_PostSetStartVoice(HScene __instance)
         {
             hScene = __instance;
 
@@ -238,7 +234,7 @@ namespace AI_BetterPenetration
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(H_Lookat_dan), "LateUpdate")]
-        public static void H_Lookat_dan_PostLateUpdate(H_Lookat_dan __instance)
+        private static void H_Lookat_dan_PostLateUpdate(H_Lookat_dan __instance)
         {
             if (!inHScene || loadingCharacter || hScene == null || __instance.strPlayMotion == null)
                 return;
@@ -247,13 +243,13 @@ namespace AI_BetterPenetration
         }
 
         [HarmonyPrefix, HarmonyPatch(typeof(HScene), "EndProc")]
-        public static void HScene_EndProc_Patch()
+        private static void HScene_EndProc_Patch()
         {
             HScene_sceneUnloaded();
         }
 
         [HarmonyPrefix, HarmonyPatch(typeof(HScene), "EndProcADV")]
-        public static void HScene_EndProcADV_Patch()
+        private static void HScene_EndProcADV_Patch()
         {
             HScene_sceneUnloaded();
         }

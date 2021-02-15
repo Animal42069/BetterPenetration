@@ -8,7 +8,6 @@ using UnityEngine.SceneManagement;
 using System.Reflection;
 using AIChara;
 using Core_BetterPenetration;
-using System.Linq;
 
 namespace HS2_BetterPenetration
 {
@@ -19,7 +18,7 @@ namespace HS2_BetterPenetration
     [BepInProcess("HoneySelect2VR")]
     public class HS2_BetterPenetration : BaseUnityPlugin
     {
-        public const string VERSION = "3.0.0.1";
+        internal const string VERSION = "3.0.0.1";
         private const int MaleLimit = 2;
         private const int FemaleLimit = 2;
         private const bool _useSelfColliders = true;
@@ -161,18 +160,26 @@ namespace HS2_BetterPenetration
                 Core.UpdateCollisionOptions(index, collisionOptions[index]);
         }
 
-        public static void BeforeCharacterReload()
+        private static void BeforeCharacterReload(object __instance)
         { 
             if (!inHScene)
+                return;
+
+            ChaControl chaControl = (ChaControl)__instance.GetPrivateProperty("ChaControl");
+            if (chaControl == null || chaControl.sex == 0)
                 return;
 
             loadingCharacter = true;
             Core.SetChangingAnimations(true);
         }
 
-        public static void AfterCharacterReload()
+        private static void AfterCharacterReload(object __instance)
         {
             if (!inHScene || hScene == null)
+                return;
+
+            ChaControl chaControl = (ChaControl)__instance.GetPrivateProperty("ChaControl");
+            if (chaControl == null || chaControl.sex == 0)
                 return;
 
             ChaControl[] femaleArray = hScene.GetFemales();
@@ -190,14 +197,52 @@ namespace HS2_BetterPenetration
             loadingCharacter = false;
         }
 
-        [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "LoadCharaFbxDataAsync")]
-        public static void ChaControl_LoadCharaFbxDataAsync(ChaControl __instance)
+        private static void BeforeDanCharacterReload(object __instance)
         {
-            Core.RemovePCollidersFromCoordinate(__instance);
+            if (!inHScene)
+                return;
+
+            ChaControl chaControl = (ChaControl)__instance.GetPrivateProperty("ChaControl");
+            if (chaControl == null || (chaControl.sex != 0 && !chaControl.fileParam.futanari))
+                return;
+
+            loadingCharacter = true;
+            Core.SetChangingAnimations(true);
+            Core.ClearDanAgents();
+        }
+
+        private static void AfterDanCharacterReload(object __instance)
+        {
+            if (!inHScene || hScene == null)
+                return;
+
+            ChaControl chaControl = (ChaControl)__instance.GetPrivateProperty("ChaControl");
+            if (chaControl == null || (chaControl.sex != 0 && !chaControl.fileParam.futanari))
+                return;
+
+            List<DanOptions> danOptions = PopulateDanOptionsList();
+
+            ChaControl[] maleArray = hScene.GetMales();
+            List<ChaControl> maleList = new List<ChaControl>();
+            foreach (var character in maleArray)
+            {
+                if (character == null)
+                    continue;
+                maleList.Add(character);
+            }
+
+            Core.InitializeDanAgents(maleList, danOptions);
+            loadingCharacter = false;
+        }
+
+        [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "LoadCharaFbxDataAsync")]
+        private static void ChaControl_LoadCharaFbxDataAsync(ChaControl __instance)
+        {
+            Core.RemoveCollidersFromCoordinate(__instance);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(HScene), "SetStartVoice")]
-        public static void HScene_PostSetStartVoice(HScene __instance)
+        private static void HScene_PostSetStartVoice(HScene __instance)
         {
             hScene = __instance;
 
@@ -289,7 +334,7 @@ namespace HS2_BetterPenetration
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(H_Lookat_dan), "LateUpdate")]
-        public static void H_Lookat_dan_PostLateUpdate(H_Lookat_dan __instance, ChaControl ___male)
+        private static void H_Lookat_dan_PostLateUpdate(H_Lookat_dan __instance, ChaControl ___male)
         {
             if (!inHScene || loadingCharacter || __instance.strPlayMotion == null || ___male == null)
                 return;
@@ -326,7 +371,14 @@ namespace HS2_BetterPenetration
                     if (methodInfo != null)
                     {
                         harmony.Patch(methodInfo, new HarmonyMethod(typeof(HS2_BetterPenetration), "BeforeCharacterReload"), new HarmonyMethod(typeof(HS2_BetterPenetration), "AfterCharacterReload"), null, null);
-                        Console.WriteLine("HS2_BetterPenetration: UncensorSelector patched correctly");
+                        Console.WriteLine("HS2_BetterPenetration: ReloadCharacterBody patched correctly");
+                    }
+
+                    methodInfo = AccessTools.Method(nestedType, "ReloadCharacterPenis", null, null);
+                    if (methodInfo != null)
+                    {
+                        harmony.Patch(methodInfo, new HarmonyMethod(typeof(HS2_BetterPenetration), "BeforeDanCharacterReload"), new HarmonyMethod(typeof(HS2_BetterPenetration), "AfterDanCharacterReload"), null, null);
+                        Console.WriteLine("HS2_BetterPenetration: ReloadCharacterPenis patched correctly");
                     }
                 }
             }
