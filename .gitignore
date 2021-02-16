@@ -65,3 +65,12 @@ crashlytics-build.properties
 /UpgradeLog.htm
 /KK_BetterPenetration/bin/Release
 /KK_BetterPenetration/obj/Release
+/AI_Studio_BetterPenetration/bin/Release
+/AI_Studio_BetterPenetration/obj
+/AI_Studio_BetterPenetrationControls/bin
+/AI_Studio_BetterPenetrationControls/obj
+/HS2_Studio_BetterPenetration/obj
+/HS2_Studio_BetterPenetration/bin/Release
+/HS2_Studio_BetterPenetrationControls/bin
+/HS2_Studio_BetterPenetrationControls/obj
+/packages

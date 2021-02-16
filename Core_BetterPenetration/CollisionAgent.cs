@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if !HS2_STUDIO && !AI_STUDIO
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -10,30 +11,30 @@ namespace Core_BetterPenetration
 {
     class CollisionAgent
     {
-        public ChaControl m_collisionCharacter;
-        public CollisionPoints m_collisionPoints;
-        public CollisionOptions m_collisionOptions;
+        internal ChaControl m_collisionCharacter;
+        internal CollisionPoints m_collisionPoints;
+        internal CollisionOptions m_collisionOptions;
         private bool m_collisionPointsFound = false;
 
-        public Transform m_bpKokanTarget;
-        public Transform m_innerTarget;
-        public Transform m_innerHeadTarget;
-        public Transform m_kokanBone;
-        public List<DynamicBone> m_kokanDynamicBones = new List<DynamicBone>();
+        internal Transform m_bpKokanTarget;
+        internal Transform m_innerTarget;
+        internal Transform m_innerHeadTarget;
+        private Transform m_kokanBone;
+        internal List<DynamicBone> m_kokanDynamicBones = new List<DynamicBone>();
 
-        public bool adjustFAnimation = false;
+        internal bool adjustFAnimation = false;
  
         public CollisionAgent(ChaControl character, CollisionOptions options)
         {
             Initialize(character, options);
         }
 
-        public void Initialize(ChaControl character, CollisionOptions options)
+        private void Initialize(ChaControl character, CollisionOptions options)
         {
             m_collisionOptions = options;
 
-            List<CollisionPoint> frontHPoints = new List<CollisionPoint>();
-            List<CollisionPoint> backHPoints = new List<CollisionPoint>();
+            List<CollisionPoint> frontCollisionPoints = new List<CollisionPoint>();
+            List<CollisionPoint> backCollisionPoints = new List<CollisionPoint>();
             m_collisionPointsFound = false;
 
             if (character == null)
@@ -47,31 +48,30 @@ namespace Core_BetterPenetration
 
             for (int index = 0; index < options.frontCollisionInfo.Count; index++)
             {
-                Transform frontHPoint = m_collisionCharacter.GetComponentsInChildren<Transform>().FirstOrDefault(x => x.name != null && x.name.Contains(options.frontCollisionInfo[index].name));
-                frontHPoints.Add(new CollisionPoint(frontHPoint, options.frontCollisionInfo[index]));
+                Transform frontCollisionPoint = m_collisionCharacter.GetComponentsInChildren<Transform>().FirstOrDefault(x => x.name != null && x.name.Contains(options.frontCollisionInfo[index].name));
+                frontCollisionPoints.Add(new CollisionPoint(frontCollisionPoint, options.frontCollisionInfo[index]));
             }
             for (int index = 0; index < options.backCollisonInfo.Count; index++)
             {
-                Transform backHPoint = m_collisionCharacter.GetComponentsInChildren<Transform>().FirstOrDefault(x => x.name != null && x.name.Contains(options.backCollisonInfo[index].name));
-                backHPoints.Add(new CollisionPoint(backHPoint, options.backCollisonInfo[index]));
+                Transform backCollisionPoint = m_collisionCharacter.GetComponentsInChildren<Transform>().FirstOrDefault(x => x.name != null && x.name.Contains(options.backCollisonInfo[index].name));
+                backCollisionPoints.Add(new CollisionPoint(backCollisionPoint, options.backCollisonInfo[index]));
             }
-            Transform backOfHead = m_collisionCharacter.GetComponentsInChildren<Transform>().FirstOrDefault(x => x.name != null && x.name.Contains(BoneNames.HeadLimit));
 
             m_bpKokanTarget = m_collisionCharacter.GetComponentsInChildren<Transform>().FirstOrDefault(x => x.name != null && x.name.Equals(LookTargets.BPKokanTarget));
             if (m_bpKokanTarget != null)
             {
                 Console.WriteLine("BP Target Found " + m_bpKokanTarget.name);
-                frontHPoints[0].transform = m_bpKokanTarget;
-                frontHPoints[0].info.name = LookTargets.BPKokanTarget;
+                frontCollisionPoints[0].transform = m_bpKokanTarget;
+                frontCollisionPoints[0].info.name = LookTargets.BPKokanTarget;
             }
 
             m_innerTarget = m_collisionCharacter.GetComponentsInChildren<Transform>().FirstOrDefault(x => x.name != null && x.name.Equals(LookTargets.InnerTarget));
             m_innerHeadTarget = m_collisionCharacter.GetComponentsInChildren<Transform>().FirstOrDefault(x => x.name != null && x.name.Contains(LookTargets.InnerHeadTarget));
 
-            if (frontHPoints.Count == options.frontCollisionInfo.Count && backHPoints.Count == options.backCollisonInfo.Count && backOfHead != null)
+            if (frontCollisionPoints.Count == options.frontCollisionInfo.Count && backCollisionPoints.Count == options.backCollisonInfo.Count)
             {
                 m_collisionPointsFound = true;
-                m_collisionPoints = new CollisionPoints(frontHPoints, backHPoints, backOfHead);
+                m_collisionPoints = new CollisionPoints(frontCollisionPoints, backCollisionPoints);
             }
 
             Console.WriteLine("constrainPointsFound " + m_collisionPointsFound);
@@ -137,14 +137,14 @@ namespace Core_BetterPenetration
             }
         }
 
-        public void CheckForAdjustment(string animationFile)
+        internal void CheckForAdjustment(string animationFile)
         {
             adjustFAnimation = false;
             if (m_kokanBone != null && BoneNames.animationAdjustmentList.Contains(animationFile))
                 adjustFAnimation = true;
         }
 
-        public void AdjustMissionaryAnimation()
+        internal void AdjustMissionaryAnimation()
         {
             if (!m_collisionOptions.kokan_adjust || !adjustFAnimation || m_kokanBone == null)
                 return;
@@ -153,12 +153,12 @@ namespace Core_BetterPenetration
             m_kokanBone.localEulerAngles += new Vector3(m_collisionOptions.kokan_adjust_rotation_x, 0, 0);
         }
 
-        public void UpdateCollisionOptions(CollisionOptions options)
+        internal void UpdateCollisionOptions(CollisionOptions options)
         {
             m_collisionOptions = options;
         }
 
-        public void ClearColliders()
+        internal void ClearColliders()
         {
             foreach (DynamicBone dynamicBone in m_collisionCharacter.GetComponentsInChildren<DynamicBone>())
             {
@@ -168,3 +168,4 @@ namespace Core_BetterPenetration
         }
     }
 }
+#endif

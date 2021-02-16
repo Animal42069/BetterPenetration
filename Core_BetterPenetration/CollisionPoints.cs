@@ -5,9 +5,8 @@ namespace Core_BetterPenetration
 {
     class CollisionPoints
     {
-        public List<CollisionPoint> frontCollisionPoints;
-        public List<CollisionPoint> backCollisionPoints;
-        public Transform headCollisionPoint;
+        internal List<CollisionPoint> frontCollisionPoints;
+        internal List<CollisionPoint> backCollisionPoints;
 
         public CollisionPoints()
         {
@@ -15,11 +14,10 @@ namespace Core_BetterPenetration
             backCollisionPoints = new List<CollisionPoint>();
         }
 
-        public CollisionPoints(List<CollisionPoint> frontPoints, List<CollisionPoint> backPoints, Transform headPoint)
+        public CollisionPoints(List<CollisionPoint> frontPoints, List<CollisionPoint> backPoints)
         {
             frontCollisionPoints = frontPoints;
             backCollisionPoints = backPoints;
-            headCollisionPoint = headPoint;
         }
     }
 }

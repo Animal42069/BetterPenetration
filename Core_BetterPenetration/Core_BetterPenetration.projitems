@@ -9,18 +9,20 @@
     <Import_RootNamespace>Core_BetterPenetration</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)BetterPenetrationController.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)BoneNames.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CollisionAgent.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CollisionOptions.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)DanOptions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CollisionPoint.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CollisionPoints.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Core.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core_Game.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)DanAgent.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)DanOptions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)DanPoint.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)DanPoints.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MathHelpers.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)DanAgent.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)CollisionAgent.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)UncensorDynamicBone.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)CollisionPoint.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Tools.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TwistedPlane.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)UncensorDynamicBone.cs" />
   </ItemGroup>
 </Project>

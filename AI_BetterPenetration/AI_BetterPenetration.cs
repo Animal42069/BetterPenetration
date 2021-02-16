@@ -1,14 +1,10 @@
 ﻿using BepInEx;
 using BepInEx.Configuration;
-using BepInEx.Bootstrap;
 using HarmonyLib;
-using System;
 using System.Collections.Generic;
 using Manager;
-using System.Reflection;
 using AIChara;
 using Core_BetterPenetration;
-using System.Linq;
 
 namespace AI_BetterPenetration
 {
@@ -18,15 +14,15 @@ namespace AI_BetterPenetration
     [BepInProcess("AI-Syoujyo")]
     public class AI_BetterPenetration : BaseUnityPlugin
     {
-        public const string VERSION = "3.0.0.0";
+        internal const string VERSION = "3.0.0.1";
         private const int MaleLimit = 1;
         private const int FemaleLimit = 2;
         private const bool _useSelfColliders = false;
 
         private static readonly List<float> frontOffsets = new List<float> { -0.35f, 0.25f, 0f, -0.65f };
-        private static readonly List<float> backOffsets = new List<float> { -0.05f, 0.25f, 0.05f, 0.05f };
+        private static readonly List<float> backOffsets = new List<float> { -0.05f, 0.05f, 0.05f };
         private static readonly List<bool> frontPointsInward = new List<bool> { false, false, false, false };
-        private static readonly List<bool> backPointsInward = new List<bool> { false, false, true, true };
+        private static readonly List<bool> backPointsInward = new List<bool> { false, true, true };
 
         private static ConfigEntry<float> _danColliderHeadLength;
         private static ConfigEntry<float> _danColliderRadius;
@@ -36,8 +32,10 @@ namespace AI_BetterPenetration
         private static ConfigEntry<float> _danLengthSquishFactor;
         private static ConfigEntry<float> _danGirthSquishFactor;
         private static ConfigEntry<float> _danSquishThreshold;
+        private static ConfigEntry<bool> _danSquishOralGirth;
         private static ConfigEntry<bool> _useFingerColliders;
         private static ConfigEntry<bool> _simplifyPenetration;
+        private static ConfigEntry<bool> _simplifyOral;
 
         private static ConfigEntry<float> _clippingDepth;
         private static ConfigEntry<float> _kokanOffsetForward;
@@ -75,9 +73,13 @@ namespace AI_BetterPenetration
             { UpdateDanOptions(); };
             (_danSquishThreshold = Config.Bind("Male Options", "Penis: Squish Threshold", 0.2f, new ConfigDescription("Allows the penis to begin squishing (shorten length increase girth) after this amount of the penis has penetrated.", new AcceptableValueRange<float>(0, 1)))).SettingChanged += (s, e) =>
             { UpdateDanOptions(); };
+            (_danSquishOralGirth = Config.Bind("Male Options", "Penis: Squish Oral Girth", false, "Allows the penis to squish (increase girth) during oral.")).SettingChanged += (s, e) =>
+            { UpdateDanOptions(); };
             (_useFingerColliders = Config.Bind("Male Options", "Finger Collider: Enable", true, "Use finger colliders")).SettingChanged += (s, e) =>
             { UpdateDanOptions(); };
             (_simplifyPenetration = Config.Bind("Male Options", "Simplify Penetration Calculation", false, "Simplifys penetration calclation by always having it target the same internal point.  Only valid for BP penis uncensors.")).SettingChanged += (s, e) =>
+            { UpdateDanOptions(); };
+            (_simplifyOral = Config.Bind("Male Options", "Simplify Oral Calculation", false, "Simplifys oral penetration calclation by always having it target the same internal point.  Only valid for BP penis uncensors.")).SettingChanged += (s, e) =>
             { UpdateDanOptions(); };
 
             (_clippingDepth = Config.Bind("Female Options", "Clipping Depth", 0.25f, "Set how close to body surface to limit penis for clipping purposes. Smaller values will result in more clipping through the body, larger values will make the shaft wander further away from the intended penetration point.")).SettingChanged += (s, e) =>
@@ -130,7 +132,7 @@ namespace AI_BetterPenetration
             if (!inHScene)
                 return;
 
-            Core.UpdateDanOptions(0, _danLengthSquishFactor.Value, _danGirthSquishFactor.Value, _danSquishThreshold.Value, _useFingerColliders.Value, _simplifyPenetration.Value);
+            Core.UpdateDanOptions(0, _danLengthSquishFactor.Value, _danGirthSquishFactor.Value, _danSquishThreshold.Value, _danSquishOralGirth.Value, _useFingerColliders.Value, _simplifyPenetration.Value, _simplifyOral.Value);
         }
 
         private static void UpdateCollisionOptions()
@@ -144,13 +146,13 @@ namespace AI_BetterPenetration
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "LoadCharaFbxDataAsync")]
-        public static void ChaControl_LoadCharaFbxDataAsync(ChaControl __instance)
+        private static void ChaControl_LoadCharaFbxDataAsync(ChaControl __instance)
         {
-            Core.RemovePCollidersFromCoordinate(__instance);
+            Core.RemoveCollidersFromCoordinate(__instance);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(HScene), "SetStartVoice")]
-        public static void HScene_PostSetStartVoice(HScene __instance)
+        private static void HScene_PostSetStartVoice(HScene __instance)
         {
             hScene = __instance;
 
@@ -184,8 +186,9 @@ namespace AI_BetterPenetration
             List<DanOptions> danOptions = new List<DanOptions>
             {
                 new DanOptions(_danColliderVerticalCenter.Value, _danColliderRadius.Value, _danColliderHeadLength.Value,
-                 _danLengthSquishFactor.Value, _danGirthSquishFactor.Value, _danSquishThreshold.Value,
-                _fingerColliderRadius.Value, _fingerColliderLength.Value, _useFingerColliders.Value, _simplifyPenetration.Value)
+                 _danLengthSquishFactor.Value, _danGirthSquishFactor.Value, _danSquishThreshold.Value, _danSquishOralGirth.Value,
+                _fingerColliderRadius.Value, _fingerColliderLength.Value, _useFingerColliders.Value, 
+                _simplifyPenetration.Value, _simplifyOral.Value)
             };
 
             return danOptions;
@@ -231,7 +234,7 @@ namespace AI_BetterPenetration
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(H_Lookat_dan), "LateUpdate")]
-        public static void H_Lookat_dan_PostLateUpdate(H_Lookat_dan __instance)
+        private static void H_Lookat_dan_PostLateUpdate(H_Lookat_dan __instance)
         {
             if (!inHScene || loadingCharacter || hScene == null || __instance.strPlayMotion == null)
                 return;
@@ -240,13 +243,13 @@ namespace AI_BetterPenetration
         }
 
         [HarmonyPrefix, HarmonyPatch(typeof(HScene), "EndProc")]
-        public static void HScene_EndProc_Patch()
+        private static void HScene_EndProc_Patch()
         {
             HScene_sceneUnloaded();
         }
 
         [HarmonyPrefix, HarmonyPatch(typeof(HScene), "EndProcADV")]
-        public static void HScene_EndProcADV_Patch()
+        private static void HScene_EndProcADV_Patch()
         {
             HScene_sceneUnloaded();
         }

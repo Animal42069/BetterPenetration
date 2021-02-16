@@ -4,21 +4,21 @@ namespace Core_BetterPenetration
 {
     class CollisionOptions
     {
-        public bool useBoundingColliders = false;
+        internal bool useBoundingColliders = false;
 
-        public float kokanForwardOffset = 0;
-        public float kokanUpOffset = 0;
-        public float headForwardOffset = 0;
-        public float headUpOffset = 0;
+        internal float kokanForwardOffset = 0;
+        internal float kokanUpOffset = 0;
+        internal float headForwardOffset = 0;
+        internal float headUpOffset = 0;
 
-        public bool kokan_adjust = false;
-        public float kokan_adjust_position_z = 0;
-        public float kokan_adjust_position_y = 0;
-        public float kokan_adjust_rotation_x = 0;
-        public float clippingDepth = 0;
+        internal bool kokan_adjust = false;
+        internal float kokan_adjust_position_z = 0;
+        internal float kokan_adjust_position_y = 0;
+        internal float kokan_adjust_rotation_x = 0;
+        internal float clippingDepth = 0;
 
-        public List<CollidonPointInfo> frontCollisionInfo;
-        public List<CollidonPointInfo> backCollisonInfo;
+        internal List<CollidonPointInfo> frontCollisionInfo;
+        internal List<CollidonPointInfo> backCollisonInfo;
 
         public CollisionOptions(bool useBoundingColliders, float kokanForwardOffset, float kokanUpOffset, float headForwardOffset, float headUpOffset, bool kokan_adjust,
         float kokan_adjust_position_z, float kokan_adjust_position_y, float kokan_adjust_rotation_x, float clippingDepth, List<CollidonPointInfo> frontInfo, List<CollidonPointInfo> backInfo)
