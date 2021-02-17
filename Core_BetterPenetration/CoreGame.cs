@@ -1,6 +1,7 @@
 ﻿#if !HS2_STUDIO && !AI_STUDIO
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 #if HS2 || AI
 using AIChara;
@@ -8,7 +9,7 @@ using AIChara;
 
 namespace Core_BetterPenetration
 {
-    class Core
+    class CoreGame
     {
         private static List<DanAgent> danAgents;
         private static List<CollisionAgent> collisionAgents;
@@ -40,13 +41,20 @@ namespace Core_BetterPenetration
 
         public static void ClearDanAgents()
         {
-            foreach (var agent in danAgents)
-            {
-                if (agent == null)
-                    continue;
+            if (danAgents == null)
+                return;
 
+            foreach (var agent in danAgents)
                 agent.ClearDanAgent();
-            }
+        }
+
+        private static void ClearCollisionAgents()
+        {
+            if (collisionAgents == null)
+                return;
+
+            foreach (var collisionAgent in collisionAgents)
+                collisionAgent.ClearColliders();
         }
 
         public static void InitializeCollisionAgents(List<ChaControl> collisionCharacterList, List<CollisionOptions> collisionOptions)
@@ -168,17 +176,8 @@ namespace Core_BetterPenetration
 
         public static void OnEndScene()
         {
-            foreach (var collisionAgent in collisionAgents)
-                collisionAgent.ClearColliders();
-
-            foreach (var danAgent in danAgents)
-            {
-                foreach (var socketAgent in collisionAgents)
-                    danAgent.RemoveColliders(socketAgent);
-
-                danAgent.ClearDanAgent();
-            }
-
+            ClearDanAgents();
+            ClearCollisionAgents();
             danAgents = null;
             collisionAgents = null;
             changingAnimations = null;

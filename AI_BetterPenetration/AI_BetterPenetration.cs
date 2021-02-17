@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using Manager;
 using AIChara;
 using Core_BetterPenetration;
+using System;
 
 namespace AI_BetterPenetration
 {
@@ -14,7 +15,7 @@ namespace AI_BetterPenetration
     [BepInProcess("AI-Syoujyo")]
     public class AI_BetterPenetration : BaseUnityPlugin
     {
-        internal const string VERSION = "3.0.0.1";
+        internal const string VERSION = "3.0.1.0";
         private const int MaleLimit = 1;
         private const int FemaleLimit = 2;
         private const bool _useSelfColliders = false;
@@ -115,7 +116,7 @@ namespace AI_BetterPenetration
             if (!inHScene)
                 return;
 
-            Core.UpdateDanCollider(0, _danColliderRadius.Value, _danColliderHeadLength.Value, _danColliderVerticalCenter.Value);
+            CoreGame.UpdateDanCollider(0, _danColliderRadius.Value, _danColliderHeadLength.Value, _danColliderVerticalCenter.Value);
         }
 
         private static void UpdateFingerColliders()
@@ -124,7 +125,7 @@ namespace AI_BetterPenetration
                 return;
 
             for (int index = 0; index < MaleLimit; index++)
-                Core.UpdateFingerColliders(0, _fingerColliderRadius.Value, _fingerColliderLength.Value);
+                CoreGame.UpdateFingerColliders(0, _fingerColliderRadius.Value, _fingerColliderLength.Value);
         }
 
         private static void UpdateDanOptions()
@@ -132,7 +133,7 @@ namespace AI_BetterPenetration
             if (!inHScene)
                 return;
 
-            Core.UpdateDanOptions(0, _danLengthSquishFactor.Value, _danGirthSquishFactor.Value, _danSquishThreshold.Value, _danSquishOralGirth.Value, _useFingerColliders.Value, _simplifyPenetration.Value, _simplifyOral.Value);
+            CoreGame.UpdateDanOptions(0, _danLengthSquishFactor.Value, _danGirthSquishFactor.Value, _danSquishThreshold.Value, _danSquishOralGirth.Value, _useFingerColliders.Value, _simplifyPenetration.Value, _simplifyOral.Value);
         }
 
         private static void UpdateCollisionOptions()
@@ -142,13 +143,13 @@ namespace AI_BetterPenetration
 
             List<CollisionOptions> collisionOptions = PopulateCollisionOptionsList();
             for (int index = 0; index < MaleLimit; index++)
-                Core.UpdateCollisionOptions(index, collisionOptions[index]);
+                CoreGame.UpdateCollisionOptions(index, collisionOptions[index]);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "LoadCharaFbxDataAsync")]
         private static void ChaControl_LoadCharaFbxDataAsync(ChaControl __instance)
         {
-            Core.RemoveCollidersFromCoordinate(__instance);
+            CoreGame.RemoveCollidersFromCoordinate(__instance);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(HScene), "SetStartVoice")]
@@ -177,7 +178,7 @@ namespace AI_BetterPenetration
                 maleList.Add(character);
             }
 
-            Core.InitializeAgents(maleList, femaleList, danOptions, collisionOptions);
+            CoreGame.InitializeAgents(maleList, femaleList, danOptions, collisionOptions);
             inHScene = true;
         }
 
@@ -221,7 +222,7 @@ namespace AI_BetterPenetration
             if (!inHScene || _info == null || _info.fileFemale == null)
                 return;
 
-            Core.OnChangeAnimation(_info.fileFemale);
+            CoreGame.OnChangeAnimation(_info.fileFemale);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(H_Lookat_dan), "setInfo")]
@@ -230,7 +231,7 @@ namespace AI_BetterPenetration
             if (!inHScene || loadingCharacter || __instance.strPlayMotion == null)
                 return;
 
-            Core.LookAtDanSetup(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, 0, 0, false);
+            CoreGame.LookAtDanSetup(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, 0, 0, false);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(H_Lookat_dan), "LateUpdate")]
@@ -239,7 +240,7 @@ namespace AI_BetterPenetration
             if (!inHScene || loadingCharacter || hScene == null || __instance.strPlayMotion == null)
                 return;
 
-            Core.LookAtDanUpdate(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, hScene.NowChangeAnim, 0, 0);
+            CoreGame.LookAtDanUpdate(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, hScene.NowChangeAnim, 0, 0);
         }
 
         [HarmonyPrefix, HarmonyPatch(typeof(HScene), "EndProc")]
@@ -268,9 +269,11 @@ namespace AI_BetterPenetration
         {
             if (patched)
                 return;
-
+            
             harmony.PatchAll(typeof(AI_BetterPenetration));
             patched = true;
+
+            Console.WriteLine("BetterPenetration: Patched");
         }
 
         private static void HScene_sceneUnloaded()
@@ -278,7 +281,7 @@ namespace AI_BetterPenetration
             if (!patched)
                 return;
 
-            Core.OnEndScene();
+            CoreGame.OnEndScene();
 
             harmony.UnpatchAll(nameof(AI_BetterPenetration));
             patched = false;
@@ -297,6 +300,8 @@ namespace AI_BetterPenetration
             }
 
             hScene = null;
+
+            Console.WriteLine("BetterPenetration: Unpatched");
         }
     }
 }
