@@ -18,7 +18,7 @@ namespace HS2_BetterPenetration
     [BepInProcess("HoneySelect2VR")]
     public class HS2_BetterPenetration : BaseUnityPlugin
     {
-        internal const string VERSION = "3.0.0.1";
+        internal const string VERSION = "3.0.1.0";
         private const int MaleLimit = 2;
         private const int FemaleLimit = 2;
         private const bool _useSelfColliders = true;
@@ -127,7 +127,7 @@ namespace HS2_BetterPenetration
                 return;
 
             for (int index = 0; index < MaleLimit; index++)
-                Core.UpdateDanCollider(index, _danColliderRadius[index].Value, _danColliderHeadLength[index].Value, _danColliderVerticalCenter[index].Value);
+                CoreGame.UpdateDanCollider(index, _danColliderRadius[index].Value, _danColliderHeadLength[index].Value, _danColliderVerticalCenter[index].Value);
         }
 
         private static void UpdateFingerColliders()
@@ -136,7 +136,7 @@ namespace HS2_BetterPenetration
                 return;
 
             for (int index = 0; index < MaleLimit; index++)
-                Core.UpdateFingerColliders(index, _fingerColliderRadius[index].Value, _fingerColliderLength[index].Value);
+                CoreGame.UpdateFingerColliders(index, _fingerColliderRadius[index].Value, _fingerColliderLength[index].Value);
         }
 
         private static void UpdateDanOptions()
@@ -145,7 +145,7 @@ namespace HS2_BetterPenetration
                 return;
 
             for (int index = 0; index < MaleLimit; index++)
-                Core.UpdateDanOptions(index, _danLengthSquishFactor[index].Value, _danGirthSquishFactor[index].Value, 
+                CoreGame.UpdateDanOptions(index, _danLengthSquishFactor[index].Value, _danGirthSquishFactor[index].Value, 
                     _danSquishThreshold[index].Value, _danSquishOralGirth[index].Value, _useFingerColliders[index].Value, 
                     _simplifyPenetration[index].Value, _simplifyOral[index].Value);
         }
@@ -157,7 +157,7 @@ namespace HS2_BetterPenetration
 
             List<CollisionOptions> collisionOptions = PopulateCollisionOptionsList();
             for (int index = 0; index < MaleLimit; index++)
-                Core.UpdateCollisionOptions(index, collisionOptions[index]);
+                CoreGame.UpdateCollisionOptions(index, collisionOptions[index]);
         }
 
         private static void BeforeCharacterReload(object __instance)
@@ -170,7 +170,7 @@ namespace HS2_BetterPenetration
                 return;
 
             loadingCharacter = true;
-            Core.SetChangingAnimations(true);
+            CoreGame.SetChangingAnimations(true);
         }
 
         private static void AfterCharacterReload(object __instance)
@@ -193,7 +193,7 @@ namespace HS2_BetterPenetration
             }
 
             List<CollisionOptions> collisionOptions = PopulateCollisionOptionsList();
-            Core.InitializeCollisionAgents(femaleList, collisionOptions);
+            CoreGame.InitializeCollisionAgents(femaleList, collisionOptions);
             loadingCharacter = false;
         }
 
@@ -207,8 +207,8 @@ namespace HS2_BetterPenetration
                 return;
 
             loadingCharacter = true;
-            Core.SetChangingAnimations(true);
-            Core.ClearDanAgents();
+            CoreGame.SetChangingAnimations(true);
+            CoreGame.ClearDanAgents();
         }
 
         private static void AfterDanCharacterReload(object __instance)
@@ -231,14 +231,14 @@ namespace HS2_BetterPenetration
                 maleList.Add(character);
             }
 
-            Core.InitializeDanAgents(maleList, danOptions);
+            CoreGame.InitializeDanAgents(maleList, danOptions);
             loadingCharacter = false;
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "LoadCharaFbxDataAsync")]
         private static void ChaControl_LoadCharaFbxDataAsync(ChaControl __instance)
         {
-            Core.RemoveCollidersFromCoordinate(__instance);
+            CoreGame.RemoveCollidersFromCoordinate(__instance);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(HScene), "SetStartVoice")]
@@ -267,7 +267,7 @@ namespace HS2_BetterPenetration
                 maleList.Add(character);
             }
 
-            Core.InitializeAgents(maleList, femaleList, danOptions, collisionOptions);
+            CoreGame.InitializeAgents(maleList, femaleList, danOptions, collisionOptions);
             inHScene = true;
         }
 
@@ -313,7 +313,7 @@ namespace HS2_BetterPenetration
             if (!inHScene || _info == null || _info.fileFemale == null)
                 return;
 
-            Core.OnChangeAnimation(_info.fileFemale);
+            CoreGame.OnChangeAnimation(_info.fileFemale);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(H_Lookat_dan), "setInfo")]
@@ -330,7 +330,7 @@ namespace HS2_BetterPenetration
             if (___assetName != null && ___assetName.Length != 0 && ___assetName.ToString().Contains("m2f"))
                 twoDans = true;
 
-            Core.LookAtDanSetup(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, maleNum, __instance.numFemale, twoDans);
+            CoreGame.LookAtDanSetup(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, maleNum, __instance.numFemale, twoDans);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(H_Lookat_dan), "LateUpdate")]
@@ -348,7 +348,7 @@ namespace HS2_BetterPenetration
                 maleNum = 1;
             }
 
-            Core.LookAtDanUpdate(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, hScene.NowChangeAnim, maleNum, __instance.numFemale);
+            CoreGame.LookAtDanUpdate(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, hScene.NowChangeAnim, maleNum, __instance.numFemale);
         }
 
         private static void SceneManager_sceneLoaded(Scene scene, LoadSceneMode lsm)
@@ -399,7 +399,7 @@ namespace HS2_BetterPenetration
                     return;
 			}
 
-            Core.OnEndScene();
+            CoreGame.OnEndScene();
 
             harmony.UnpatchAll(nameof(HS2_BetterPenetration));
             patched = false;

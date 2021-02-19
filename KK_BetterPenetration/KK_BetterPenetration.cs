@@ -110,7 +110,7 @@ namespace KK_BetterPenetration
                 return;
 
             for (int index = 0; index < MaleLimit; index++)
-                Core.UpdateDanCollider(index, _danColliderRadius[index].Value, _danColliderHeadLength[index].Value, _danColliderVerticalCenter[index].Value);
+                CoreGame.UpdateDanCollider(index, _danColliderRadius[index].Value, _danColliderHeadLength[index].Value, _danColliderVerticalCenter[index].Value);
         }
 
         private static void UpdateFingerColliders()
@@ -119,7 +119,7 @@ namespace KK_BetterPenetration
                 return;
 
             for (int index = 0; index < MaleLimit; index++)
-                Core.UpdateFingerColliders(index, _fingerColliderRadius[index].Value, _fingerColliderLength[index].Value);
+                CoreGame.UpdateFingerColliders(index, _fingerColliderRadius[index].Value, _fingerColliderLength[index].Value);
         }
 
         private static void UpdateDanOptions()
@@ -128,7 +128,7 @@ namespace KK_BetterPenetration
                 return;
 
             for (int index = 0; index < MaleLimit; index++)
-                Core.UpdateDanOptions(index, _danLengthSquishFactor[index].Value, _danGirthSquishFactor[index].Value,
+                CoreGame.UpdateDanOptions(index, _danLengthSquishFactor[index].Value, _danGirthSquishFactor[index].Value,
                     _danSquishThreshold[index].Value, _danSquishOralGirth[index].Value, _useFingerColliders[index].Value,
                     _simplifyPenetration[index].Value, _simplifyOral[index].Value);
         }
@@ -140,13 +140,13 @@ namespace KK_BetterPenetration
 
             List<CollisionOptions> collisionOptions = PopulateCollisionOptionsList();
             for (int index = 0; index < MaleLimit; index++)
-                Core.UpdateCollisionOptions(index, collisionOptions[index]);
+                CoreGame.UpdateCollisionOptions(index, collisionOptions[index]);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "LoadCharaFbxDataAsync")]
         public static void ChaControl_LoadCharaFbxDataAsync(ChaControl __instance)
         {
-            Core.RemoveCollidersFromCoordinate(__instance);
+            CoreGame.RemoveCollidersFromCoordinate(__instance);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(HSceneProc), "Start")]
@@ -185,7 +185,7 @@ namespace KK_BetterPenetration
             if (___male1 != null)
                 maleList.Add(___male1);
 
-            Core.InitializeAgents(maleList, femaleList, danOptions, collisionOptions);
+            CoreGame.InitializeAgents(maleList, femaleList, danOptions, collisionOptions);
             inHScene = true;
             hSceneStarted = false;
         }
@@ -236,7 +236,7 @@ namespace KK_BetterPenetration
 
             Console.WriteLine($"_nextAinmInfo {_nextAinmInfo.pathFemaleBase.file}");
 
-            Core.OnChangeAnimation(_nextAinmInfo.pathFemaleBase.file);
+            CoreGame.OnChangeAnimation(_nextAinmInfo.pathFemaleBase.file);
         }
 
 
@@ -252,10 +252,10 @@ namespace KK_BetterPenetration
                 maleNum = 1;
 
             twoDans = false;
-     //       if (___assetName != null && ___assetName.Length != 0 && ___assetName.ToString().Contains("m2f"))
-     //           twoDans = true;
+            //       if (___assetName != null && ___assetName.Length != 0 && ___assetName.ToString().Contains("m2f"))
+            //           twoDans = true;
 
-            Core.LookAtDanSetup(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, maleNum, __instance.numFemale, twoDans);
+            CoreGame.LookAtDanSetup(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, maleNum, __instance.numFemale, twoDans);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(Lookat_dan), "LateUpdate")]
@@ -273,7 +273,7 @@ namespace KK_BetterPenetration
                 maleNum = 1;
             }
 
-            Core.LookAtDanUpdate(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, false, maleNum, __instance.numFemale);
+            CoreGame.LookAtDanUpdate(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, false, maleNum, __instance.numFemale);
         }
 
         private static void SceneManager_sceneLoaded(Scene scene, LoadSceneMode lsm)
@@ -294,7 +294,7 @@ namespace KK_BetterPenetration
             if (!patched || scene.name != "HProc")
                 return;
 
-            Core.OnEndScene();
+            CoreGame.OnEndScene();
 
             harmony.UnpatchAll(nameof(KK_BetterPenetration));
             patched = false;

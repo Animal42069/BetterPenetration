@@ -45,10 +45,10 @@ namespace Core_BetterPenetration
                     danPoints[point].ScaleDanGirth(girthScaleFactor);
                 else if (point <= danPoints.Count / 3)
                     danPoints[point].ScaleDanGirth(1.0f);
-                else if (point >= danPoints.Count * 2 / 3)
-                    danPoints[point].ScaleDanGirth(inverseGirthScaleFactor);
-                else
+                else if (point <= danPoints.Count * 2 / 3)
                     danPoints[point].ScaleDanGirth(halfGirthScaleFactor);
+                else
+                    danPoints[point].ScaleDanGirth(inverseGirthScaleFactor);
             }
         }
 #else
@@ -56,7 +56,7 @@ namespace Core_BetterPenetration
         {
             float halfGirthScaleFactor = (1 + (girthScaleFactor - 1) / 2);
 
-            for (int point = 0; point < danPoints.Count * 2 / 3; point++)
+            for (int point = 1; point < danPoints.Count * 2 / 3; point++)
             {
                 if (point <= danPoints.Count / 3)
                     danPoints[point].ScaleDanGirth(girthScaleFactor);
