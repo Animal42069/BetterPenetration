@@ -333,10 +333,18 @@ namespace Core_BetterPenetration
             if (m_referenceTarget.name != LookTargets.HeadTarget || m_danOptions.squishOralGirth)
                 m_danPoints.SquishDanGirth(girthScaleFactor);
 
-            if (m_referenceTarget.name == LookTargets.KokanTarget || m_referenceTarget.name == LookTargets.AnaTarget || m_referenceTarget.name == LookTargets.BPKokanTarget)
-                adjustedDanLength = GetMaxDanLength(adjustedDanLength, danTarget, targetAgent.m_innerTarget.position, danDistanceToTarget);
-            else if (m_referenceTarget.name == LookTargets.HeadTarget)
+            if (m_referenceTarget.name == LookTargets.KokanTarget || m_referenceTarget.name == LookTargets.AnaTarget || m_referenceTarget.name == LookTargets.BPKokanTarget) {
+                // TODO temp bug fix.  targetAgent.m_innerTarget is not set, and throws a NullPointerException
+                try {
+                    adjustedDanLength = GetMaxDanLength(adjustedDanLength, danTarget, targetAgent.m_innerTarget.position, danDistanceToTarget);
+                } catch (Exception e) {
+                    Console.WriteLine("KK_BetterPenetration.DanAgent.SetDanTarget() - Exception: " + e);
+                }
+
+            } else if (m_referenceTarget.name == LookTargets.HeadTarget) {
+                
                 adjustedDanLength = GetMaxDanLength(adjustedDanLength, danTarget, targetAgent.m_innerHeadTarget.position, danDistanceToTarget);
+            }
 
             danEndTarget = ConstrainDan(danStartPosition, danTargetVector, danEndTarget, adjustedDanLength, danDistanceToTarget, targetAgent);
             ScaleDanColliders(adjustedDanLength);

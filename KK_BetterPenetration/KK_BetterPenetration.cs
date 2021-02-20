@@ -279,10 +279,15 @@ namespace KK_BetterPenetration
         private static void SceneManager_sceneLoaded(Scene scene, LoadSceneMode lsm)
         {
             Console.WriteLine($"SceneManager_sceneLoaded {scene.name}");
-
-            if (patched || scene.name != "HProc")
-                return;
-
+            
+            if (UnityEngine.Application.productName == "KoikatuVR") {
+                if (patched || scene.name != "VRHScene")
+                    return;
+            } else {
+                if (patched || scene.name != "HProc")
+                    return;
+            }
+ 
             harmony.PatchAll(typeof(KK_BetterPenetration));
             patched = true;
         }
@@ -291,8 +296,13 @@ namespace KK_BetterPenetration
         {
             Console.WriteLine($"SceneManager_sceneUnloaded {scene.name}");
 
-            if (!patched || scene.name != "HProc")
-                return;
+            if (UnityEngine.Application.productName == "KoikatuVR") {
+                if (!patched || scene.name != "VRHScene")
+                        return;
+            } else {
+                if (!patched || scene.name != "HProc")
+                    return;
+            }
 
             CoreGame.OnEndScene();
 
