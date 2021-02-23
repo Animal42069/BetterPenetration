@@ -13,8 +13,7 @@ namespace Core_BetterPenetration
     {
         private static List<DanAgent> danAgents;
         private static List<CollisionAgent> collisionAgents;
-
-        private static List<bool> changingAnimations;
+        private static List<bool> danHasNewTarget;
 
         public static void InitializeAgents(List<ChaControl> danCharacterList, List<ChaControl> collisionCharacterList, List<DanOptions> danOptions, List<CollisionOptions> collisionOptions)
         {
@@ -25,7 +24,7 @@ namespace Core_BetterPenetration
         public static void InitializeDanAgents(List<ChaControl> danCharacterList, List<DanOptions> danOptions)
         {
             danAgents = new List<DanAgent>();
-            changingAnimations = new List<bool>();
+            danHasNewTarget = new List<bool>();
 
             int characterNum = 0;
             foreach (var character in danCharacterList)
@@ -34,7 +33,7 @@ namespace Core_BetterPenetration
                     continue;
 
                 danAgents.Add(new DanAgent(character, danOptions[characterNum]));
-                changingAnimations.Add(false);
+                danHasNewTarget.Add(false);
                 characterNum++;
             }
         }
@@ -79,7 +78,7 @@ namespace Core_BetterPenetration
             if (!changingAnimation)
                 collisionAgents[femaleNum].AdjustMissionaryAnimation();
 
-            if (changingAnimations[maleNum] && !changingAnimation)
+            if (danHasNewTarget[maleNum] && !changingAnimation)
             {
                 if (collisionAgents.Count > 1 && collisionAgents[1].m_collisionCharacter.visibleAll && collisionAgents[1].m_collisionCharacter.objTop != null)
                 {
@@ -93,6 +92,8 @@ namespace Core_BetterPenetration
                 {
                     danAgents[maleNum].SetupNewDanTarget(lookAtTransform, currentMotion, topStick, collisionAgents[femaleNum]);
                 }
+
+                danHasNewTarget[maleNum] = false;
             }
 
             danAgents[maleNum].SetDanTarget(collisionAgents[femaleNum]);
@@ -128,7 +129,7 @@ namespace Core_BetterPenetration
             foreach (var socketAgent in collisionAgents)
                 socketAgent.adjustFAnimation = false;
 
-            SetChangingAnimations(true);
+            SetDansHaveNewTarget(true);
 
             if (collisionAgents == null || collisionAgents[0] == null)
                 return;
@@ -136,10 +137,10 @@ namespace Core_BetterPenetration
             collisionAgents[0].CheckForAdjustment(newAnimationFile);
         }
 
-        public static void SetChangingAnimations(bool set)
+        public static void SetDansHaveNewTarget(bool set)
         {
-            for (int index = 0; index < changingAnimations.Count; index++)
-                changingAnimations[index] = set;
+            for (int index = 0; index < danHasNewTarget.Count; index++)
+                danHasNewTarget[index] = set;
         }
 
         public static void UpdateDanCollider(int maleNum, float danRadius, float danHeadLength, float danVerticalCenter)
@@ -180,7 +181,7 @@ namespace Core_BetterPenetration
             ClearCollisionAgents();
             danAgents = null;
             collisionAgents = null;
-            changingAnimations = null;
+            danHasNewTarget = null;
         }
 
         public static void RemoveCollidersFromCoordinate(ChaControl character)

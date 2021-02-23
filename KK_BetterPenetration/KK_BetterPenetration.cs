@@ -13,7 +13,7 @@ namespace KK_BetterPenetration
     [BepInProcess("KoikatuVR")]
     public class KK_BetterPenetration : BaseUnityPlugin
     {
-        public const string VERSION = "3.0.0.0";
+        public const string VERSION = "3.0.2.0";
         private const int MaleLimit = 2;
         private const int FemaleLimit = 2;
         private const bool _useSelfColliders = false;

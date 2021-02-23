@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Core_BetterPenetration
@@ -27,6 +28,7 @@ namespace Core_BetterPenetration
             {
                 Vector3 forwardVector = Vector3.Normalize(newDanPositions[point + 1] - newDanPositions[point]);
                 danQuaternion = Quaternion.LookRotation(forwardVector, Vector3.Cross(forwardVector, danTop.right));
+
                 danPoints[point].transform.SetPositionAndRotation(newDanPositions[point], danQuaternion);
             }
 
@@ -74,9 +76,9 @@ namespace Core_BetterPenetration
             foreach (var danPoint in danPoints)
                 danPoint.ResetDanPoint();
 
-            Quaternion danRotation = danPoints[0].transform.rotation;
+            Quaternion danRotation = danPoints[0].GetDanPointRotation();
             for (int point = 1; point < danPoints.Count - 1; point++)
-                danPoints[point].transform.rotation = danRotation;
+                danPoints[point].SetDanPointRotation(danRotation);
         }
 
         internal Vector3 GetDanStartPosition()

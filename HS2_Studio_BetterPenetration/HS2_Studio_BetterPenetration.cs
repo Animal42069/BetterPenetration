@@ -16,13 +16,13 @@ namespace HS2_Studio_BetterPenetration
 {
     [BepInPlugin(GUID, PluginName, VERSION)]
     [BepInDependency("com.deathweasel.bepinex.uncensorselector", "3.10")]
-    [BepInDependency("com.joan6694.illusionplugins.bonesframework", "1.4.1")]
+    [BepInDependency("com.joan6694.illusionplugins.bonesframework", "1.4.2")]
     [BepInProcess("StudioNEOV2")]
     public class HS2_Studio_BetterPenetration : BaseUnityPlugin
     {
         private const string GUID = "com.animal42069.studiobetterpenetration";
         private const string PluginName = "HS2 Studio Better Penetration";
-        private const string VERSION = "3.0.0.1";
+        private const string VERSION = "1.0.1.0";
         private const string BEHAVIOR = "BetterPenetrationController";
         private const string StudioCategoryName = "Better Penetration";
         private Harmony harmony;

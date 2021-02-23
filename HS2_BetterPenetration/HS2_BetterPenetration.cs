@@ -13,12 +13,12 @@ namespace HS2_BetterPenetration
 {
     [BepInPlugin("animal42069.HS2betterpenetration", "HS2 Better Penetration", VERSION)]
     [BepInDependency("com.deathweasel.bepinex.uncensorselector", "3.10")]
-    [BepInDependency("com.joan6694.illusionplugins.bonesframework", "1.4.1")]
+    [BepInDependency("com.joan6694.illusionplugins.bonesframework", "1.4.2")]
     [BepInProcess("HoneySelect2")]
     [BepInProcess("HoneySelect2VR")]
     public class HS2_BetterPenetration : BaseUnityPlugin
     {
-        internal const string VERSION = "3.0.1.0";
+        internal const string VERSION = "3.0.2.0";
         private const int MaleLimit = 2;
         private const int FemaleLimit = 2;
         private const bool _useSelfColliders = true;
@@ -77,7 +77,7 @@ namespace HS2_BetterPenetration
                 { UpdateDanColliders(); };
                 (_danLengthSquishFactor[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis: Squish Length Factor", 0.6f, new ConfigDescription("How much the length of the penis squishes after it has passed the squish threshold", new AcceptableValueRange<float>(0, 1)))).SettingChanged += (s, e) =>
                 { UpdateDanOptions(); };
-                (_danGirthSquishFactor[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis: Squish Girth Factor", 0.25f, new ConfigDescription("How much the girth of the penis squishes after it has passed the squish threshold", new AcceptableValueRange<float>(0, 1)))).SettingChanged += (s, e) =>
+                (_danGirthSquishFactor[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis: Squish Girth Factor", 0.4f, new ConfigDescription("How much the girth of the penis squishes after it has passed the squish threshold", new AcceptableValueRange<float>(0, 1)))).SettingChanged += (s, e) =>
                 { UpdateDanOptions(); };
                 (_danSquishThreshold[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis: Squish Threshold", 0.2f, new ConfigDescription("Allows the penis to begin squishing (shorten length increase girth) after this amount of the penis has penetrated.", new AcceptableValueRange<float>(0, 1)))).SettingChanged += (s, e) =>
                 { UpdateDanOptions(); };
@@ -170,7 +170,7 @@ namespace HS2_BetterPenetration
                 return;
 
             loadingCharacter = true;
-            CoreGame.SetChangingAnimations(true);
+            CoreGame.SetDansHaveNewTarget(true);
         }
 
         private static void AfterCharacterReload(object __instance)
@@ -207,7 +207,7 @@ namespace HS2_BetterPenetration
                 return;
 
             loadingCharacter = true;
-            CoreGame.SetChangingAnimations(true);
+            CoreGame.SetDansHaveNewTarget(true);
             CoreGame.ClearDanAgents();
         }
 
