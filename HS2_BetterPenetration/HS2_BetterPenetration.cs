@@ -353,8 +353,13 @@ namespace HS2_BetterPenetration
 
         private static void SceneManager_sceneLoaded(Scene scene, LoadSceneMode lsm)
         {
-            if (lsm != LoadSceneMode.Single || patched || scene.name != "HScene")
-                return;
+            if (UnityEngine.Application.productName == "HoneySelect2VR") {
+                if (scene.name == "Init" || scene.name == "VRTitle" || scene.name == "VRLogo" || scene.name == "VRSelect") // for the official HoneySelect2VR, the LoadSceneMode can be Multiple, and the scene name is equal to the map name, not "HScene"
+                    return;
+            } else {
+                if (lsm != LoadSceneMode.Single || patched || scene.name != "HScene")
+                    return;
+            }
 
             harmony.PatchAll(typeof(HS2_BetterPenetration));
             patched = true;
@@ -386,13 +391,19 @@ namespace HS2_BetterPenetration
 
         private static void SceneManager_sceneUnloaded(Scene scene)
         {
-            if (!patched || scene.name != "HScene")
-                return;
+            if(UnityEngine.Application.productName == "HoneySelect2VR") {
+                if (scene.name == "Init" || scene.name == "VRTitle" || scene.name == "VRLogo" || scene.name == "VRSelect")
+                    return;
+            } else {
+                if (!patched || scene.name != "HScene")
+                    return;
+			}
 
             CoreGame.OnEndScene();
 
             harmony.UnpatchAll(nameof(HS2_BetterPenetration));
             patched = false;
+
             inHScene = false;
             loadingCharacter = false;
 
