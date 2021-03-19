@@ -66,8 +66,8 @@ namespace Core_BetterPenetration
         internal const string KokanTarget = "k_f_kokan_00";
         internal const string BPKokanTarget = "cf_J_Vagina_root";
         internal const string AnaTarget = "k_f_ana_00";
-        internal const string InnerTarget = "cf_J_Kosi01";
-        internal const string InnerHeadTarget = "cf_J_Head";
+        internal const string InnerTarget = "cf_j_waist01";
+        internal const string InnerHeadTarget = "cf_j_head";
     }
 
     static class BoneNames
