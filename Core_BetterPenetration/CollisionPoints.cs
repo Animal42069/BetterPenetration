@@ -19,5 +19,14 @@ namespace Core_BetterPenetration
             frontCollisionPoints = frontPoints;
             backCollisionPoints = backPoints;
         }
+
+        public void UpdateCollisionOptions(CollisionOptions options)
+        {
+            for (var point = 0; point < frontCollisionPoints.Count && point < options.frontCollisionInfo.Count; point++)
+                frontCollisionPoints[point].UpdateCollisionInfo(options.frontCollisionInfo[point]);
+
+            for (var point = 0; point < frontCollisionPoints.Count && point < options.frontCollisionInfo.Count; point++)
+                backCollisionPoints[point].UpdateCollisionInfo(options.backCollisonInfo[point]);
+        }
     }
 }

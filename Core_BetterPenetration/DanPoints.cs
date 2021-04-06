@@ -28,11 +28,11 @@ namespace Core_BetterPenetration
             {
                 Vector3 forwardVector = Vector3.Normalize(newDanPositions[point + 1] - newDanPositions[point]);
                 danQuaternion = Quaternion.LookRotation(forwardVector, Vector3.Cross(forwardVector, danTop.right));
-
                 danPoints[point].transform.SetPositionAndRotation(newDanPositions[point], danQuaternion);
             }
 
             danPoints[danPoints.Count - 1].transform.SetPositionAndRotation(newDanPositions[danPoints.Count - 1], danQuaternion);
+            danTop.transform.rotation = danPoints[0].transform.rotation;
         }
 
 #if !AI_STUDIO && !HS2_STUDIO

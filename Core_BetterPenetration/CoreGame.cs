@@ -200,6 +200,7 @@ namespace Core_BetterPenetration
                 {
                     if (dynamicBone.m_Colliders[collider] != null && dynamicBone.m_Colliders[collider].name != null && dynamicBone.m_Colliders[collider].name.Contains("Vagina"))
                         dynamicBone.m_Colliders[collider] = null;
+                    //    dynamicBone.m_Colliders.RemoveAt(collider);
                 }
             }
         }

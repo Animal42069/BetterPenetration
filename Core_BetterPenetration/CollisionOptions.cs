@@ -17,11 +17,11 @@ namespace Core_BetterPenetration
         internal float kokan_adjust_rotation_x = 0;
         internal float clippingDepth = 0;
 
-        internal List<CollidonPointInfo> frontCollisionInfo;
-        internal List<CollidonPointInfo> backCollisonInfo;
+        internal List<CollisionPointInfo> frontCollisionInfo;
+        internal List<CollisionPointInfo> backCollisonInfo;
 
         public CollisionOptions(bool useBoundingColliders, float kokanForwardOffset, float kokanUpOffset, float headForwardOffset, float headUpOffset, bool kokan_adjust,
-        float kokan_adjust_position_z, float kokan_adjust_position_y, float kokan_adjust_rotation_x, float clippingDepth, List<CollidonPointInfo> frontInfo, List<CollidonPointInfo> backInfo)
+        float kokan_adjust_position_z, float kokan_adjust_position_y, float kokan_adjust_rotation_x, float clippingDepth, List<CollisionPointInfo> frontInfo, List<CollisionPointInfo> backInfo)
         {
             this.useBoundingColliders = useBoundingColliders;
 

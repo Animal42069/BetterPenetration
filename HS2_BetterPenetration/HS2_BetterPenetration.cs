@@ -18,7 +18,7 @@ namespace HS2_BetterPenetration
     [BepInProcess("HoneySelect2VR")]
     public class HS2_BetterPenetration : BaseUnityPlugin
     {
-        internal const string VERSION = "3.0.2.1";
+        internal const string VERSION = "3.0.3.0";
         private const int MaleLimit = 2;
         private const int FemaleLimit = 2;
         private const bool _useSelfColliders = true;
@@ -156,7 +156,7 @@ namespace HS2_BetterPenetration
                 return;
 
             List<CollisionOptions> collisionOptions = PopulateCollisionOptionsList();
-            for (int index = 0; index < MaleLimit; index++)
+            for (int index = 0; index < FemaleLimit; index++)
                 CoreGame.UpdateCollisionOptions(index, collisionOptions[index]);
         }
 
@@ -290,13 +290,13 @@ namespace HS2_BetterPenetration
         {
             List<CollisionOptions> collisionOptions = new List<CollisionOptions>();
 
-            List<CollidonPointInfo> frontInfo = new List<CollidonPointInfo>();
+            List<CollisionPointInfo> frontInfo = new List<CollisionPointInfo>();
             for (int info = 0; info < BoneNames.frontCollisionList.Count; info++)
-                frontInfo.Add(new CollidonPointInfo(BoneNames.frontCollisionList[info], _frontCollisionOffset[info].Value, frontPointsInward[info]));
+                frontInfo.Add(new CollisionPointInfo(BoneNames.frontCollisionList[info], _frontCollisionOffset[info].Value, frontPointsInward[info]));
 
-            List<CollidonPointInfo> backInfo = new List<CollidonPointInfo>();
+            List<CollisionPointInfo> backInfo = new List<CollisionPointInfo>();
             for (int info = 0; info < BoneNames.backCollisionList.Count; info++)
-                backInfo.Add(new CollidonPointInfo(BoneNames.backCollisionList[info], _backCollisionOffset[info].Value, backPointsInward[info]));
+                backInfo.Add(new CollisionPointInfo(BoneNames.backCollisionList[info], _backCollisionOffset[info].Value, backPointsInward[info]));
 
             for (int femaleNum = 0; femaleNum < FemaleLimit; femaleNum++)
             {

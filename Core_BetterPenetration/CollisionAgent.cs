@@ -79,9 +79,12 @@ namespace Core_BetterPenetration
             m_kokanDynamicBones = new List<DynamicBone>();
             foreach (DynamicBone dynamicBone in m_collisionCharacter.GetComponentsInChildren<DynamicBone>())
             {
+
                 if (!dynamicBone.name.Contains(BoneNames.BPBone))
                     continue;
-
+#if KK
+                m_kokanDynamicBones.Add(dynamicBone);
+#else
                 dynamicBone.m_Colliders.Clear();
 
                 if (dynamicBone == null || dynamicBone.m_Root == null)
@@ -97,7 +100,7 @@ namespace Core_BetterPenetration
                 else
                     dynamicBone.m_Radius *= (m_kokanBone.lossyScale.x + m_kokanBone.lossyScale.z) / 2;
 
-#if HS2 || AIS
+#if HS2 || AIS || HS2_STUDIO || AI_STUDIO
                 dynamicBone.UpdateParameters();
 #endif
                 m_kokanDynamicBones.Add(dynamicBone);
@@ -134,6 +137,7 @@ namespace Core_BetterPenetration
                 }
 
                 dynamicBone.m_Colliders.Add(selfCollider);
+#endif
             }
         }
 
@@ -156,6 +160,11 @@ namespace Core_BetterPenetration
         internal void UpdateCollisionOptions(CollisionOptions options)
         {
             m_collisionOptions = options;
+
+            if (m_collisionPoints == null)
+                return;
+
+            m_collisionPoints.UpdateCollisionOptions(options);
         }
 
         internal void ClearColliders()

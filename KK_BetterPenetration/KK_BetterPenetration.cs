@@ -13,13 +13,13 @@ namespace KK_BetterPenetration
     [BepInProcess("KoikatuVR")]
     public class KK_BetterPenetration : BaseUnityPlugin
     {
-        public const string VERSION = "3.0.2.0";
+        public const string VERSION = "3.0.3.0";
         private const int MaleLimit = 2;
         private const int FemaleLimit = 2;
         private const bool _useSelfColliders = false;
 
-        private static readonly List<float> frontOffsets = new List<float> { -0.035f, -0.04f, -0.02f};
-        private static readonly List<float> backOffsets = new List<float> { -0.005f, 0.01f, 0.01f};
+        private static readonly List<float> frontOffsets = new List<float> { -0.04f, 0.04f, 0.06f};
+        private static readonly List<float> backOffsets = new List<float> { -0.04f, 0.04f, 0f};
         private static readonly List<bool> frontPointsInward = new List<bool> { false, false, false,};
         private static readonly List<bool> backPointsInward = new List<bool> { false, true, true};
 
@@ -56,19 +56,19 @@ namespace KK_BetterPenetration
         {
             for (int maleNum = 0; maleNum < _danColliderHeadLength.Length; maleNum++)
             {
-                (_fingerColliderLength[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Finger Collider: Length", 0.06f, "Lenght of the finger colliders.")).SettingChanged += (s, e) =>
+                (_fingerColliderLength[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Finger Collider: Length", 0.03f, "Lenght of the finger colliders.")).SettingChanged += (s, e) =>
                 { UpdateFingerColliders(); };
-                (_fingerColliderRadius[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Finger Collider: Radius", 0.02f, "Radius of the finger colliders.")).SettingChanged += (s, e) =>
+                (_fingerColliderRadius[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Finger Collider: Radius", 0.008f, "Radius of the finger colliders.")).SettingChanged += (s, e) =>
                 { UpdateFingerColliders(); };
-                (_danColliderHeadLength[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis Collider: Length of Head", 0.035f, "Distance from the center of the head bone to the tip, used for collision purposes.")).SettingChanged += (s, e) =>
+                (_danColliderHeadLength[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis Collider: Length of Head", 0.008f, "Distance from the center of the head bone to the tip, used for collision purposes.")).SettingChanged += (s, e) =>
                 { UpdateDanColliders(); };
-                (_danColliderRadius[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis Collider: Radius of Shaft", 0.032f, "Radius of the shaft collider.")).SettingChanged += (s, e) =>
+                (_danColliderRadius[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis Collider: Radius of Shaft", 0.024f, "Radius of the shaft collider.")).SettingChanged += (s, e) =>
                 { UpdateDanColliders(); };
-                (_danColliderVerticalCenter[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis Collider: Vertical Center", -0.003f, "Vertical Center of the shaft collider")).SettingChanged += (s, e) =>
+                (_danColliderVerticalCenter[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis Collider: Vertical Center", 0.0f, "Vertical Center of the shaft collider")).SettingChanged += (s, e) =>
                 { UpdateDanColliders(); };
-                (_danLengthSquishFactor[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis: Squish Length Factor", 0.5f, new ConfigDescription("How much the length of the penis squishes after it has passed the squish threshold", new AcceptableValueRange<float>(0, 1)))).SettingChanged += (s, e) =>
+                (_danLengthSquishFactor[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis: Squish Length Factor", 0.6f, new ConfigDescription("How much the length of the penis squishes after it has passed the squish threshold", new AcceptableValueRange<float>(0, 1)))).SettingChanged += (s, e) =>
                 { UpdateDanOptions(); };
-                (_danGirthSquishFactor[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis: Squish Girth Factor", 1.1f, new ConfigDescription("How much the girth of the penis squishes after it has passed the squish threshold", new AcceptableValueRange<float>(1, 2)))).SettingChanged += (s, e) =>
+                (_danGirthSquishFactor[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis: Squish Girth Factor", 0.15f, new ConfigDescription("How much the girth of the penis squishes after it has passed the squish threshold", new AcceptableValueRange<float>(0, 1)))).SettingChanged += (s, e) =>
                 { UpdateDanOptions(); };
                 (_danSquishThreshold[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis: Squish Threshold", 0.2f, new ConfigDescription("Allows the penis to begin squishing (shorten length increase girth) after this amount of the penis has penetrated.", new AcceptableValueRange<float>(0, 1)))).SettingChanged += (s, e) =>
                 { UpdateDanOptions(); };
@@ -139,7 +139,7 @@ namespace KK_BetterPenetration
                 return;
 
             List<CollisionOptions> collisionOptions = PopulateCollisionOptionsList();
-            for (int index = 0; index < MaleLimit; index++)
+            for (int index = 0; index < FemaleLimit; index++)
                 CoreGame.UpdateCollisionOptions(index, collisionOptions[index]);
         }
 
@@ -209,13 +209,13 @@ namespace KK_BetterPenetration
         {
             List<CollisionOptions> collisionOptions = new List<CollisionOptions>();
 
-            List<CollidonPointInfo> frontInfo = new List<CollidonPointInfo>();
+            List<CollisionPointInfo> frontInfo = new List<CollisionPointInfo>();
             for (int info = 0; info < BoneNames.frontCollisionList.Count; info++)
-                frontInfo.Add(new CollidonPointInfo(BoneNames.frontCollisionList[info], _frontCollisionOffset[info].Value, frontPointsInward[info]));
+                frontInfo.Add(new CollisionPointInfo(BoneNames.frontCollisionList[info], _frontCollisionOffset[info].Value, frontPointsInward[info]));
 
-            List<CollidonPointInfo> backInfo = new List<CollidonPointInfo>();
+            List<CollisionPointInfo> backInfo = new List<CollisionPointInfo>();
             for (int info = 0; info < BoneNames.backCollisionList.Count; info++)
-                backInfo.Add(new CollidonPointInfo(BoneNames.backCollisionList[info], _backCollisionOffset[info].Value, backPointsInward[info]));
+                backInfo.Add(new CollisionPointInfo(BoneNames.backCollisionList[info], _backCollisionOffset[info].Value, backPointsInward[info]));
 
             for (int femaleNum = 0; femaleNum < FemaleLimit; femaleNum++)
             {
@@ -244,7 +244,7 @@ namespace KK_BetterPenetration
         private static void H_Lookat_dan_PostSetInfo(Lookat_dan __instance, ChaControl ___male)
         {
  
-            if (!inHScene || loadingCharacter || __instance == null || __instance.strPlayMotion == null || ___male == null)
+            if (!inHScene || loadingCharacter || __instance.strPlayMotion == null || ___male == null)
                 return;
 
             int maleNum = 0;
@@ -261,7 +261,7 @@ namespace KK_BetterPenetration
         [HarmonyPostfix, HarmonyPatch(typeof(Lookat_dan), "LateUpdate")]
         public static void Lookat_dan_PostLateUpdate(Lookat_dan __instance, ChaControl ___male)
         {
-            if (!inHScene || loadingCharacter || __instance == null || __instance.strPlayMotion == null || ___male == null)
+            if (!inHScene || loadingCharacter || __instance.strPlayMotion == null || ___male == null)
                 return;
 
             int maleNum = 0;

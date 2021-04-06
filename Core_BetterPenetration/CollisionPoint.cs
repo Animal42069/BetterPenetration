@@ -5,22 +5,28 @@ namespace Core_BetterPenetration
     class CollisionPoint
     {
         internal Transform transform;
-        internal CollidonPointInfo info;
+        internal CollisionPointInfo info;
 
-        public CollisionPoint(Transform point, CollidonPointInfo collisionInfo)
+        public CollisionPoint(Transform point, CollisionPointInfo collisionInfo)
         {
             transform = point;
             info = collisionInfo;
         }
+
+        public void UpdateCollisionInfo(CollisionPointInfo collisionInfo)
+        {
+            info = collisionInfo;
+        }
+
     }
 
-    class CollidonPointInfo
+    class CollisionPointInfo
     {
         internal string name;
         internal float offset;
         internal bool inward;
 
-        public CollidonPointInfo(string transformName, float offsetValue, bool inwardDirection)
+        public CollisionPointInfo(string transformName, float offsetValue, bool inwardDirection)
         {
             name = transformName;
             offset = offsetValue;
