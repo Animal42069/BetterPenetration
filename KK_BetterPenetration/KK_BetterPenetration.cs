@@ -5,15 +5,18 @@ using System;
 using System.Collections.Generic;
 using UnityEngine.SceneManagement;
 using Core_BetterPenetration;
+using System.Reflection;
 
 namespace KK_BetterPenetration
 {
     [BepInPlugin("animal42069.KKbetterpenetration", "KK Better Penetration", VERSION)]
     [BepInProcess("Koikatu")]
     [BepInProcess("KoikatuVR")]
+    [BepInProcess("Koikatu Party")]
+    [BepInProcess("Koikatu Party VR")]
     public class KK_BetterPenetration : BaseUnityPlugin
     {
-        public const string VERSION = "3.0.3.0";
+        public const string VERSION = "3.0.4.0";
         private const int MaleLimit = 2;
         private const int FemaleLimit = 2;
         private const bool _useSelfColliders = false;
@@ -46,6 +49,7 @@ namespace KK_BetterPenetration
 
         private static Harmony harmony;
         private static HSceneProc hSceneProc;
+        private static Traverse hSceneProcTraverse;
         private static bool patched = false;
         private static bool hSceneStarted = false;
         private static bool inHScene = false;
@@ -150,40 +154,46 @@ namespace KK_BetterPenetration
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(HSceneProc), "Start")]
-        public static void HScene_PostStart()
+        public static void HScene_PostStart(HSceneProc __instance)
         {
             Console.WriteLine("HSceneProc Start");
+
+            hSceneProc = __instance;
+            hSceneProcTraverse = Traverse.Create(__instance);
 
             hSceneStarted = true;
             inHScene = false;
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(HSceneProc), "Update")]
-        public static void HScene_PostUpdate(HSceneProc __instance, List<ChaControl> ___lstFemale, ChaControl ___male, ChaControl ___male1)
+        public static void HScene_PostUpdate()
         {
-            if (!hSceneStarted || !__instance.enabled || inHScene)
+            if (!hSceneStarted || inHScene || hSceneProc == null || !hSceneProc.enabled  || hSceneProcTraverse == null)
                 return;
-
-            hSceneProc = __instance;
 
             List<DanOptions> danOptions = PopulateDanOptionsList();
             List<CollisionOptions> collisionOptions = PopulateCollisionOptionsList();
 
-            if (___lstFemale == null || ___lstFemale.Count == 0)
+            var lstFemale = hSceneProcTraverse.Field("lstFemale").GetValue<List<ChaControl>>();
+            if (lstFemale == null || lstFemale.Count == 0)
                 return;
 
             List<ChaControl> femaleList = new List<ChaControl>();
-
-            foreach (var female in ___lstFemale)
+            foreach (var female in lstFemale)
                 if (female != null)
                     femaleList.Add(female);
             
             List<ChaControl> maleList = new List<ChaControl>();
-            if (___male != null)
-                maleList.Add(___male);
+            var male = hSceneProcTraverse.Field("male").GetValue<ChaControl>();
+            if (male != null)
+                maleList.Add(male);
 
-            if (___male1 != null)
-                maleList.Add(___male1);
+            var male1 = hSceneProcTraverse.Field("male1").GetValue<ChaControl>();
+            if (male1 != null)
+                maleList.Add(male1);
+
+            if (maleList.IsNullOrEmpty())
+                return;
 
             CoreGame.InitializeAgents(maleList, femaleList, danOptions, collisionOptions);
             inHScene = true;
@@ -316,9 +326,12 @@ namespace KK_BetterPenetration
             if (hSceneProc.lookDan != null)
                 hSceneProc.lookDan.transLookAtNull = null;
 
-            if (hSceneProc.lookDan1 != null)
+            var hasDarkness = typeof(ChaInfo).GetProperty("exType", BindingFlags.Public | BindingFlags.Instance) != null;
+
+            if (hasDarkness && hSceneProc?.lookDan1 != null && hSceneProc?.lookDan1?.transLookAtNull != null)
                 hSceneProc.lookDan1.transLookAtNull = null;
 
+            hSceneProcTraverse = null;
             hSceneProc = null;
         }
     }
