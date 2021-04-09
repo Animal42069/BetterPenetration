@@ -28,13 +28,10 @@ namespace KK_BetterPenetration
         private static readonly ConfigEntry<float>[] _danColliderHeadLength = new ConfigEntry<float>[MaleLimit];
         private static readonly ConfigEntry<float>[] _danColliderRadius = new ConfigEntry<float>[MaleLimit];
         private static readonly ConfigEntry<float>[] _danColliderVerticalCenter = new ConfigEntry<float>[MaleLimit];
-        private static readonly ConfigEntry<float>[] _fingerColliderLength = new ConfigEntry<float>[MaleLimit];
-        private static readonly ConfigEntry<float>[] _fingerColliderRadius = new ConfigEntry<float>[MaleLimit];
         private static readonly ConfigEntry<float>[] _danLengthSquishFactor = new ConfigEntry<float>[MaleLimit];
         private static readonly ConfigEntry<float>[] _danGirthSquishFactor = new ConfigEntry<float>[MaleLimit];
         private static readonly ConfigEntry<float>[] _danSquishThreshold = new ConfigEntry<float>[MaleLimit];
         private static readonly ConfigEntry<bool>[] _danSquishOralGirth = new ConfigEntry<bool>[MaleLimit];
-        private static readonly ConfigEntry<bool>[] _useFingerColliders = new ConfigEntry<bool>[MaleLimit];
         private static readonly ConfigEntry<bool>[] _simplifyPenetration = new ConfigEntry<bool>[MaleLimit];
         private static readonly ConfigEntry<bool>[] _simplifyOral = new ConfigEntry<bool>[MaleLimit];
 
@@ -59,10 +56,6 @@ namespace KK_BetterPenetration
         {
             for (int maleNum = 0; maleNum < _danColliderHeadLength.Length; maleNum++)
             {
-                (_fingerColliderLength[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Finger Collider: Length", 0.03f, "Lenght of the finger colliders.")).SettingChanged += (s, e) =>
-                { UpdateFingerColliders(); };
-                (_fingerColliderRadius[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Finger Collider: Radius", 0.008f, "Radius of the finger colliders.")).SettingChanged += (s, e) =>
-                { UpdateFingerColliders(); };
                 (_danColliderHeadLength[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis Collider: Length of Head", 0.008f, "Distance from the center of the head bone to the tip, used for collision purposes.")).SettingChanged += (s, e) =>
                 { UpdateDanColliders(); };
                 (_danColliderRadius[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis Collider: Radius of Shaft", 0.024f, "Radius of the shaft collider.")).SettingChanged += (s, e) =>
@@ -76,8 +69,6 @@ namespace KK_BetterPenetration
                 (_danSquishThreshold[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis: Squish Threshold", 0.2f, new ConfigDescription("Allows the penis to begin squishing (shorten length increase girth) after this amount of the penis has penetrated.", new AcceptableValueRange<float>(0, 1)))).SettingChanged += (s, e) =>
                 { UpdateDanOptions(); };
                 (_danSquishOralGirth[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis: Squish Oral Girth", false, "Allows the penis to squish (increase girth) during oral.")).SettingChanged += (s, e) =>
-                { UpdateDanOptions(); };
-                (_useFingerColliders[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Finger Collider: Enable", true, "Use finger colliders")).SettingChanged += (s, e) =>
                 { UpdateDanOptions(); };
                 (_simplifyPenetration[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Simplify Penetration Calculation", false, "Simplifys penetration calclation by always having it target the same internal point.  Only valid for BP penis uncensors.")).SettingChanged += (s, e) =>
                 { UpdateDanOptions(); };
@@ -116,15 +107,6 @@ namespace KK_BetterPenetration
                 CoreGame.UpdateDanCollider(index, _danColliderRadius[index].Value, _danColliderHeadLength[index].Value, _danColliderVerticalCenter[index].Value);
         }
 
-        private static void UpdateFingerColliders()
-        {
-            if (!inHScene)
-                return;
-
-            for (int index = 0; index < MaleLimit; index++)
-                CoreGame.UpdateFingerColliders(index, _fingerColliderRadius[index].Value, _fingerColliderLength[index].Value);
-        }
-
         private static void UpdateDanOptions()
         {
             if (!inHScene)
@@ -132,7 +114,7 @@ namespace KK_BetterPenetration
 
             for (int index = 0; index < MaleLimit; index++)
                 CoreGame.UpdateDanOptions(index, _danLengthSquishFactor[index].Value, _danGirthSquishFactor[index].Value,
-                    _danSquishThreshold[index].Value, _danSquishOralGirth[index].Value, _useFingerColliders[index].Value,
+                    _danSquishThreshold[index].Value, _danSquishOralGirth[index].Value, false,
                     _simplifyPenetration[index].Value, _simplifyOral[index].Value);
         }
 
@@ -207,8 +189,7 @@ namespace KK_BetterPenetration
             {
                 danOptions.Add(new DanOptions(_danColliderVerticalCenter[maleNum].Value, _danColliderRadius[maleNum].Value, _danColliderHeadLength[maleNum].Value,
                     _danLengthSquishFactor[maleNum].Value, _danGirthSquishFactor[maleNum].Value, _danSquishThreshold[maleNum].Value, _danSquishOralGirth[maleNum].Value,
-                    _fingerColliderRadius[maleNum].Value, _fingerColliderLength[maleNum].Value, _useFingerColliders[maleNum].Value,
-                    _simplifyPenetration[maleNum].Value, _simplifyOral[maleNum].Value));
+                    0, 0, false, _simplifyPenetration[maleNum].Value, _simplifyOral[maleNum].Value));
             }
 
             return danOptions;
@@ -283,6 +264,23 @@ namespace KK_BetterPenetration
             }
 
             CoreGame.LookAtDanUpdate(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, false, maleNum, __instance.numFemale);
+        }
+
+        [HarmonyPostfix, HarmonyPatch(typeof(Lookat_dan), "Release")]
+        private static void H_Lookat_dan_PostRelease(Lookat_dan __instance, ChaControl ___male)
+        {
+            if (!inHScene || loadingCharacter || __instance.strPlayMotion == null || ___male == null)
+                return;
+
+            int maleNum = 0;
+            if (___male != null && ___male.chaID != 0)
+                maleNum = 1;
+
+            twoDans = false;
+            //       if (___assetName != null && ___assetName.Length != 0 && ___assetName.ToString().Contains("m2f"))
+            //           twoDans = true;
+
+            CoreGame.LookAtDanRelease(maleNum, __instance.numFemale, twoDans);
         }
 
         private static void SceneManager_sceneLoaded(Scene scene, LoadSceneMode lsm)

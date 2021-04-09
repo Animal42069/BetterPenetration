@@ -124,6 +124,31 @@ namespace Core_BetterPenetration
             }
         }
 
+        public static void LookAtDanRelease(int maleNum, int femaleNum, bool twoDans)
+        {
+            if (maleNum >= danAgents.Count || femaleNum >= collisionAgents.Count)
+                return;
+
+            if (!twoDans && danAgents.Count > 1 && danAgents[1] != null)
+                danAgents[1].RemoveColliders(collisionAgents[femaleNum]);
+
+            if (maleNum == 1 && !twoDans)
+                return;
+
+            if (collisionAgents.Count > 1 && collisionAgents[1].m_collisionCharacter.visibleAll && collisionAgents[1].m_collisionCharacter.objTop != null)
+            {
+                var secondTarget = 1 - femaleNum;
+                if (secondTarget < 0)
+                    secondTarget = 0;
+
+                danAgents[maleNum].ClearDanTarget(collisionAgents[femaleNum], collisionAgents[secondTarget]);
+            }
+            else
+            {
+                danAgents[maleNum].ClearDanTarget(collisionAgents[femaleNum]);
+            }
+        }
+
         public static void OnChangeAnimation(string newAnimationFile)
         {
             foreach (var socketAgent in collisionAgents)

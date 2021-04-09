@@ -568,11 +568,21 @@ namespace Core_BetterPenetration
             ScaleDanColliders(m_baseDanLength);
         }
 
-        internal void SetupNewDanTarget(Transform lookAtTransform, string currentMotion, bool topStick, CollisionAgent firstTarget, CollisionAgent secondTarget = null)
+        internal void ClearDanTarget(CollisionAgent firstTarget, CollisionAgent secondTarget = null)
         {
             ClearTarget();
+            ResetDanAdjustment();
+            RemoveTamaColliders();
+            RemoveColliders(firstTarget);
+            if (secondTarget != null)
+                RemoveColliders(secondTarget);
+        }
 
-            if (!m_danPointsFound)
+        internal void SetupNewDanTarget(Transform lookAtTransform, string currentMotion, bool topStick, CollisionAgent firstTarget, CollisionAgent secondTarget = null)
+        {
+            ClearDanTarget(firstTarget, secondTarget);
+
+            if (!m_danPointsFound || currentMotion == string.Empty)
                 return;
 
             if (secondTarget != null)
@@ -581,45 +591,24 @@ namespace Core_BetterPenetration
                 {
                     AddDanColliders(firstTarget);
                     AddDanColliders(secondTarget);
-                    RemoveFingerColliders(firstTarget);
-                    RemoveFingerColliders(secondTarget);
                 }
                 else if (lookAtTransform.name == LookTargets.KokanTarget)
                 {
                     AddDanColliders(firstTarget);
-                    RemoveDanColliders(secondTarget);
-                    RemoveFingerColliders(firstTarget);
-
                     if (m_danOptions.useFingerColliders)
                         AddFingerColliders(secondTarget);
-                    else
-                        RemoveFingerColliders(secondTarget);
-                }
-                else
-                {
-                    RemoveDanColliders(firstTarget);
-                    RemoveDanColliders(secondTarget);
-                    RemoveFingerColliders(firstTarget);
-                    RemoveFingerColliders(secondTarget);
                 }
             }
             else
             {
                 if (lookAtTransform == null || lookAtTransform.name == LookTargets.KokanTarget)
                     AddDanColliders(firstTarget);
-                else
-                    RemoveDanColliders(firstTarget);
 
                 if (m_danOptions.useFingerColliders && lookAtTransform == null)
                     AddFingerColliders(firstTarget);
-                else
-                    RemoveFingerColliders(firstTarget);
             }
 
-            RemoveTamaColliders();
             AddTamaColliders(firstTarget.m_collisionCharacter);
-
-            ResetDanAdjustment();
 
             m_referenceTarget = lookAtTransform;
             m_danPenetration = topStick || currentMotion.Contains("IN");
