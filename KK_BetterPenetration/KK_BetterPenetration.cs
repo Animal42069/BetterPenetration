@@ -5,18 +5,17 @@ using System;
 using System.Collections.Generic;
 using UnityEngine.SceneManagement;
 using Core_BetterPenetration;
-using System.Reflection;
 
 namespace KK_BetterPenetration
 {
     [BepInPlugin("animal42069.KKbetterpenetration", "KK Better Penetration", VERSION)]
     [BepInProcess("Koikatu")]
     [BepInProcess("KoikatuVR")]
-    [BepInProcess("Koikatu Party")]
-    [BepInProcess("Koikatu Party VR")]
+    [BepInProcess("Koikatsu Party")]
+    [BepInProcess("Koikatsu Party VR")]
     public class KK_BetterPenetration : BaseUnityPlugin
     {
-        public const string VERSION = "3.0.4.0";
+        public const string VERSION = "3.0.5.0";
         private const int MaleLimit = 2;
         private const int FemaleLimit = 2;
         private const bool _useSelfColliders = false;
@@ -325,11 +324,6 @@ namespace KK_BetterPenetration
 
             if (hSceneProc.lookDan != null)
                 hSceneProc.lookDan.transLookAtNull = null;
-
-            var hasDarkness = typeof(ChaInfo).GetProperty("exType", BindingFlags.Public | BindingFlags.Instance) != null;
-
-            if (hasDarkness && hSceneProc?.lookDan1 != null && hSceneProc?.lookDan1?.transLookAtNull != null)
-                hSceneProc.lookDan1.transLookAtNull = null;
 
             hSceneProcTraverse = null;
             hSceneProc = null;
