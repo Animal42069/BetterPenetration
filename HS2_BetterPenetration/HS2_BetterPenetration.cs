@@ -23,11 +23,10 @@ namespace HS2_BetterPenetration
         private const int FemaleLimit = 2;
         private const bool _useSelfColliders = true;
 
-        private static readonly List<float> frontOffsets = new List<float> { -0.35f, 0.25f, 0f, -0.65f };
-        private static readonly List<float> backOffsets = new List<float> { -0.05f, 0.05f, 0.05f };
-        private static readonly List<bool> frontPointsInward = new List<bool> { false, false, false, false };
-        private static readonly List<bool> backPointsInward = new List<bool> { false, true, true };
-
+        private static readonly List<float> frontOffsets = new List<float> { -0.35f, 0f };
+        private static readonly List<float> backOffsets = new List<float> { -0.05f, 0.05f };
+        private static readonly List<bool> frontPointsInward = new List<bool> { false, false };
+        private static readonly List<bool> backPointsInward = new List<bool> { false, true };
         
         private static readonly ConfigEntry<float>[] _danColliderHeadLength = new ConfigEntry<float>[MaleLimit];
         private static readonly ConfigEntry<float>[] _danColliderRadius = new ConfigEntry<float>[MaleLimit];
@@ -60,6 +59,7 @@ namespace HS2_BetterPenetration
         private static bool inHScene = false;
         private static bool loadingCharacter = false;
         private static bool twoDans;
+        private static bool resetTamaParticles = false;
 
         private void Awake()
         {
@@ -314,6 +314,19 @@ namespace HS2_BetterPenetration
                 return;
 
             CoreGame.OnChangeAnimation(_info.fileFemale);
+            resetTamaParticles = true;
+        }
+
+        [HarmonyPrefix, HarmonyPatch(typeof(HScene), "SetMovePositionPoint")]
+        private static void HScene_SetMovePositionPoint()
+        {
+            resetTamaParticles = true;
+        }
+
+        [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "setPlay")]
+        private static void ChaControl_PostSetPlay()
+        {
+            resetTamaParticles = true;
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(H_Lookat_dan), "setInfo")]
@@ -338,6 +351,12 @@ namespace HS2_BetterPenetration
         {
             if (!inHScene || loadingCharacter || __instance.strPlayMotion == null || ___male == null)
                 return;
+
+            if (resetTamaParticles && !hScene.NowChangeAnim)
+            {
+                CoreGame.ResetTamaParticles();
+                resetTamaParticles = false;
+            }
 
             int maleNum = 0;
 

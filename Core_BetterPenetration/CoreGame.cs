@@ -162,6 +162,12 @@ namespace Core_BetterPenetration
             collisionAgents[0].CheckForAdjustment(newAnimationFile);
         }
 
+        public static void ResetTamaParticles()
+        {
+            foreach (var agent in danAgents)
+                agent.ResetTamaParticles();
+        }
+
         public static void SetDansHaveNewTarget(bool set)
         {
             for (int index = 0; index < danHasNewTarget.Count; index++)
@@ -218,15 +224,53 @@ namespace Core_BetterPenetration
 
             foreach (var dynamicBone in dynamicBones)
             {
-                if (dynamicBone == null || dynamicBone.m_Colliders == null || (dynamicBone.name != null && dynamicBone.name.Contains("Vagina")))
+                if (dynamicBone == null || 
+                    dynamicBone.m_Colliders == null || 
+                    (dynamicBone.name != null && (dynamicBone.name.Contains("Vagina") || dynamicBone.name.Contains("cm_J_dan"))))
                     continue;
 
                 for (int collider = 0; collider < dynamicBone.m_Colliders.Count; collider++)
                 {
-                    if (dynamicBone.m_Colliders[collider] != null && dynamicBone.m_Colliders[collider].name != null && dynamicBone.m_Colliders[collider].name.Contains("Vagina"))
-                        dynamicBone.m_Colliders[collider] = null;
-                    //    dynamicBone.m_Colliders.RemoveAt(collider);
+                    if (dynamicBone.m_Colliders[collider] != null && 
+                        dynamicBone.m_Colliders[collider].name != null && 
+                        (dynamicBone.m_Colliders[collider].name.Contains("Vagina") || dynamicBone.m_Colliders[collider].name.Contains("cm_J_dan")))
+                        dynamicBone.m_Colliders.RemoveAt(collider);
                 }
+            }
+        }
+
+        internal static void SetAgentsBPBoneWeights(float weight)
+        {
+            foreach (var agent in danAgents)
+            {
+                if (agent?.m_danCharacter == null)
+                    continue;
+
+                SetBPBoneWeights(agent.m_danCharacter, weight);
+            }
+
+            foreach (var agent in collisionAgents)
+            {
+                if (agent?.m_collisionCharacter == null)
+                    continue;
+
+                SetBPBoneWeights(agent.m_collisionCharacter, weight);
+            }
+        }
+
+        internal static void SetBPBoneWeights(ChaControl character, float weight)
+        {
+            var dynamicBones = character.GetComponentsInChildren<DynamicBone>(true);
+
+            if (dynamicBones == null)
+                return;
+
+            foreach (var dynamicBone in dynamicBones)
+            {
+                if (dynamicBone == null || dynamicBone.m_Root == null || dynamicBone.name == null || !dynamicBone.name.Contains(BoneNames.BPBone))
+                        continue;
+
+                dynamicBone.SetWeight(weight);
             }
         }
     }

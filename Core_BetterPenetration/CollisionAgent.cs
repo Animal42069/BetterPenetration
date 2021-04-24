@@ -14,7 +14,7 @@ namespace Core_BetterPenetration
         internal ChaControl m_collisionCharacter;
         internal CollisionPoints m_collisionPoints;
         internal CollisionOptions m_collisionOptions;
-        private bool m_collisionPointsFound = false;
+        internal bool m_collisionPointsFound = false;
 
         internal Transform m_bpKokanTarget;
         internal Transform m_innerTarget;
@@ -68,7 +68,9 @@ namespace Core_BetterPenetration
             m_innerTarget = m_collisionCharacter.GetComponentsInChildren<Transform>().FirstOrDefault(x => x.name != null && x.name.Equals(LookTargets.InnerTarget));
             m_innerHeadTarget = m_collisionCharacter.GetComponentsInChildren<Transform>().FirstOrDefault(x => x.name != null && x.name.Contains(LookTargets.InnerHeadTarget));
 
-            if (frontCollisionPoints.Count == options.frontCollisionInfo.Count && backCollisionPoints.Count == options.backCollisonInfo.Count)
+            if (frontCollisionPoints.Count == options.frontCollisionInfo.Count && 
+                backCollisionPoints.Count == options.backCollisonInfo.Count &&
+                m_innerTarget != null && m_innerHeadTarget != null)
             {
                 m_collisionPointsFound = true;
                 m_collisionPoints = new CollisionPoints(frontCollisionPoints, backCollisionPoints);
@@ -79,65 +81,11 @@ namespace Core_BetterPenetration
             m_kokanDynamicBones = new List<DynamicBone>();
             foreach (DynamicBone dynamicBone in m_collisionCharacter.GetComponentsInChildren<DynamicBone>())
             {
-
-                if (!dynamicBone.name.Contains(BoneNames.BPBone))
+                if (dynamicBone == null || dynamicBone.m_Root == null || dynamicBone.name == null || !dynamicBone.name.Contains(BoneNames.BPBone))
                     continue;
-#if KK
-                m_kokanDynamicBones.Add(dynamicBone);
-#else
+
                 dynamicBone.m_Colliders.Clear();
-
-                if (dynamicBone == null || dynamicBone.m_Root == null)
-                    continue;
-
-                if (!BoneNames.uncensorBoneList.TryGetValue(dynamicBone.m_Root.name, out UncensorDynamicBone dynamicBoneValues))
-                    continue;
-
-                if (dynamicBoneValues.direction == UncensorDynamicBone.DynamicBoneDirection.Z)
-                    dynamicBone.m_Radius *= m_kokanBone.lossyScale.z;
-                else if (dynamicBoneValues.direction == UncensorDynamicBone.DynamicBoneDirection.Z)
-                    dynamicBone.m_Radius *= m_kokanBone.lossyScale.x;
-                else
-                    dynamicBone.m_Radius *= (m_kokanBone.lossyScale.x + m_kokanBone.lossyScale.z) / 2;
-
-#if HS2 || AIS || HS2_STUDIO || AI_STUDIO
-                dynamicBone.UpdateParameters();
-#endif
                 m_kokanDynamicBones.Add(dynamicBone);
-
-                if (!m_collisionOptions.useBoundingColliders || dynamicBoneValues.selfColliderName == null)
-                    continue;
-
-                DynamicBoneCollider selfCollider = m_collisionCharacter.GetComponentsInChildren<DynamicBoneCollider>().FirstOrDefault(x => x.name != null && x.name.Contains(dynamicBoneValues.selfColliderName));
-                if (selfCollider == null)
-                {
-                    Transform colliderTransform = m_collisionCharacter.GetComponentsInChildren<Transform>().FirstOrDefault(x => x.name != null && x.name.Contains(dynamicBoneValues.selfColliderName));
-                    if (colliderTransform == null)
-                        continue;
-
-                    selfCollider = colliderTransform.gameObject.AddComponent(typeof(DynamicBoneCollider)) as DynamicBoneCollider;
-                    selfCollider.m_Bound = DynamicBoneCollider.Bound.Inside;
-                    selfCollider.m_Direction = DynamicBoneCollider.Direction.Y;
-
-                    if (dynamicBoneValues.direction == UncensorDynamicBone.DynamicBoneDirection.Z)
-                    {
-                        selfCollider.m_Height = dynamicBoneValues.selfColliderHeight * m_kokanBone.lossyScale.z;
-                        selfCollider.m_Radius = dynamicBoneValues.selfColliderRadius * m_kokanBone.lossyScale.z;
-                    }
-                    else if (dynamicBoneValues.direction == UncensorDynamicBone.DynamicBoneDirection.X)
-                    {
-                        selfCollider.m_Height = dynamicBoneValues.selfColliderHeight * m_kokanBone.lossyScale.x;
-                        selfCollider.m_Radius = dynamicBoneValues.selfColliderRadius * m_kokanBone.lossyScale.x;
-                    }
-                    else
-                    {
-                        selfCollider.m_Height = dynamicBoneValues.selfColliderHeight * (m_kokanBone.lossyScale.x + m_kokanBone.lossyScale.z) / 2;
-                        selfCollider.m_Radius = dynamicBoneValues.selfColliderRadius * (m_kokanBone.lossyScale.x + m_kokanBone.lossyScale.z) / 2;
-                    }
-                }
-
-                dynamicBone.m_Colliders.Add(selfCollider);
-#endif
             }
         }
 

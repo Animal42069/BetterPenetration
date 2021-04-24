@@ -1,29 +1,34 @@
-﻿using BepInEx;
+﻿using System;
+using System.Reflection;
+using System.Collections.Generic;
+using BepInEx;
+using BepInEx.Bootstrap;
 using BepInEx.Configuration;
 using HarmonyLib;
-using System;
-using System.Collections.Generic;
-using UnityEngine.SceneManagement;
 using Core_BetterPenetration;
+
 
 namespace KK_BetterPenetration
 {
     [BepInPlugin("animal42069.KKbetterpenetration", "KK Better Penetration", VERSION)]
+    [BepInDependency("com.deathweasel.bepinex.uncensorselector", "3.11.1")]
     [BepInProcess("Koikatu")]
     [BepInProcess("KoikatuVR")]
     [BepInProcess("Koikatsu Party")]
     [BepInProcess("Koikatsu Party VR")]
     public class KK_BetterPenetration : BaseUnityPlugin
     {
-        public const string VERSION = "3.0.5.0";
+        public static KK_BetterPenetration instance;
+
+        public const string VERSION = "3.1.2.0";
         private const int MaleLimit = 2;
         private const int FemaleLimit = 2;
         private const bool _useSelfColliders = false;
 
-        private static readonly List<float> frontOffsets = new List<float> { -0.04f, 0.04f, 0.06f};
-        private static readonly List<float> backOffsets = new List<float> { -0.04f, 0.04f, 0f};
-        private static readonly List<bool> frontPointsInward = new List<bool> { false, false, false,};
-        private static readonly List<bool> backPointsInward = new List<bool> { false, true, true};
+        private static readonly List<float> frontOffsets = new List<float> { -0.04f, 0.04f, 0.06f };
+        private static readonly List<float> backOffsets = new List<float> { -0.04f, 0.04f, 0f };
+        private static readonly List<bool> frontPointsInward = new List<bool> { false, false, false, };
+        private static readonly List<bool> backPointsInward = new List<bool> { false, true, true };
 
         private static readonly ConfigEntry<float>[] _danColliderHeadLength = new ConfigEntry<float>[MaleLimit];
         private static readonly ConfigEntry<float>[] _danColliderRadius = new ConfigEntry<float>[MaleLimit];
@@ -46,14 +51,16 @@ namespace KK_BetterPenetration
         private static Harmony harmony;
         private static HSceneProc hSceneProc;
         private static Traverse hSceneProcTraverse;
-        private static bool patched = false;
         private static bool hSceneStarted = false;
         private static bool inHScene = false;
         private static readonly bool loadingCharacter = false;
         private static bool twoDans = false;
+        private static Type _uncensorSelectorType;
 
         private void Awake()
         {
+            instance = this;
+
             for (int maleNum = 0; maleNum < _danColliderHeadLength.Length; maleNum++)
             {
                 (_danColliderHeadLength[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis Collider: Length of Head", 0.008f, "Distance from the center of the head bone to the tip, used for collision purposes.")).SettingChanged += (s, e) =>
@@ -94,8 +101,23 @@ namespace KK_BetterPenetration
             { UpdateCollisionOptions(); };
 
             harmony = new Harmony("KK_BetterPenetration");
-            SceneManager.sceneLoaded += SceneManager_sceneLoaded;
-            SceneManager.sceneUnloaded += SceneManager_sceneUnloaded;
+            harmony.PatchAll(typeof(KK_BetterPenetration));
+
+            Chainloader.PluginInfos.TryGetValue("com.deathweasel.bepinex.uncensorselector", out PluginInfo info);
+            if (info == null || info.Instance == null)
+                return;
+
+            _uncensorSelectorType = info.Instance.GetType();
+            Type uncensorSelectorControllerType = _uncensorSelectorType.GetNestedType("UncensorSelectorController", AccessTools.all);
+            if (uncensorSelectorControllerType == null)
+                return;
+
+            MethodInfo uncensorSelectorReloadCharacterBody = AccessTools.Method(uncensorSelectorControllerType, "ReloadCharacterBody");
+            if (uncensorSelectorReloadCharacterBody == null)
+                return;
+            
+            harmony.Patch(uncensorSelectorReloadCharacterBody, postfix: new HarmonyMethod(typeof(KK_BetterPenetration), nameof(UncensorSelector_ReloadCharacterBody_Postfix), new[] { typeof(object) }));
+            Console.WriteLine("KK_BetterPenetration: UncensorSelector patched ReloadCharacterBody correctly");
         }
 
         private static void UpdateDanColliders()
@@ -131,14 +153,13 @@ namespace KK_BetterPenetration
         [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "LoadCharaFbxDataAsync")]
         public static void ChaControl_LoadCharaFbxDataAsync(ChaControl __instance)
         {
+            Console.WriteLine("LoadCharaFbxDataAsync");
             CoreGame.RemoveCollidersFromCoordinate(__instance);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(HSceneProc), "Start")]
         public static void HScene_PostStart(HSceneProc __instance)
         {
-            Console.WriteLine("HSceneProc Start");
-
             hSceneProc = __instance;
             hSceneProcTraverse = Traverse.Create(__instance);
 
@@ -146,10 +167,28 @@ namespace KK_BetterPenetration
             inHScene = false;
         }
 
+        [HarmonyPrefix, HarmonyPatch(typeof(HSceneProc), "EndProc")]
+        internal static void HSceneProc_EndProc_Patch()
+        {
+            CoreGame.SetAgentsBPBoneWeights(0f);
+            CoreGame.OnEndScene();
+
+            inHScene = false;
+
+            if (hSceneProc == null)
+                return;
+
+            if (hSceneProc.lookDan != null)
+                hSceneProc.lookDan.transLookAtNull = null;
+
+            hSceneProcTraverse = null;
+            hSceneProc = null;
+        }
+
         [HarmonyPostfix, HarmonyPatch(typeof(HSceneProc), "Update")]
         public static void HScene_PostUpdate()
         {
-            if (!hSceneStarted || inHScene || hSceneProc == null || !hSceneProc.enabled  || hSceneProcTraverse == null)
+            if (!hSceneStarted || inHScene || hSceneProc == null || !hSceneProc.enabled || hSceneProcTraverse == null)
                 return;
 
             List<DanOptions> danOptions = PopulateDanOptionsList();
@@ -163,7 +202,7 @@ namespace KK_BetterPenetration
             foreach (var female in lstFemale)
                 if (female != null)
                     femaleList.Add(female);
-            
+
             List<ChaControl> maleList = new List<ChaControl>();
             var male = hSceneProcTraverse.Field("male").GetValue<ChaControl>();
             if (male != null)
@@ -177,6 +216,7 @@ namespace KK_BetterPenetration
                 return;
 
             CoreGame.InitializeAgents(maleList, femaleList, danOptions, collisionOptions);
+            CoreGame.SetAgentsBPBoneWeights(1f);
             inHScene = true;
             hSceneStarted = false;
         }
@@ -219,12 +259,8 @@ namespace KK_BetterPenetration
         [HarmonyPrefix, HarmonyPatch(typeof(HSceneProc), "ChangeAnimator")]
         private static void HSceneProc_PreChangeAnimator(HSceneProc.AnimationListInfo _nextAinmInfo)
         {
-            Console.WriteLine("HSceneProc ChangeAnimator");
-
             if (!inHScene || _nextAinmInfo == null || _nextAinmInfo.pathFemaleBase.file == null)
                 return;
-
-            Console.WriteLine($"_nextAinmInfo {_nextAinmInfo.pathFemaleBase.file}");
 
             CoreGame.OnChangeAnimation(_nextAinmInfo.pathFemaleBase.file);
         }
@@ -233,7 +269,7 @@ namespace KK_BetterPenetration
         [HarmonyPostfix, HarmonyPatch(typeof(Lookat_dan), "SetInfo")]
         private static void H_Lookat_dan_PostSetInfo(Lookat_dan __instance, ChaControl ___male)
         {
- 
+
             if (!inHScene || loadingCharacter || __instance.strPlayMotion == null || ___male == null)
                 return;
 
@@ -283,48 +319,13 @@ namespace KK_BetterPenetration
             CoreGame.LookAtDanRelease(maleNum, __instance.numFemale, twoDans);
         }
 
-        private static void SceneManager_sceneLoaded(Scene scene, LoadSceneMode lsm)
+        private static void UncensorSelector_ReloadCharacterBody_Postfix(object __instance)
         {
-            Console.WriteLine($"SceneManager_sceneLoaded {scene.name}");
-            
-            if (UnityEngine.Application.productName == "KoikatuVR") {
-                if (patched || scene.name != "VRHScene")
-                    return;
-            } else {
-                if (patched || scene.name != "HProc")
-                    return;
-            }
- 
-            harmony.PatchAll(typeof(KK_BetterPenetration));
-            patched = true;
-        }
-
-        private static void SceneManager_sceneUnloaded(Scene scene)
-        {
-            Console.WriteLine($"SceneManager_sceneUnloaded {scene.name}");
-
-            if (UnityEngine.Application.productName == "KoikatuVR") {
-                if (!patched || scene.name != "VRHScene")
-                        return;
-            } else {
-                if (!patched || scene.name != "HProc")
-                    return;
-            }
-
-            CoreGame.OnEndScene();
-
-            harmony.UnpatchAll(nameof(KK_BetterPenetration));
-            patched = false;
-            inHScene = false;
-
-            if (hSceneProc == null)
+            ChaControl chaControl = (ChaControl)__instance.GetPrivateProperty("ChaControl");
+            if (chaControl == null)
                 return;
-
-            if (hSceneProc.lookDan != null)
-                hSceneProc.lookDan.transLookAtNull = null;
-
-            hSceneProcTraverse = null;
-            hSceneProc = null;
+            CoreGame.SetBPBoneWeights(chaControl, inHScene ? 1f : 0f);
         }
+
     }
 }

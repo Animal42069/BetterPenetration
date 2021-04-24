@@ -20,10 +20,10 @@ namespace AI_BetterPenetration
         private const int FemaleLimit = 2;
         private const bool _useSelfColliders = false;
 
-        private static readonly List<float> frontOffsets = new List<float> { -0.35f, 0.25f, 0f, -0.65f };
-        private static readonly List<float> backOffsets = new List<float> { -0.05f, 0.05f, 0.05f };
-        private static readonly List<bool> frontPointsInward = new List<bool> { false, false, false, false };
-        private static readonly List<bool> backPointsInward = new List<bool> { false, true, true };
+        private static readonly List<float> frontOffsets = new List<float> { -0.35f, 0f };
+        private static readonly List<float> backOffsets = new List<float> { -0.05f, 0.05f };
+        private static readonly List<bool> frontPointsInward = new List<bool> { false, false };
+        private static readonly List<bool> backPointsInward = new List<bool> { false, true };
 
         private static ConfigEntry<float> _danColliderHeadLength;
         private static ConfigEntry<float> _danColliderRadius;
@@ -55,6 +55,7 @@ namespace AI_BetterPenetration
         private static bool patched = false;
         private static bool inHScene = false;
         private static bool loadingCharacter = false;
+        private static bool resetTamaParticles = false;
 
         private void Awake()
         {
@@ -223,6 +224,19 @@ namespace AI_BetterPenetration
                 return;
 
             CoreGame.OnChangeAnimation(_info.fileFemale);
+            resetTamaParticles = true;
+        }
+
+        [HarmonyPrefix, HarmonyPatch(typeof(HScene), "SetMovePositionPoint")]
+        private static void HScene_SetMovePositionPoint()
+        {
+            resetTamaParticles = true;
+        }
+
+        [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "setPlay")]
+        private static void ChaControl_PostSetPlay()
+        {
+            resetTamaParticles = true;
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(H_Lookat_dan), "setInfo")]
@@ -239,6 +253,12 @@ namespace AI_BetterPenetration
         {
             if (!inHScene || loadingCharacter || hScene == null || __instance.strPlayMotion == null)
                 return;
+
+            if (resetTamaParticles && !hScene.NowChangeAnim)
+            {
+                CoreGame.ResetTamaParticles();
+                resetTamaParticles = false;
+            }
 
             CoreGame.LookAtDanUpdate(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, hScene.NowChangeAnim, 0, 0);
         }

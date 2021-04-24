@@ -16,34 +16,21 @@ namespace Core_BetterPenetration
     static class BoneNames
     {
         internal const string KokanBone = "cf_J_Kokan";
-        internal const string DanBase = "cm_J_dan101_00";
-        internal const string DanMid0 = "cm_J_dan103_00";
-        internal const string DanMid1 = "cm_J_dan105_00";
-        internal const string DanMid2 = "cm_J_dan107_00";
-        internal const string DanHead = "cm_J_dan109_00";
         internal const string TamaTop = "cm_J_dan_f_top";
-        internal const string TamaLeftBone = "cm_J_dan_Dynamic_f_L";
-        internal const string TamaRightBone = "cm_J_dan_Dynamic_f_R";
-        internal const string TamaLeftCollider = "cm_J_dan_f_L";
-        internal const string TamaRightCollider = "cm_J_dan_f_R";
         internal const string IndexFinger = "cf_J_Hand_Index03_R";
         internal const string MiddleFinger = "cf_J_Hand_Middle03_R";
         internal const string RingFinger = "cf_J_Hand_Ring03_R";
         internal const string BPBone = "cf_J_Vagina";
 
-        internal static readonly List<string> DanBones = new List<string> { DanBase, DanMid0, DanMid1, DanMid2, DanHead };
-        internal static readonly List<string> MidSectionColliders = new List<string> { "cf_hit_Kosi02_s", "cf_hit_LegUp01_s_L", "cf_hit_LegUp01_s_R", "cf_hit_Siri_s_L", "cf_hit_Siri_s_R" };
-        internal static readonly List<string> frontCollisionList = new List<string> { LookTargets.KokanTarget, "cf_J_sk_00_02", "N_Waist_f", "k_f_spine03_03" };
-        internal static readonly List<string> backCollisionList = new List<string> { LookTargets.AnaTarget, "N_Waist_b", "N_Back" };
+        internal static readonly List<string> DanBones = new List<string> { "cm_J_dan101_00", "cm_J_dan103_00", "cm_J_dan105_00", "cm_J_dan107_00", "cm_J_dan109_00" };
+        internal static readonly List<string> TamaBones = new List<string> { "cm_J_dan_Pivot_f_top", "cm_J_dan_Pivot_f_L", "cm_J_dan_Pivot_f_R"};
+        internal static readonly List<string> MidSectionColliders = new List<string> { "cf_hit_Kosi02_s", "cf_hit_LegUp01_s_L", "cf_hit_LegUp01_s_R"};
+        internal static readonly List<string> BodyColliders = new List<string> { "cf_hit_Kosi02_s", "cf_hit_LegLow02_s_L", "cf_hit_LegLow02_s_R", "cf_hit_LegUp01_s_L", "cf_hit_LegUp01_s_R", 
+                                                                                 "cf_J_Spine01_s", "cf_J_Spine02_s", "cf_J_Spine03_s", "cf_hit_Mune02_s_L", "cf_hit_Mune02_s_R", 
+                                                                                 "ColFace01", "ColFace02", "cf_J_Neck_s", "cf_J_ArmUp02_s_L", "cf_J_ArmUp02_s_R" };
+        internal static readonly List<string> frontCollisionList = new List<string> { LookTargets.KokanTarget, "N_Waist_f"};
+        internal static readonly List<string> backCollisionList = new List<string> { LookTargets.AnaTarget, "N_Waist_b"};
         internal static readonly List<string> animationAdjustmentList = new List<string> { "ais_f_00", "ais_f_01", "ais_f_12", "ais_f_19", "ais_f_20" };
-
-        internal static readonly Dictionary<string, UncensorDynamicBone> uncensorBoneList = new Dictionary<string, UncensorDynamicBone> {
-                { "cf_J_Vagina_Pivot_B", new UncensorDynamicBone(UncensorDynamicBone.DynamicBoneDirection.Z, "cf_J_Vagina_Collider_B", 0.39f, 0.0021f) } ,
-                { "cf_J_Vagina_Pivot_F", new UncensorDynamicBone(UncensorDynamicBone.DynamicBoneDirection.Z, "cf_J_Vagina_Collider_F", 0.19f, 0.0011f) } ,
-                { "cf_J_Vagina_Pivot_Inner_F", new UncensorDynamicBone(UncensorDynamicBone.DynamicBoneDirection.Z, "cf_J_Vagina_Collider_Inner_F", 0.34f, 0.0011f) } ,
-                { "cf_J_Vagina_Pivot_L.005", new UncensorDynamicBone(UncensorDynamicBone.DynamicBoneDirection.XZ, "cf_J_Vagina_Collider_L.005", 0.39f, 0.0021f) } ,
-                { "cf_J_Vagina_Pivot_R.005", new UncensorDynamicBone(UncensorDynamicBone.DynamicBoneDirection.XZ, "cf_J_Vagina_Collider_R.005", 0.39f, 0.0021f) } ,
-                { "cf_J_Vagina_Sides", new UncensorDynamicBone(UncensorDynamicBone.DynamicBoneDirection.X) } };
     }
 #endif
 
@@ -53,19 +40,14 @@ namespace Core_BetterPenetration
         internal const string BPBone = "cf_J_Vagina";
         internal const string BPKokanTarget = "cf_J_Vagina_root";
         internal const string BPDanEntryTarget = "k_f_dan_entry";
-        internal const string DanBase = "cm_J_dan101_00";
-        internal const string DanMid0 = "cm_J_dan103_00";
-        internal const string DanMid1 = "cm_J_dan105_00";
-        internal const string DanMid2 = "cm_J_dan107_00";
-        internal const string DanHead = "cm_J_dan109_00";
         internal const string TamaTop = "cm_J_dan_f_top";
-        internal const string TamaLeftBone = "cm_J_dan_Dynamic_f_L";
-        internal const string TamaRightBone = "cm_J_dan_Dynamic_f_R";
-        internal const string TamaLeftCollider = "cm_J_dan_f_L";
-        internal const string TamaRightCollider = "cm_J_dan_f_R";
 
-        internal static readonly List<string> DanBones = new List<string>{ DanBase, DanMid0, DanMid1, DanMid2, DanHead };
-        internal static readonly List<string> MidSectionColliders = new List<string> { "cf_hit_Kosi02_s", "cf_hit_LegUp01_s_L", "cf_hit_LegUp01_s_R", "cf_hit_Siri_s_L", "cf_hit_Siri_s_L" };
+        internal static readonly List<string> DanBones = new List<string> { "cm_J_dan101_00", "cm_J_dan103_00", "cm_J_dan105_00", "cm_J_dan107_00", "cm_J_dan109_00" };
+        internal static readonly List<string> TamaBones = new List<string> { "cm_J_dan_Pivot_f_top", "cm_J_dan_Pivot_f_L", "cm_J_dan_Pivot_f_R"};
+        internal static readonly List<string> MidSectionColliders = new List<string> { "cf_hit_Kosi02_s", "cf_hit_LegUp01_s_L", "cf_hit_LegUp01_s_R"};
+        internal static readonly List<string> BodyColliders = new List<string> { "cf_hit_Kosi02_s", "cf_hit_LegLow02_s_L", "cf_hit_LegLow02_s_R", "cf_hit_LegUp01_s_L", "cf_hit_LegUp01_s_R", 
+                                                                                 "cf_J_Spine01_s", "cf_J_Spine02_s", "cf_J_Spine03_s", "cf_hit_Mune02_s_L", "cf_hit_Mune02_s_R", 
+                                                                                 "ColFace01", "ColFace02", "cf_J_Neck_s", "cf_J_ArmUp02_s_L", "cf_J_ArmUp02_s_R" };
     }
 #endif
 
@@ -83,34 +65,22 @@ namespace Core_BetterPenetration
     static class BoneNames
     {
         internal const string KokanBone = "cf_j_kokan";
-        internal const string DanBase = "cm_J_dan101_00";
-        internal const string DanMid0 = "cm_J_dan103_00";
-        internal const string DanMid1 = "cm_J_dan105_00";
-        internal const string DanMid2 = "cm_J_dan107_00";
-        internal const string DanHead = "cm_J_dan109_00";
         internal const string TamaTop = "cm_J_dan_f_top";
-        internal const string TamaLeftBone = "cm_J_dan_Dynamic_f_L";
-        internal const string TamaRightBone = "cm_J_dan_Dynamic_f_R";
-        internal const string TamaLeftCollider = "cm_J_dan_f_L";
-        internal const string TamaRightCollider = "cm_J_dan_f_R";
         internal const string IndexFinger = "cf_j_index03_R";
         internal const string MiddleFinger = "cf_j_middle03_R";
         internal const string RingFinger = "cf_j_ring03_R";
         internal const string BPBone = "cf_J_Vagina";
 
-        internal static readonly List<string> DanBones = new List<string> { DanBase, DanMid0, DanMid1, DanMid2, DanHead };
-        internal static readonly List<string> MidSectionColliders = new List<string> { "cf_hit_Kosi02_s", "cf_hit_LegUp01_s_L", "cf_hit_LegUp01_s_R", "cf_hit_Siri_s_L", "cf_hit_Siri_s_L" };
+        internal static readonly List<string> DanBones = new List<string> { "cm_J_dan101_00", "cm_J_dan103_00", "cm_J_dan105_00", "cm_J_dan107_00", "cm_J_dan109_00" };
+        internal static readonly List<string> TamaBones = new List<string> { "cm_J_dan_Pivot_f_top", "cm_J_dan_Pivot_f_L", "cm_J_dan_Pivot_f_R"};
+        internal static readonly List<string> MidSectionColliders = new List<string> { "cf_hit_Kosi02_s", "cf_hit_LegUp01_s_L", "cf_hit_LegUp01_s_R"};
+        internal static readonly List<string> BodyColliders = new List<string> { "cf_hit_Kosi02_s", "cf_hit_LegLow02_s_L", "cf_hit_LegLow02_s_R", "cf_hit_LegUp01_s_L", "cf_hit_LegUp01_s_R", 
+                                                                                 "cf_J_Spine01_s", "cf_J_Spine02_s", "cf_J_Spine03_s", "cf_hit_Mune02_s_L", "cf_hit_Mune02_s_R", 
+                                                                                 "ColFace01", "ColFace02", "cf_J_Neck_s", "cf_J_ArmUp02_s_L", "cf_J_ArmUp02_s_R" };
+
         internal static readonly List<string> frontCollisionList = new List<string> { LookTargets.KokanTarget, "a_n_waist_f", "a_n_bust_f" };
         internal static readonly List<string> backCollisionList = new List<string> { LookTargets.AnaTarget, "a_n_waist_b", "a_n_back" };
         internal static readonly List<string> animationAdjustmentList = new List<string> { "ais_f_00", "ais_f_01", "ais_f_12", "ais_f_19", "ais_f_20" };
-
-        internal static readonly Dictionary<string, UncensorDynamicBone> uncensorBoneList = new Dictionary<string, UncensorDynamicBone> {
-                { "cf_J_Vagina_Pivot_B", new UncensorDynamicBone(UncensorDynamicBone.DynamicBoneDirection.Z, "cf_J_Vagina_Collider_B", 0.39f, 0.0021f) } ,
-                { "cf_J_Vagina_Pivot_F", new UncensorDynamicBone(UncensorDynamicBone.DynamicBoneDirection.Z, "cf_J_Vagina_Collider_F", 0.19f, 0.0011f) } ,
-                { "cf_J_Vagina_Pivot_Inner_F", new UncensorDynamicBone(UncensorDynamicBone.DynamicBoneDirection.Z, "cf_J_Vagina_Collider_Inner_F", 0.34f, 0.0011f) } ,
-                { "cf_J_Vagina_Pivot_L.005", new UncensorDynamicBone(UncensorDynamicBone.DynamicBoneDirection.XZ, "cf_J_Vagina_Collider_L.005", 0.39f, 0.0021f) } ,
-                { "cf_J_Vagina_Pivot_R.005", new UncensorDynamicBone(UncensorDynamicBone.DynamicBoneDirection.XZ, "cf_J_Vagina_Collider_R.005", 0.39f, 0.0021f) } ,
-                { "cf_J_Vagina_Sides", new UncensorDynamicBone(UncensorDynamicBone.DynamicBoneDirection.X) } };
     }
 
 #endif

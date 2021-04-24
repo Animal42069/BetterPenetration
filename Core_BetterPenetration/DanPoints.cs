@@ -32,6 +32,11 @@ namespace Core_BetterPenetration
             }
 
             danPoints[danPoints.Count - 1].transform.SetPositionAndRotation(newDanPositions[danPoints.Count - 1], danQuaternion);
+            AimDanTop();
+        }
+
+        internal void AimDanTop()
+        {
             danTop.transform.rotation = danPoints[0].transform.rotation;
         }
 
