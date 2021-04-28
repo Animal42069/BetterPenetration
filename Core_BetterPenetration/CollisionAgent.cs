@@ -60,7 +60,6 @@ namespace Core_BetterPenetration
             m_bpKokanTarget = m_collisionCharacter.GetComponentsInChildren<Transform>().FirstOrDefault(x => x.name != null && x.name.Equals(LookTargets.BPKokanTarget));
             if (m_bpKokanTarget != null)
             {
-                Console.WriteLine("BP Target Found " + m_bpKokanTarget.name);
                 frontCollisionPoints[0].transform = m_bpKokanTarget;
                 frontCollisionPoints[0].info.name = LookTargets.BPKokanTarget;
             }
@@ -76,7 +75,7 @@ namespace Core_BetterPenetration
                 m_collisionPoints = new CollisionPoints(frontCollisionPoints, backCollisionPoints);
             }
 
-            Console.WriteLine("constrainPointsFound " + m_collisionPointsFound);
+            Debug.Log($"constrainPointsFound {m_collisionPointsFound}");
 
             m_kokanDynamicBones = new List<DynamicBone>();
             foreach (DynamicBone dynamicBone in m_collisionCharacter.GetComponentsInChildren<DynamicBone>())

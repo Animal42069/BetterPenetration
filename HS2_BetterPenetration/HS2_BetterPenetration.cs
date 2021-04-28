@@ -8,6 +8,7 @@ using UnityEngine.SceneManagement;
 using System.Reflection;
 using AIChara;
 using Core_BetterPenetration;
+using UnityEngine;
 
 namespace HS2_BetterPenetration
 {
@@ -383,26 +384,24 @@ namespace HS2_BetterPenetration
             harmony.PatchAll(typeof(HS2_BetterPenetration));
             patched = true;
 
-            Console.WriteLine("HS2_BetterPenetration: Searching for Uncensor Selector");
             Chainloader.PluginInfos.TryGetValue("com.deathweasel.bepinex.uncensorselector", out PluginInfo pluginInfo);
             if (pluginInfo != null && pluginInfo.Instance != null)
             {
                 Type nestedType = pluginInfo.Instance.GetType().GetNestedType("UncensorSelectorController", AccessTools.all);
                 if (nestedType != null)
                 {
-                    Console.WriteLine("HS2_BetterPenetration: UncensorSelector found, trying to patch");
                     MethodInfo methodInfo = AccessTools.Method(nestedType, "ReloadCharacterBody", null, null);
                     if (methodInfo != null)
                     {
                         harmony.Patch(methodInfo, new HarmonyMethod(typeof(HS2_BetterPenetration), "BeforeCharacterReload"), new HarmonyMethod(typeof(HS2_BetterPenetration), "AfterCharacterReload"), null, null);
-                        Console.WriteLine("HS2_BetterPenetration: ReloadCharacterBody patched correctly");
+                        Debug.Log("HS2_BetterPenetration: patched UncensorSelector::ReloadCharacterBody correctly");
                     }
 
                     methodInfo = AccessTools.Method(nestedType, "ReloadCharacterPenis", null, null);
                     if (methodInfo != null)
                     {
                         harmony.Patch(methodInfo, new HarmonyMethod(typeof(HS2_BetterPenetration), "BeforeDanCharacterReload"), new HarmonyMethod(typeof(HS2_BetterPenetration), "AfterDanCharacterReload"), null, null);
-                        Console.WriteLine("HS2_BetterPenetration: ReloadCharacterPenis patched correctly");
+                        Debug.Log("HS2_BetterPenetration: patched UncensorSelector::ReloadCharacterPenis patched");
                     }
                 }
             }

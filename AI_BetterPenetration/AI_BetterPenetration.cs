@@ -292,8 +292,6 @@ namespace AI_BetterPenetration
             
             harmony.PatchAll(typeof(AI_BetterPenetration));
             patched = true;
-
-            Console.WriteLine("BetterPenetration: Patched");
         }
 
         private static void HScene_sceneUnloaded()
@@ -320,8 +318,6 @@ namespace AI_BetterPenetration
             }
 
             hScene = null;
-
-            Console.WriteLine("BetterPenetration: Unpatched");
         }
     }
 }

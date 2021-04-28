@@ -21,7 +21,7 @@ namespace KK_BetterPenetration
     {
         public static KK_BetterPenetration instance;
 
-        public const string VERSION = "3.1.3.0";
+        public const string VERSION = "3.1.3.1";
         private const int MaleLimit = 2;
         private const int FemaleLimit = 2;
         private const bool _useSelfColliders = false;
@@ -118,7 +118,7 @@ namespace KK_BetterPenetration
                 return;
             
             harmony.Patch(uncensorSelectorReloadCharacterBody, postfix: new HarmonyMethod(typeof(KK_BetterPenetration), nameof(UncensorSelector_ReloadCharacterBody_Postfix), new[] { typeof(object) }));
-            Console.WriteLine("KK_BetterPenetration: UncensorSelector patched ReloadCharacterBody correctly");
+            Debug.Log("KK_BetterPenetration: UncensorSelector patched ReloadCharacterBody correctly");
         }
 
         private static void UpdateDanColliders()
@@ -154,7 +154,6 @@ namespace KK_BetterPenetration
         [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "LoadCharaFbxDataAsync")]
         public static void ChaControl_LoadCharaFbxDataAsync(ChaControl __instance)
         {
-            Console.WriteLine("LoadCharaFbxDataAsync");
             CoreGame.RemoveCollidersFromCoordinate(__instance);
         }
 

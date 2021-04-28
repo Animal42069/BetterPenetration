@@ -34,7 +34,6 @@ namespace AI_Studio_BetterPenetration
             harmony = new Harmony("AI_Studio_BetterPenetration");
             harmony.PatchAll(typeof(AI_Studio_BetterPenetration));
 
-            Console.WriteLine("Studio_BetterPenetration: Searching for Uncensor Selector");
             Chainloader.PluginInfos.TryGetValue("com.deathweasel.bepinex.uncensorselector", out PluginInfo pluginInfo);
             if (pluginInfo == null || pluginInfo.Instance == null)
                 return;
@@ -43,7 +42,6 @@ namespace AI_Studio_BetterPenetration
             if (nestedType == null)
                 return;
 
-            Console.WriteLine("Studio_BetterPenetration: UncensorSelector found, trying to patch");
             MethodInfo methodInfo = AccessTools.Method(nestedType, "ReloadCharacterPenis", null, null);
             if (methodInfo == null)
                 return;
@@ -51,9 +49,8 @@ namespace AI_Studio_BetterPenetration
             harmony.Patch(methodInfo, new HarmonyMethod(typeof(AI_Studio_BetterPenetration), "BeforeDanCharacterReload"),
                                       new HarmonyMethod(typeof(AI_Studio_BetterPenetration), "AfterDanCharacterReload"),
                                       null, null);
-            Console.WriteLine("Studio_BetterPenetration: ReloadCharacterPenis patched correctly");
+            Debug.Log("Studio_BetterPenetration: patched UncensorSelector::ReloadCharacterPenis correctly");
 
-            Console.WriteLine("Studio_BetterPenetration: Searching for NodeConstraints");
             Chainloader.PluginInfos.TryGetValue("com.joan6694.illusionplugins.nodesconstraints", out pluginInfo);
             if (pluginInfo == null || pluginInfo.Instance == null)
                 return;
@@ -62,7 +59,6 @@ namespace AI_Studio_BetterPenetration
             if (pluginType == null)
                 return;
 
-            Console.WriteLine("Studio_BetterPenetration: NodeConstraints found, trying to patch");
             methodInfo = AccessTools.Method(pluginType, "AddConstraint", null, null);
             if (methodInfo == null)
                 return;
@@ -70,7 +66,7 @@ namespace AI_Studio_BetterPenetration
             harmony.Patch(methodInfo, null,
                                       new HarmonyMethod(typeof(AI_Studio_BetterPenetration), "AfterAddConstraint"),
                                       null, null);
-            Console.WriteLine("Studio_BetterPenetration: NodeConstraints patched correctly");
+            Debug.Log("Studio_BetterPenetration: patched NodeConstraints::AddConstraint correctly");
         }
 
         public static void RegisterStudioControls()

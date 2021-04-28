@@ -60,9 +60,7 @@ namespace Core_BetterPenetration
             UpdateFingerColliders(m_danOptions.fingerRadius, m_danOptions.fingerLength);
 #endif
 
-            Console.WriteLine("Dan Found " + m_danPointsFound);
-            Console.WriteLine("BP Dan Found " + m_bpDanPointsFound);
-            Console.WriteLine("BP Tama Found " + m_bpTamaFound);       
+            Debug.Log($"BP Dan Found { m_bpDanPointsFound}; BP Tama Found {m_bpTamaFound}");
         }
 
         private void InitializeDan()
@@ -97,8 +95,6 @@ namespace Core_BetterPenetration
 
         private void InitializeTama()
         {
-            Console.WriteLine($"InitializeTama");
-
             m_tamaBones = new List<DynamicBone>();
 
             foreach(var tamaBoneName in BoneNames.TamaBones)
@@ -123,8 +119,6 @@ namespace Core_BetterPenetration
 
             AddTamaColliders(m_danCharacter);
             tamaSelfColliders = m_tamaBones[0].m_Colliders.Count();
-
-            Console.WriteLine("tamaSelfColliders " + tamaSelfColliders);
         }
 
         internal void ResetTamaParticles()
