@@ -12,6 +12,7 @@ namespace KK_BetterPenetration
 {
     [BepInPlugin("animal42069.KKbetterpenetration", "KK Better Penetration", VERSION)]
     [BepInDependency("com.deathweasel.bepinex.uncensorselector", "3.11.1")]
+    [BepInDependency("com.rclcircuit.bepinex.modboneimplantor", "1.0")]
     [BepInProcess("Koikatu")]
     [BepInProcess("KoikatuVR")]
     [BepInProcess("Koikatsu Party")]
@@ -20,7 +21,7 @@ namespace KK_BetterPenetration
     {
         public static KK_BetterPenetration instance;
 
-        public const string VERSION = "3.1.2.0";
+        public const string VERSION = "3.1.3.0";
         private const int MaleLimit = 2;
         private const int FemaleLimit = 2;
         private const bool _useSelfColliders = false;

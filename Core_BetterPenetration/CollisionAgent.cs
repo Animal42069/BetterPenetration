@@ -123,6 +123,17 @@ namespace Core_BetterPenetration
                     dynamicBone.m_Colliders.Clear();
             }
         }
+
+        internal void ResetKokanParticles()
+        {
+            foreach (var kokanBone in m_kokanDynamicBones)
+            {
+                if (kokanBone == null)
+                    continue;
+
+                kokanBone.ResetParticlesPosition();
+            }
+        }
     }
 }
 #endif

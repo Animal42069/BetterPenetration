@@ -55,23 +55,23 @@ namespace AI_BetterPenetration
         private static bool patched = false;
         private static bool inHScene = false;
         private static bool loadingCharacter = false;
-        private static bool resetTamaParticles = false;
+        private static bool resetParticles = false;
 
         private void Awake()
         {
-            (_fingerColliderLength = Config.Bind("Male Options", "Finger Collider: Length", 0.6f, "Lenght of the finger colliders.")).SettingChanged += (s, e) =>
+            (_fingerColliderLength = Config.Bind("Male Options", "Finger Collider: Length", 0.18f, "Lenght of the finger colliders.")).SettingChanged += (s, e) =>
             { UpdateFingerColliders(); };
-            (_fingerColliderRadius = Config.Bind("Male Options", "Finger Collider: Radius", 0.2f, "Radius of the finger colliders.")).SettingChanged += (s, e) =>
+            (_fingerColliderRadius = Config.Bind("Male Options", "Finger Collider: Radius", 0.06f, "Radius of the finger colliders.")).SettingChanged += (s, e) =>
             { UpdateFingerColliders(); };
-            (_danColliderHeadLength = Config.Bind("Male Options", "Penis Collider: Length of Head", 0.35f, "Distance from the center of the head bone to the tip, used for collision purposes.")).SettingChanged += (s, e) =>
+            (_danColliderHeadLength = Config.Bind("Male Options", "Penis Collider: Length of Head", 0.15f, "Distance from the center of the head bone to the tip, used for collision purposes.")).SettingChanged += (s, e) =>
             { UpdateDanColliders(); };
-            (_danColliderRadius = Config.Bind("Male Options", "Penis Collider: Radius of Shaft", 0.32f, "Radius of the shaft collider.")).SettingChanged += (s, e) =>
+            (_danColliderRadius = Config.Bind("Male Options", "Penis Collider: Radius of Shaft", 0.18f, "Radius of the shaft collider.")).SettingChanged += (s, e) =>
             { UpdateDanColliders(); };
             (_danColliderVerticalCenter = Config.Bind("Male Options", "Penis Collider: Vertical Center", -0.03f, "Vertical Center of the shaft collider")).SettingChanged += (s, e) =>
             { UpdateDanColliders(); };
             (_danLengthSquishFactor = Config.Bind("Male Options", "Penis: Squish Length Factor", 0.6f, new ConfigDescription("How much the length of the penis squishes after it has passed the squish threshold", new AcceptableValueRange<float>(0, 1)))).SettingChanged += (s, e) =>
             { UpdateDanOptions(); };
-            (_danGirthSquishFactor = Config.Bind("Male Options", "Penis: Squish Girth Factor", 0.4f, new ConfigDescription("How much the girth of the penis squishes after it has passed the squish threshold", new AcceptableValueRange<float>(0, 1)))).SettingChanged += (s, e) =>
+            (_danGirthSquishFactor = Config.Bind("Male Options", "Penis: Squish Girth Factor", 0.2f, new ConfigDescription("How much the girth of the penis squishes after it has passed the squish threshold", new AcceptableValueRange<float>(0, 1)))).SettingChanged += (s, e) =>
             { UpdateDanOptions(); };
             (_danSquishThreshold = Config.Bind("Male Options", "Penis: Squish Threshold", 0.2f, new ConfigDescription("Allows the penis to begin squishing (shorten length increase girth) after this amount of the penis has penetrated.", new AcceptableValueRange<float>(0, 1)))).SettingChanged += (s, e) =>
             { UpdateDanOptions(); };
@@ -224,19 +224,19 @@ namespace AI_BetterPenetration
                 return;
 
             CoreGame.OnChangeAnimation(_info.fileFemale);
-            resetTamaParticles = true;
+            resetParticles = true;
         }
 
         [HarmonyPrefix, HarmonyPatch(typeof(HScene), "SetMovePositionPoint")]
         private static void HScene_SetMovePositionPoint()
         {
-            resetTamaParticles = true;
+            resetParticles = true;
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "setPlay")]
         private static void ChaControl_PostSetPlay()
         {
-            resetTamaParticles = true;
+            resetParticles = true;
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(H_Lookat_dan), "setInfo")]
@@ -254,10 +254,10 @@ namespace AI_BetterPenetration
             if (!inHScene || loadingCharacter || hScene == null || __instance.strPlayMotion == null)
                 return;
 
-            if (resetTamaParticles && !hScene.NowChangeAnim)
+            if (resetParticles && !hScene.NowChangeAnim)
             {
-                CoreGame.ResetTamaParticles();
-                resetTamaParticles = false;
+                CoreGame.ResetParticles();
+                resetParticles = false;
             }
 
             CoreGame.LookAtDanUpdate(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, hScene.NowChangeAnim, 0, 0);

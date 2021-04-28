@@ -346,8 +346,6 @@ namespace Core_BetterPenetration
                     !BoneNames.BodyColliders.Contains(dynamicBoneCollider.name))
                     continue;
 
-                Console.WriteLine($"Adding {dynamicBoneCollider.name} from {target.name} to tama colliders");
-
                 foreach (var tamaBone in m_tamaBones)
                 {
                     if (tamaBone == null)
@@ -568,7 +566,7 @@ namespace Core_BetterPenetration
         {
             ClearDanTarget(firstTarget, secondTarget);
 
-            if (!m_danPointsFound || currentMotion == string.Empty)
+            if (!m_danPointsFound)
                 return;
 
             if (secondTarget != null)
@@ -597,6 +595,9 @@ namespace Core_BetterPenetration
             AddTamaColliders(firstTarget.m_collisionCharacter, false);
             if (secondTarget != null)
                 AddTamaColliders(secondTarget.m_collisionCharacter, false);
+
+            if (currentMotion == string.Empty)
+                return;
 
             m_referenceTarget = lookAtTransform;
 #if KK

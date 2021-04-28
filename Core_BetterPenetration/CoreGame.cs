@@ -162,10 +162,13 @@ namespace Core_BetterPenetration
             collisionAgents[0].CheckForAdjustment(newAnimationFile);
         }
 
-        public static void ResetTamaParticles()
+        public static void ResetParticles()
         {
             foreach (var agent in danAgents)
                 agent.ResetTamaParticles();
+
+            foreach (var agent in collisionAgents)
+                agent.ResetKokanParticles();
         }
 
         public static void SetDansHaveNewTarget(bool set)

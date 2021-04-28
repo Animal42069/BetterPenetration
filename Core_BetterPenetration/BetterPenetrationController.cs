@@ -18,11 +18,11 @@ namespace Core_BetterPenetration
         public bool danTargetsValid = false;
 
         public const float DefaultLengthSquish = 0.6f;
-        public const float DefaultGirthSquish = 0.4f;
+        public const float DefaultGirthSquish = 0.2f;
         public const float DefaultSquishThreshold = 0.2f;
         public const float DefaultColliderVertical = -0.03f;
-        public const float DefaultColliderLength = 0.35f;
-        public const float DefaultColliderRadius = 0.32f;
+        public const float DefaultColliderLength = 0.15f;
+        public const float DefaultColliderRadius = 0.18f;
 
         protected override void OnCardBeingSaved(GameMode currentGameMode)
         {
