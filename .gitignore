@@ -78,3 +78,6 @@ crashlytics-build.properties
 /HS2_Studio_BetterPenetrationControls
 /AI_Studio_BetterPenetrationControls
 /KK_BetterPenetration/obj/Debug/DesignTimeResolveAssemblyReferences.cache
+/KK_Studio_BetterPenetration/bin/Release
+/KK_Studio_BetterPenetration/obj
+/KK_Studio_BetterPenetrationControls

@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using Manager;
 using AIChara;
 using Core_BetterPenetration;
-using System;
 
 namespace AI_BetterPenetration
 {
@@ -15,10 +14,9 @@ namespace AI_BetterPenetration
     [BepInProcess("AI-Syoujyo")]
     public class AI_BetterPenetration : BaseUnityPlugin
     {
-        internal const string VERSION = "3.0.2.0";
+        internal const string VERSION = "4.0.0.0";
         private const int MaleLimit = 1;
         private const int FemaleLimit = 2;
-        private const bool _useSelfColliders = false;
 
         private static readonly List<float> frontOffsets = new List<float> { -0.35f, 0f };
         private static readonly List<float> backOffsets = new List<float> { -0.05f, 0.05f };
@@ -210,7 +208,7 @@ namespace AI_BetterPenetration
 
             for (int femaleNum = 0; femaleNum < FemaleLimit; femaleNum++)
             {
-                collisionOptions.Add(new CollisionOptions(_useSelfColliders, _kokanOffsetForward.Value, _kokanOffsetUp.Value, _headOffsetForward.Value, _headOffsetUp.Value, _useKokanFix.Value,
+                collisionOptions.Add(new CollisionOptions(_kokanOffsetForward.Value, _kokanOffsetUp.Value, _headOffsetForward.Value, _headOffsetUp.Value, _useKokanFix.Value,
                     _kokanFixPositionZ.Value, _kokanFixPositionY.Value, _kokanFixRotationX.Value, _clippingDepth.Value, frontInfo, backInfo));
             }
 

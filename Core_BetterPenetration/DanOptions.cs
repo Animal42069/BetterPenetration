@@ -8,7 +8,7 @@
         public float danLengthSquish;
         public float danGirthSquish;
         public float squishThreshold;
-#if !AI_STUDIO && ! HS2_STUDIO
+#if !AI_STUDIO && ! HS2_STUDIO && !KK_STUDIO
         public float fingerRadius;
         public float fingerLength;
         public bool useFingerColliders;

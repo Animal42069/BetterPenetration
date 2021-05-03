@@ -4,8 +4,6 @@ namespace Core_BetterPenetration
 {
     class CollisionOptions
     {
-        internal bool useBoundingColliders = false;
-
         internal float kokanForwardOffset = 0;
         internal float kokanUpOffset = 0;
         internal float headForwardOffset = 0;
@@ -20,11 +18,9 @@ namespace Core_BetterPenetration
         internal List<CollisionPointInfo> frontCollisionInfo;
         internal List<CollisionPointInfo> backCollisonInfo;
 
-        public CollisionOptions(bool useBoundingColliders, float kokanForwardOffset, float kokanUpOffset, float headForwardOffset, float headUpOffset, bool kokan_adjust,
+        public CollisionOptions(float kokanForwardOffset, float kokanUpOffset, float headForwardOffset, float headUpOffset, bool kokan_adjust,
         float kokan_adjust_position_z, float kokan_adjust_position_y, float kokan_adjust_rotation_x, float clippingDepth, List<CollisionPointInfo> frontInfo, List<CollisionPointInfo> backInfo)
         {
-            this.useBoundingColliders = useBoundingColliders;
-
             this.kokanForwardOffset = kokanForwardOffset;
             this.kokanUpOffset = kokanUpOffset;
             this.headForwardOffset = headForwardOffset;

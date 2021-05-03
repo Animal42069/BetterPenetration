@@ -40,7 +40,7 @@ namespace Core_BetterPenetration
             danTop.transform.rotation = danPoints[0].transform.rotation;
         }
 
-#if !AI_STUDIO && !HS2_STUDIO
+#if !AI_STUDIO && !HS2_STUDIO && !KK_STUDIO
         internal void SquishDanGirth(float girthScaleFactor)
         {
             float halfGirthScaleFactor = (1 - (1 - 1 / girthScaleFactor) / 2);

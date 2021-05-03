@@ -1,10 +1,13 @@
-﻿#if AI_STUDIO || HS2_STUDIO
+﻿#if AI_STUDIO || HS2_STUDIO || KK_STUDIO
 using KKAPI;
 using KKAPI.Chara;
-using AIChara;
 using UnityEngine;
 using ExtensibleSaveFormat;
 using System.Linq;
+
+#if AI_STUDIO || HS2_STUDIO
+using AIChara;
+#endif
 
 namespace Core_BetterPenetration
 {
@@ -17,13 +20,23 @@ namespace Core_BetterPenetration
         public Transform danEndTarget;
         public bool danTargetsValid = false;
 
+#if AI_STUDIO || HS2_STUDIO
         public const float DefaultLengthSquish = 0.6f;
         public const float DefaultGirthSquish = 0.2f;
         public const float DefaultSquishThreshold = 0.2f;
         public const float DefaultColliderVertical = -0.03f;
         public const float DefaultColliderLength = 0.15f;
         public const float DefaultColliderRadius = 0.18f;
+#endif
 
+#if KK_STUDIO
+        public const float DefaultLengthSquish = 0.6f;
+        public const float DefaultGirthSquish = 0.15f;
+        public const float DefaultSquishThreshold = 0.2f;
+        public const float DefaultColliderVertical = 0.0f;
+        public const float DefaultColliderLength = 0.008f;
+        public const float DefaultColliderRadius = 0.024f;
+#endif
         protected override void OnCardBeingSaved(GameMode currentGameMode)
         {
             PluginData data = new PluginData { version = 1 };
@@ -123,25 +136,43 @@ namespace Core_BetterPenetration
             danTargetsValid = true;
         }
 
+        public void ClearTama()
+        {
+            if (danAgent != null)
+                danAgent.ClearTama();
+        }
+
+        public void InitializeTama()
+        {
+            if (danAgent == null)
+                return;
+
+            danAgent.InitializeTama();
+        }
+
         public void SetCollisionAgent(ChaControl target)
         {
             if (danAgent == null || danOptions == null || !danTargetsValid)
                 return;
 
             if (collisionAgent != null)
+            {
                 danAgent.RemoveDanColliders(collisionAgent);
+                danAgent.RemoveTamaColliders();
+            }
 
             collisionAgent = target;
             danAgent.AddDanColliders(collisionAgent);
+            danAgent.AddTamaColliders(collisionAgent, false);
         }
 
         public void RemoveCollisionAgent()
         {
-            if (danAgent == null || danOptions == null || !danTargetsValid)
+            if (danAgent == null || danOptions == null || !danTargetsValid || collisionAgent == null)
                 return;
 
-            if (collisionAgent != null)
-                danAgent.RemoveDanColliders(collisionAgent);
+            danAgent.RemoveDanColliders(collisionAgent);
+            danAgent.RemoveTamaColliders();
 
             collisionAgent = null;
         }

@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("HS2_Studio_BetterPenetration")]
+[assembly: AssemblyTitle("KK_Studio_BetterPenetration")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("HS2_Studio_BetterPenetration")]
+[assembly: AssemblyProduct("KK_Studio_BetterPenetration")]
 [assembly: AssemblyCopyright("Copyright ©  2021")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -32,5 +32,5 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion(HS2_Studio_BetterPenetration.HS2_Studio_BetterPenetration.VERSION)]
-[assembly: AssemblyFileVersion(HS2_Studio_BetterPenetration.HS2_Studio_BetterPenetration.VERSION)]
+[assembly: AssemblyVersion(KK_Studio_BetterPenetration.KK_Studio_BetterPenetration.VERSION)]
+[assembly: AssemblyFileVersion(KK_Studio_BetterPenetration.KK_Studio_BetterPenetration.VERSION)]

@@ -21,7 +21,7 @@ namespace Core_BetterPenetration
         private bool m_bpTamaFound = false;
         private int tamaSelfColliders;
 
-#if !HS2_STUDIO && !AI_STUDIO
+#if !HS2_STUDIO && !AI_STUDIO && !KK_STUDIO
         private Transform m_referenceTarget;
         private DynamicBoneCollider m_indexCollider;
         private DynamicBoneCollider m_middleCollider;
@@ -31,7 +31,7 @@ namespace Core_BetterPenetration
 
 #if HS2 || AI || HS2_STUDIO || AI_STUDIO
         private const float DefaultDanLength = 1.9f;
-#elif KK
+#elif KK || KK_STUDIO
         private const float DefaultDanLength = 0.19f;
 #endif
 
@@ -56,7 +56,7 @@ namespace Core_BetterPenetration
             InitializeDan();
             InitializeTama();
 
-#if !HS2_STUDIO && !AI_STUDIO
+#if !HS2_STUDIO && !AI_STUDIO && !KK_STUDIO
             UpdateFingerColliders(m_danOptions.fingerRadius, m_danOptions.fingerLength);
 #endif
 
@@ -93,11 +93,11 @@ namespace Core_BetterPenetration
             }
         }
 
-        private void InitializeTama()
+        internal void InitializeTama()
         {
-            m_tamaBones = new List<DynamicBone>();
+            ClearTama();
 
-            foreach(var tamaBoneName in BoneNames.TamaBones)
+            foreach (var tamaBoneName in BoneNames.TamaBones)
             {
                 var tamaBone = m_danCharacter.GetComponentsInChildren<DynamicBone>().FirstOrDefault(x => x.name != null && x.name.Contains(tamaBoneName));
 
@@ -365,7 +365,7 @@ namespace Core_BetterPenetration
             }
         }
 
-#if !HS2_STUDIO && !AI_STUDIO
+#if !HS2_STUDIO && !AI_STUDIO && !KK_STUDIO
         internal void UpdateDanOptions(float danLengthSquish, float danGirthSquish, float squishThreshold, bool squishOralGirth, bool useFingerColliders, bool simplifyPenetration, bool simplifyOral)
         {
             m_danOptions.danLengthSquish = danLengthSquish;
@@ -673,11 +673,16 @@ namespace Core_BetterPenetration
         }
 #endif
 
-            internal void ClearDanAgent()
+        internal void ClearTama()
+        {
+            m_bpTamaFound = false;
+            m_tamaBones = new List<DynamicBone>();
+        }
+
+        internal void ClearDanAgent()
         {
             m_danPointsFound = false;
             m_bpDanPointsFound = false;
-            m_bpTamaFound = false;
 
             if (m_danPoints != null)
                 m_danPoints.ResetDanPoints();
@@ -687,10 +692,11 @@ namespace Core_BetterPenetration
                 foreach (var danCollider in m_danColliders)
                     UnityEngine.Object.Destroy(danCollider);
 
-            m_tamaBones = new List<DynamicBone>();
             m_danColliders = new List<DynamicBoneCollider>();
 
-#if !HS2_STUDIO && !AI_STUDIO
+            ClearTama();
+
+#if !HS2_STUDIO && !AI_STUDIO && !KK_STUDIO
 
             ClearTarget();
 

@@ -17,14 +17,14 @@ namespace KK_BetterPenetration
     [BepInProcess("KoikatuVR")]
     [BepInProcess("Koikatsu Party")]
     [BepInProcess("Koikatsu Party VR")]
+
     public class KK_BetterPenetration : BaseUnityPlugin
     {
         public static KK_BetterPenetration instance;
 
-        public const string VERSION = "3.1.3.1";
+        public const string VERSION = "3.1.4.0";
         private const int MaleLimit = 2;
         private const int FemaleLimit = 2;
-        private const bool _useSelfColliders = false;
 
         private static readonly List<float> frontOffsets = new List<float> { -0.04f, 0.04f, 0.06f };
         private static readonly List<float> backOffsets = new List<float> { -0.04f, 0.04f, 0f };
@@ -52,6 +52,7 @@ namespace KK_BetterPenetration
         private static Harmony harmony;
         private static HSceneProc hSceneProc;
         private static Traverse hSceneProcTraverse;
+        private static Traverse vrHSceneTraverse;
         private static bool hSceneStarted = false;
         private static bool inHScene = false;
         private static readonly bool loadingCharacter = false;
@@ -104,6 +105,15 @@ namespace KK_BetterPenetration
             harmony = new Harmony("KK_BetterPenetration");
             harmony.PatchAll(typeof(KK_BetterPenetration));
 
+            Type VRHSceneType = Type.GetType("VRHScene, Assembly-CSharp");
+            if (VRHSceneType != null)
+            {
+                harmony.Patch(VRHSceneType.GetMethod("Start", AccessTools.all), postfix: new HarmonyMethod(typeof(KK_BetterPenetration).GetMethod(nameof(KK_BetterPenetration.VRHScene_PostStart), AccessTools.all)));
+                harmony.Patch(VRHSceneType.GetMethod("EndProc", AccessTools.all), prefix: new HarmonyMethod(typeof(KK_BetterPenetration).GetMethod(nameof(KK_BetterPenetration.VRHScene_EndProc), AccessTools.all)));
+                harmony.Patch(VRHSceneType.GetMethod("Update", AccessTools.all), postfix: new HarmonyMethod(typeof(KK_BetterPenetration).GetMethod(nameof(KK_BetterPenetration.VRHScene_PostUpdate), AccessTools.all)));
+                harmony.Patch(VRHSceneType.GetMethod("ChangeAnimator", AccessTools.all), prefix: new HarmonyMethod(typeof(KK_BetterPenetration).GetMethod(nameof(KK_BetterPenetration.VRHScene_PreChangeAnimator), AccessTools.all)));
+            }
+
             Chainloader.PluginInfos.TryGetValue("com.deathweasel.bepinex.uncensorselector", out PluginInfo info);
             if (info == null || info.Instance == null)
                 return;
@@ -119,36 +129,6 @@ namespace KK_BetterPenetration
             
             harmony.Patch(uncensorSelectorReloadCharacterBody, postfix: new HarmonyMethod(typeof(KK_BetterPenetration), nameof(UncensorSelector_ReloadCharacterBody_Postfix), new[] { typeof(object) }));
             Debug.Log("KK_BetterPenetration: UncensorSelector patched ReloadCharacterBody correctly");
-        }
-
-        private static void UpdateDanColliders()
-        {
-            if (!inHScene)
-                return;
-
-            for (int index = 0; index < MaleLimit; index++)
-                CoreGame.UpdateDanCollider(index, _danColliderRadius[index].Value, _danColliderHeadLength[index].Value, _danColliderVerticalCenter[index].Value);
-        }
-
-        private static void UpdateDanOptions()
-        {
-            if (!inHScene)
-                return;
-
-            for (int index = 0; index < MaleLimit; index++)
-                CoreGame.UpdateDanOptions(index, _danLengthSquishFactor[index].Value, _danGirthSquishFactor[index].Value,
-                    _danSquishThreshold[index].Value, _danSquishOralGirth[index].Value, false,
-                    _simplifyPenetration[index].Value, _simplifyOral[index].Value);
-        }
-
-        private static void UpdateCollisionOptions()
-        {
-            if (!inHScene)
-                return;
-
-            List<CollisionOptions> collisionOptions = PopulateCollisionOptionsList();
-            for (int index = 0; index < FemaleLimit; index++)
-                CoreGame.UpdateCollisionOptions(index, collisionOptions[index]);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "LoadCharaFbxDataAsync")]
@@ -168,7 +148,7 @@ namespace KK_BetterPenetration
         }
 
         [HarmonyPrefix, HarmonyPatch(typeof(HSceneProc), "EndProc")]
-        internal static void HSceneProc_EndProc_Patch()
+        internal static void HSceneProc_EndProc()
         {
             CoreGame.SetAgentsBPBoneWeights(0f);
             CoreGame.OnEndScene();
@@ -221,41 +201,6 @@ namespace KK_BetterPenetration
             hSceneStarted = false;
         }
 
-        private static List<DanOptions> PopulateDanOptionsList()
-        {
-            List<DanOptions> danOptions = new List<DanOptions>();
-
-            for (int maleNum = 0; maleNum < MaleLimit; maleNum++)
-            {
-                danOptions.Add(new DanOptions(_danColliderVerticalCenter[maleNum].Value, _danColliderRadius[maleNum].Value, _danColliderHeadLength[maleNum].Value,
-                    _danLengthSquishFactor[maleNum].Value, _danGirthSquishFactor[maleNum].Value, _danSquishThreshold[maleNum].Value, _danSquishOralGirth[maleNum].Value,
-                    0, 0, false, _simplifyPenetration[maleNum].Value, _simplifyOral[maleNum].Value));
-            }
-
-            return danOptions;
-        }
-
-        private static List<CollisionOptions> PopulateCollisionOptionsList()
-        {
-            List<CollisionOptions> collisionOptions = new List<CollisionOptions>();
-
-            List<CollisionPointInfo> frontInfo = new List<CollisionPointInfo>();
-            for (int info = 0; info < BoneNames.frontCollisionList.Count; info++)
-                frontInfo.Add(new CollisionPointInfo(BoneNames.frontCollisionList[info], _frontCollisionOffset[info].Value, frontPointsInward[info]));
-
-            List<CollisionPointInfo> backInfo = new List<CollisionPointInfo>();
-            for (int info = 0; info < BoneNames.backCollisionList.Count; info++)
-                backInfo.Add(new CollisionPointInfo(BoneNames.backCollisionList[info], _backCollisionOffset[info].Value, backPointsInward[info]));
-
-            for (int femaleNum = 0; femaleNum < FemaleLimit; femaleNum++)
-            {
-                collisionOptions.Add(new CollisionOptions(_useSelfColliders, _kokanOffsetForward.Value, _kokanOffsetUp.Value, _headOffsetForward.Value, _headOffsetUp.Value,
-                    false, 0, 0, 0, _clippingDepth.Value, frontInfo, backInfo));
-            }
-
-            return collisionOptions;
-        }
-
         [HarmonyPrefix, HarmonyPatch(typeof(HSceneProc), "ChangeAnimator")]
         private static void HSceneProc_PreChangeAnimator(HSceneProc.AnimationListInfo _nextAinmInfo)
         {
@@ -265,6 +210,68 @@ namespace KK_BetterPenetration
             CoreGame.OnChangeAnimation(_nextAinmInfo.pathFemaleBase.file);
         }
 
+        public static void VRHScene_PostStart(object __instance)
+        {
+            vrHSceneTraverse = Traverse.Create(__instance);
+
+            hSceneStarted = true;
+            inHScene = false;
+        }
+
+        internal static void VRHScene_EndProc()
+        {
+            CoreGame.SetAgentsBPBoneWeights(0f);
+            CoreGame.OnEndScene();
+
+            inHScene = false;
+            vrHSceneTraverse = null;
+        }
+
+        public static void VRHScene_PostUpdate()
+        {
+            if (!hSceneStarted || inHScene || vrHSceneTraverse == null)
+                return;
+
+            var enabled = hSceneProcTraverse.Field("enabled").GetValue<bool>();
+            if (!enabled)
+                return;
+
+            List<DanOptions> danOptions = PopulateDanOptionsList();
+            List<CollisionOptions> collisionOptions = PopulateCollisionOptionsList();
+
+            var lstFemale = hSceneProcTraverse.Field("lstFemale").GetValue<List<ChaControl>>();
+            if (lstFemale == null || lstFemale.Count == 0)
+                return;
+
+            List<ChaControl> femaleList = new List<ChaControl>();
+            foreach (var female in lstFemale)
+                if (female != null)
+                    femaleList.Add(female);
+
+            List<ChaControl> maleList = new List<ChaControl>();
+            var male = hSceneProcTraverse.Field("male").GetValue<ChaControl>();
+            if (male != null)
+                maleList.Add(male);
+
+            var male1 = hSceneProcTraverse.Field("male1").GetValue<ChaControl>();
+            if (male1 != null)
+                maleList.Add(male1);
+
+            if (maleList.IsNullOrEmpty())
+                return;
+
+            CoreGame.InitializeAgents(maleList, femaleList, danOptions, collisionOptions);
+            CoreGame.SetAgentsBPBoneWeights(1f);
+            inHScene = true;
+            hSceneStarted = false;
+        }
+        private static void VRHScene_PreChangeAnimator(HSceneProc.AnimationListInfo _nextAinmInfo)
+        {
+            if (!inHScene || _nextAinmInfo == null || _nextAinmInfo.pathFemaleBase.file == null)
+                return;
+
+            CoreGame.OnChangeAnimation(_nextAinmInfo.pathFemaleBase.file);
+        }
 
         [HarmonyPostfix, HarmonyPatch(typeof(Lookat_dan), "SetInfo")]
         private static void H_Lookat_dan_PostSetInfo(Lookat_dan __instance, ChaControl ___male)
@@ -317,6 +324,71 @@ namespace KK_BetterPenetration
             //           twoDans = true;
 
             CoreGame.LookAtDanRelease(maleNum, __instance.numFemale, twoDans);
+        }
+
+        private static void UpdateDanColliders()
+        {
+            if (!inHScene)
+                return;
+
+            for (int index = 0; index < MaleLimit; index++)
+                CoreGame.UpdateDanCollider(index, _danColliderRadius[index].Value, _danColliderHeadLength[index].Value, _danColliderVerticalCenter[index].Value);
+        }
+
+        private static void UpdateDanOptions()
+        {
+            if (!inHScene)
+                return;
+
+            for (int index = 0; index < MaleLimit; index++)
+                CoreGame.UpdateDanOptions(index, _danLengthSquishFactor[index].Value, _danGirthSquishFactor[index].Value,
+                    _danSquishThreshold[index].Value, _danSquishOralGirth[index].Value, false,
+                    _simplifyPenetration[index].Value, _simplifyOral[index].Value);
+        }
+
+        private static void UpdateCollisionOptions()
+        {
+            if (!inHScene)
+                return;
+
+            List<CollisionOptions> collisionOptions = PopulateCollisionOptionsList();
+            for (int index = 0; index < FemaleLimit; index++)
+                CoreGame.UpdateCollisionOptions(index, collisionOptions[index]);
+        }
+
+        private static List<DanOptions> PopulateDanOptionsList()
+        {
+            List<DanOptions> danOptions = new List<DanOptions>();
+
+            for (int maleNum = 0; maleNum < MaleLimit; maleNum++)
+            {
+                danOptions.Add(new DanOptions(_danColliderVerticalCenter[maleNum].Value, _danColliderRadius[maleNum].Value, _danColliderHeadLength[maleNum].Value,
+                    _danLengthSquishFactor[maleNum].Value, _danGirthSquishFactor[maleNum].Value, _danSquishThreshold[maleNum].Value, _danSquishOralGirth[maleNum].Value,
+                    0, 0, false, _simplifyPenetration[maleNum].Value, _simplifyOral[maleNum].Value));
+            }
+
+            return danOptions;
+        }
+
+        private static List<CollisionOptions> PopulateCollisionOptionsList()
+        {
+            List<CollisionOptions> collisionOptions = new List<CollisionOptions>();
+
+            List<CollisionPointInfo> frontInfo = new List<CollisionPointInfo>();
+            for (int info = 0; info < BoneNames.frontCollisionList.Count; info++)
+                frontInfo.Add(new CollisionPointInfo(BoneNames.frontCollisionList[info], _frontCollisionOffset[info].Value, frontPointsInward[info]));
+
+            List<CollisionPointInfo> backInfo = new List<CollisionPointInfo>();
+            for (int info = 0; info < BoneNames.backCollisionList.Count; info++)
+                backInfo.Add(new CollisionPointInfo(BoneNames.backCollisionList[info], _backCollisionOffset[info].Value, backPointsInward[info]));
+
+            for (int femaleNum = 0; femaleNum < FemaleLimit; femaleNum++)
+            {
+                collisionOptions.Add(new CollisionOptions(_kokanOffsetForward.Value, _kokanOffsetUp.Value, _headOffsetForward.Value, _headOffsetUp.Value,
+                    false, 0, 0, 0, _clippingDepth.Value, frontInfo, backInfo));
+            }
+
+            return collisionOptions;
         }
 
         private static void UncensorSelector_ReloadCharacterBody_Postfix(object __instance)

@@ -9,20 +9,19 @@ using UniRx;
 using System;
 using System.Linq;
 using System.Reflection;
-using AIChara;
 using Core_BetterPenetration;
 
-namespace HS2_Studio_BetterPenetration
+namespace KK_Studio_BetterPenetration
 {
     [BepInPlugin(GUID, PluginName, VERSION)]
-    [BepInDependency("com.deathweasel.bepinex.uncensorselector", "3.10")]
-    [BepInDependency("com.joan6694.illusionplugins.bonesframework", "1.4.2")]
-    [BepInProcess("StudioNEOV2")]
-    public class HS2_Studio_BetterPenetration : BaseUnityPlugin
+    [BepInDependency("com.deathweasel.bepinex.uncensorselector", "3.11.1")]
+    [BepInDependency("com.rclcircuit.bepinex.modboneimplantor", "1.0")]
+    [BepInProcess("CharaStudio")]
+    public class KK_Studio_BetterPenetration : BaseUnityPlugin
     {
-        internal const string GUID = "com.animal42069.studiobetterpenetration";
-        internal const string PluginName = "HS2 Studio Better Penetration";
-        internal const string VERSION = "2.0.0.0";
+        internal const string GUID = "com.animal42069.kkstudiobetterpenetration";
+        internal const string PluginName = "KK Studio Better Penetration";
+        internal const string VERSION = "1.0.0.0";
         internal const string BEHAVIOR = "BetterPenetrationController";
         internal const string StudioCategoryName = "Better Penetration";
         internal Harmony harmony;
@@ -31,8 +30,8 @@ namespace HS2_Studio_BetterPenetration
         {
             CharacterApi.RegisterExtraBehaviour<BetterPenetrationController>(BEHAVIOR);
 
-            harmony = new Harmony("HS2_Studio_BetterPenetration");
-            harmony.PatchAll(typeof(HS2_Studio_BetterPenetration));
+            harmony = new Harmony("KK_Studio_BetterPenetration");
+            harmony.PatchAll(typeof(KK_Studio_BetterPenetration));
 
             Chainloader.PluginInfos.TryGetValue("com.deathweasel.bepinex.uncensorselector", out PluginInfo pluginInfo);
             if (pluginInfo == null || pluginInfo.Instance == null)
@@ -46,18 +45,16 @@ namespace HS2_Studio_BetterPenetration
             if (methodInfo == null)
                 return;
 
-            harmony.Patch(methodInfo, new HarmonyMethod(typeof(HS2_Studio_BetterPenetration), "BeforeDanCharacterReload"),
-                                      new HarmonyMethod(typeof(HS2_Studio_BetterPenetration), "AfterDanCharacterReload"),
-                                      null, null);
+            harmony.Patch(methodInfo, prefix: new HarmonyMethod(typeof(KK_Studio_BetterPenetration), "BeforeDanCharacterReload"),
+                                      postfix: new HarmonyMethod(typeof(KK_Studio_BetterPenetration), "AfterDanCharacterReload"));
             Debug.Log("Studio_BetterPenetration: patched UncensorSelectorController::ReloadCharacterPenis correctly");
 
             methodInfo = AccessTools.Method(nestedType, "ReloadCharacterBalls", null, null);
             if (methodInfo == null)
                 return;
 
-            harmony.Patch(methodInfo, new HarmonyMethod(typeof(HS2_Studio_BetterPenetration), "BeforeTamaCharacterReload"),
-                                      new HarmonyMethod(typeof(HS2_Studio_BetterPenetration), "AfterTamaCharacterReload"),
-                                      null, null);
+            harmony.Patch(methodInfo, prefix: new HarmonyMethod(typeof(KK_Studio_BetterPenetration), "BeforeTamaCharacterReload"),
+                                      postfix: new HarmonyMethod(typeof(KK_Studio_BetterPenetration), "AfterTamaCharacterReload"));
             Debug.Log("Studio_BetterPenetration: patched UncensorSelectorController::ReloadCharacterBalls correctly");
 
             Chainloader.PluginInfos.TryGetValue("com.joan6694.illusionplugins.nodesconstraints", out pluginInfo);
@@ -72,9 +69,7 @@ namespace HS2_Studio_BetterPenetration
             if (methodInfo == null)
                 return;
 
-            harmony.Patch(methodInfo, null,
-                                      new HarmonyMethod(typeof(HS2_Studio_BetterPenetration), "AfterAddConstraint"),
-                                      null, null);
+            harmony.Patch(methodInfo, postfix: new HarmonyMethod(typeof(KK_Studio_BetterPenetration), "AfterAddConstraint"));
             Debug.Log("Studio_BetterPenetration: patched NodeConstraints::AddConstraint correctly");
         }
 
@@ -99,7 +94,7 @@ namespace HS2_Studio_BetterPenetration
             });
             StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(lengthSlider);
 
-            var girthSlider = new CurrentStateCategorySlider("Girth Squish", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().DanGirthSquish, 0f, 2f);
+            var girthSlider = new CurrentStateCategorySlider("Girth Squish", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().DanGirthSquish, 0f, 1f);
             girthSlider.Value.Subscribe(value =>
             {
                 foreach (var controller in StudioAPI.GetSelectedControllers<BetterPenetrationController>())
@@ -115,7 +110,7 @@ namespace HS2_Studio_BetterPenetration
             });
             StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(thresholdSlider);
 
-            var colliderRadius = new CurrentStateCategorySlider("Collilder Radius", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().DanColliderRadius, 0f, 1f);
+            var colliderRadius = new CurrentStateCategorySlider("Collilder Radius", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().DanColliderRadius, 0f, 0.1f);
             colliderRadius.Value.Subscribe(value =>
             {
                 foreach (var controller in StudioAPI.GetSelectedControllers<BetterPenetrationController>())
@@ -123,7 +118,7 @@ namespace HS2_Studio_BetterPenetration
             });
             StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(colliderRadius);
 
-            var colliderLength = new CurrentStateCategorySlider("Collilder Length", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().DanColliderLength, 0f, 1f);
+            var colliderLength = new CurrentStateCategorySlider("Collilder Length", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().DanColliderLength, 0f, 0.1f);
             colliderLength.Value.Subscribe(value =>
             {
                 foreach (var controller in StudioAPI.GetSelectedControllers<BetterPenetrationController>())
@@ -131,7 +126,7 @@ namespace HS2_Studio_BetterPenetration
             });
             StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(colliderLength);
 
-            var colliderVertical = new CurrentStateCategorySlider("Collilder Vertical", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().DanColliderVertical, -0.1f, 0.1f);
+            var colliderVertical = new CurrentStateCategorySlider("Collilder Vertical", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().DanColliderVertical, -0.01f, 0.01f);
             colliderVertical.Value.Subscribe(value =>
             {
                 foreach (var controller in StudioAPI.GetSelectedControllers<BetterPenetrationController>())

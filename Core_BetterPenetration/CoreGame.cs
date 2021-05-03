@@ -1,4 +1,4 @@
-﻿#if !HS2_STUDIO && !AI_STUDIO
+﻿#if !HS2_STUDIO && !AI_STUDIO && !KK_STUDIO
 using System.Collections.Generic;
 using UnityEngine;
 using System;

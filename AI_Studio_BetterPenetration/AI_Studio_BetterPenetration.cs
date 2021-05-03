@@ -1,10 +1,10 @@
 ﻿using BepInEx;
 using BepInEx.Bootstrap;
 using HarmonyLib;
+using UnityEngine;
 using KKAPI.Studio;
 using KKAPI.Studio.UI;
 using KKAPI.Chara;
-using UnityEngine;
 using UniRx;
 using System;
 using System.Linq;
@@ -16,16 +16,16 @@ namespace AI_Studio_BetterPenetration
 {
     [BepInPlugin(GUID, PluginName, VERSION)]
     [BepInDependency("com.deathweasel.bepinex.uncensorselector", "3.10")]
-    [BepInDependency("com.joan6694.illusionplugins.bonesframework", "1.4.2")]
+    [BepInDependency("com.joan6694.illusionplugins.bonesframework", "1.4.3")]
     [BepInProcess("StudioNEOV2")]
     public class AI_Studio_BetterPenetration : BaseUnityPlugin
     {
-        internal const string VERSION = "1.0.1.0";
-        private const string GUID = "com.animal42069.studiobetterpenetration";
-        private const string PluginName = "AI Studio Better Penetration";
-        private const string BEHAVIOR = "BetterPenetrationController";
-        private const string StudioCategoryName = "Better Penetration";
-        private Harmony harmony;
+        internal const string GUID = "com.animal42069.studiobetterpenetration";
+        internal const string PluginName = "AI Studio Better Penetration";
+        internal const string VERSION = "2.0.0.0";
+        internal const string BEHAVIOR = "BetterPenetrationController";
+        internal const string StudioCategoryName = "Better Penetration";
+        internal Harmony harmony;
 
         internal void Main()
         {
@@ -50,6 +50,15 @@ namespace AI_Studio_BetterPenetration
                                       new HarmonyMethod(typeof(AI_Studio_BetterPenetration), "AfterDanCharacterReload"),
                                       null, null);
             Debug.Log("Studio_BetterPenetration: patched UncensorSelector::ReloadCharacterPenis correctly");
+
+            methodInfo = AccessTools.Method(nestedType, "ReloadCharacterBalls", null, null);
+            if (methodInfo == null)
+                return;
+
+            harmony.Patch(methodInfo, new HarmonyMethod(typeof(AI_Studio_BetterPenetration), "BeforeTamaCharacterReload"),
+                                      new HarmonyMethod(typeof(AI_Studio_BetterPenetration), "AfterTamaCharacterReload"),
+                                      null, null);
+            Debug.Log("Studio_BetterPenetration: patched UncensorSelectorController::ReloadCharacterBalls correctly");
 
             Chainloader.PluginInfos.TryGetValue("com.joan6694.illusionplugins.nodesconstraints", out pluginInfo);
             if (pluginInfo == null || pluginInfo.Instance == null)
@@ -153,6 +162,28 @@ namespace AI_Studio_BetterPenetration
                 controller.InitializeDanAgent();
         }
 
+        internal static void BeforeTamaCharacterReload(object __instance)
+        {
+            ChaControl chaControl = (ChaControl)__instance.GetPrivateProperty("ChaControl");
+            if (chaControl == null)
+                return;
+
+            var controller = chaControl.GetComponent<BetterPenetrationController>();
+            if (controller != null)
+                controller.ClearTama();
+        }
+
+        internal static void AfterTamaCharacterReload(object __instance)
+        {
+            ChaControl chaControl = (ChaControl)__instance.GetPrivateProperty("ChaControl");
+            if (chaControl == null)
+                return;
+
+            var controller = chaControl.GetComponent<BetterPenetrationController>();
+            if (controller != null)
+                controller.InitializeTama();
+        }
+
         internal static void AfterAddConstraint(Transform parentTransform, Transform childTransform)
         {
             if (childTransform.name != BoneNames.BPDanEntryTarget)
@@ -167,7 +198,7 @@ namespace AI_Studio_BetterPenetration
                 controller.RemoveCollisionAgent();
                 return;
             }
-            
+
             var targetChaControl = parentTransform.GetComponentInParent<ChaControl>();
             if (targetChaControl == null)
                 return;

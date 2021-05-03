@@ -1,7 +1,0 @@
-<Project>
-  <Target Name="IllusionLibsBepInExHarmony" AfterTargets="ResolveReferences">
-    <ItemGroup>
-      <ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths)" Condition="'%(ReferenceCopyLocalPaths.NuGetPackageId)' == 'IllusionLibs.BepInEx.Harmony'" />
-    </ItemGroup>
-  </Target>
-</Project>
