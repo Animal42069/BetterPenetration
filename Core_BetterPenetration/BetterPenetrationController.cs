@@ -4,6 +4,7 @@ using KKAPI.Chara;
 using UnityEngine;
 using ExtensibleSaveFormat;
 using System.Linq;
+using System;
 
 #if AI_STUDIO || HS2_STUDIO
 using AIChara;
@@ -88,6 +89,8 @@ namespace Core_BetterPenetration
 
             danOptions = new DanOptions(colliderVertical, colliderRadius, colliderLength, lengthSquish, girthSquish, squishThreshold);
             InitializeDanAgent();
+
+            base.OnReload(currentGameMode, maintainState);
         }
 
         protected override void Start()
@@ -103,7 +106,7 @@ namespace Core_BetterPenetration
 
         protected void LateUpdate()
         {
-            if (!danTargetsValid)
+            if (!danTargetsValid || danEntryTarget == null || danEndTarget == null)
                 return;
 
             danAgent.SetDanTarget(danEntryTarget.position, danEndTarget.position);

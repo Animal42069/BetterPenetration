@@ -6,7 +6,7 @@ using BepInEx.Bootstrap;
 using BepInEx.Configuration;
 using HarmonyLib;
 using Core_BetterPenetration;
-
+using UnityEngine;
 
 namespace KK_BetterPenetration
 {
@@ -22,7 +22,7 @@ namespace KK_BetterPenetration
     {
         public static KK_BetterPenetration instance;
 
-        public const string VERSION = "3.1.4.0";
+        public const string VERSION = "3.1.6.0";
         private const int MaleLimit = 2;
         private const int FemaleLimit = 2;
 
@@ -42,15 +42,16 @@ namespace KK_BetterPenetration
         private static readonly ConfigEntry<bool>[] _simplifyOral = new ConfigEntry<bool>[MaleLimit];
 
         private static ConfigEntry<float> _clippingDepth;
-        private static ConfigEntry<float> _kokanOffsetForward;
-        private static ConfigEntry<float> _kokanOffsetUp;
-        private static ConfigEntry<float> _headOffsetForward;
-        private static ConfigEntry<float> _headOffsetUp;
+        private static ConfigEntry<Vector3> _kokanOffset;
+        private static ConfigEntry<Vector3> _innerKokanOffset;
+        private static ConfigEntry<Vector3> _mouthOffset;
+        private static ConfigEntry<Vector3> _innerMouthOffset;
         private static readonly ConfigEntry<float>[] _frontCollisionOffset = new ConfigEntry<float>[frontOffsets.Count];
         private static readonly ConfigEntry<float>[] _backCollisionOffset = new ConfigEntry<float>[backOffsets.Count];
 
         private static Harmony harmony;
         private static HSceneProc hSceneProc;
+        private static MonoBehaviour vrHScene;
         private static Traverse hSceneProcTraverse;
         private static Traverse vrHSceneTraverse;
         private static bool hSceneStarted = false;
@@ -93,13 +94,13 @@ namespace KK_BetterPenetration
             for (int offset = 0; offset < backOffsets.Count; offset++)
                 (_backCollisionOffset[offset] = Config.Bind("Female Options", "Clipping Offset: Back Collision " + offset, backOffsets[offset], "Individual offset on colision point, to improve clipping")).SettingChanged += (s, e) =>
                 { UpdateCollisionOptions(); };
-            (_kokanOffsetForward = Config.Bind("Female Options", "Target Offset: Vagina Vertical", -0.007f, "Vertical offset of the vagina target")).SettingChanged += (s, e) =>
+            (_kokanOffset = Config.Bind("Female Options", "Target Offset: Vagina Target", new Vector3(0, 0, 0), "Offset of the vagina target")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_kokanOffsetUp = Config.Bind("Female Options", "Target Offset: Vagina Depth", 0.0f, "Depth offset of the vagina target")).SettingChanged += (s, e) =>
+            (_innerKokanOffset = Config.Bind("Female Options", "Target Offset: Inner Vagina Target", new Vector3(0, 0, 0), "Offset of the simplified inner vagina target")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_headOffsetForward = Config.Bind("Female Options", "Target Offset: Mouth Depth", 0.0f, "Depth offset of the mouth target")).SettingChanged += (s, e) =>
+            (_mouthOffset = Config.Bind("Female Options", "Target Offset: Mouth Target", new Vector3(0, 0, 0), "Offset of the mouth target")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_headOffsetUp = Config.Bind("Female Options", "Target Offset: Mouth Vertical", 0.00f, "Vertical offset of the mouth target")).SettingChanged += (s, e) =>
+            (_innerMouthOffset = Config.Bind("Female Options", "Target Offset: Inner Mouth Target", new Vector3(0, 0, 0), "Offset of the simplified inner mouth target")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
 
             harmony = new Harmony("KK_BetterPenetration");
@@ -108,10 +109,14 @@ namespace KK_BetterPenetration
             Type VRHSceneType = Type.GetType("VRHScene, Assembly-CSharp");
             if (VRHSceneType != null)
             {
-                harmony.Patch(VRHSceneType.GetMethod("Start", AccessTools.all), postfix: new HarmonyMethod(typeof(KK_BetterPenetration).GetMethod(nameof(KK_BetterPenetration.VRHScene_PostStart), AccessTools.all)));
-                harmony.Patch(VRHSceneType.GetMethod("EndProc", AccessTools.all), prefix: new HarmonyMethod(typeof(KK_BetterPenetration).GetMethod(nameof(KK_BetterPenetration.VRHScene_EndProc), AccessTools.all)));
-                harmony.Patch(VRHSceneType.GetMethod("Update", AccessTools.all), postfix: new HarmonyMethod(typeof(KK_BetterPenetration).GetMethod(nameof(KK_BetterPenetration.VRHScene_PostUpdate), AccessTools.all)));
-                harmony.Patch(VRHSceneType.GetMethod("ChangeAnimator", AccessTools.all), prefix: new HarmonyMethod(typeof(KK_BetterPenetration).GetMethod(nameof(KK_BetterPenetration.VRHScene_PreChangeAnimator), AccessTools.all)));
+                harmony.Patch(VRHSceneType.GetMethod("Start", AccessTools.all), 
+                    postfix: new HarmonyMethod(typeof(KK_BetterPenetration).GetMethod(nameof(KK_BetterPenetration.VRHScene_PostStart), AccessTools.all)));
+                harmony.Patch(VRHSceneType.GetMethod("EndProc", AccessTools.all), 
+                    prefix: new HarmonyMethod(typeof(KK_BetterPenetration).GetMethod(nameof(KK_BetterPenetration.VRHScene_EndProc), AccessTools.all)));
+                harmony.Patch(VRHSceneType.GetMethod("Update", AccessTools.all), 
+                    postfix: new HarmonyMethod(typeof(KK_BetterPenetration).GetMethod(nameof(KK_BetterPenetration.VRHScene_PostUpdate), AccessTools.all)));
+                harmony.Patch(VRHSceneType.GetMethod("ChangeAnimator", AccessTools.all), 
+                    prefix: new HarmonyMethod(typeof(KK_BetterPenetration).GetMethod(nameof(KK_BetterPenetration.VRHScene_PreChangeAnimator), AccessTools.all)));
             }
 
             Chainloader.PluginInfos.TryGetValue("com.deathweasel.bepinex.uncensorselector", out PluginInfo info);
@@ -140,6 +145,8 @@ namespace KK_BetterPenetration
         [HarmonyPostfix, HarmonyPatch(typeof(HSceneProc), "Start")]
         public static void HScene_PostStart(HSceneProc __instance)
         {
+            Console.WriteLine($"HScene_PostStart");
+
             hSceneProc = __instance;
             hSceneProcTraverse = Traverse.Create(__instance);
 
@@ -150,6 +157,8 @@ namespace KK_BetterPenetration
         [HarmonyPrefix, HarmonyPatch(typeof(HSceneProc), "EndProc")]
         internal static void HSceneProc_EndProc()
         {
+            Console.WriteLine($"HSceneProc_EndProc");
+
             CoreGame.SetAgentsBPBoneWeights(0f);
             CoreGame.OnEndScene();
 
@@ -170,6 +179,8 @@ namespace KK_BetterPenetration
         {
             if (!hSceneStarted || inHScene || hSceneProc == null || !hSceneProc.enabled || hSceneProcTraverse == null)
                 return;
+
+            Console.WriteLine($"HScene_PostUpdate");
 
             List<DanOptions> danOptions = PopulateDanOptionsList();
             List<CollisionOptions> collisionOptions = PopulateCollisionOptionsList();
@@ -207,12 +218,17 @@ namespace KK_BetterPenetration
             if (!inHScene || _nextAinmInfo == null || _nextAinmInfo.pathFemaleBase.file == null)
                 return;
 
+            Console.WriteLine($"HSceneProc_PreChangeAnimator {_nextAinmInfo.pathFemaleBase.file}");
+
             CoreGame.OnChangeAnimation(_nextAinmInfo.pathFemaleBase.file);
         }
 
-        public static void VRHScene_PostStart(object __instance)
+        public static void VRHScene_PostStart(MonoBehaviour __instance)
         {
+            Console.WriteLine("VRHScene_PostStart");
+
             vrHSceneTraverse = Traverse.Create(__instance);
+            vrHScene = __instance;
 
             hSceneStarted = true;
             inHScene = false;
@@ -220,6 +236,8 @@ namespace KK_BetterPenetration
 
         internal static void VRHScene_EndProc()
         {
+            Console.WriteLine("VRHScene_EndProc");
+
             CoreGame.SetAgentsBPBoneWeights(0f);
             CoreGame.OnEndScene();
 
@@ -229,17 +247,18 @@ namespace KK_BetterPenetration
 
         public static void VRHScene_PostUpdate()
         {
-            if (!hSceneStarted || inHScene || vrHSceneTraverse == null)
+            if (!hSceneStarted || inHScene || vrHScene == null || vrHSceneTraverse == null)
                 return;
 
-            var enabled = hSceneProcTraverse.Field("enabled").GetValue<bool>();
-            if (!enabled)
+            Console.WriteLine($"VRHScene_PostUpdate vrHScene.enabled {vrHScene.enabled}");
+
+            if (!vrHScene.enabled)
                 return;
 
             List<DanOptions> danOptions = PopulateDanOptionsList();
             List<CollisionOptions> collisionOptions = PopulateCollisionOptionsList();
 
-            var lstFemale = hSceneProcTraverse.Field("lstFemale").GetValue<List<ChaControl>>();
+            var lstFemale = vrHSceneTraverse.Field("lstFemale").GetValue<List<ChaControl>>();
             if (lstFemale == null || lstFemale.Count == 0)
                 return;
 
@@ -248,27 +267,35 @@ namespace KK_BetterPenetration
                 if (female != null)
                     femaleList.Add(female);
 
+            Console.WriteLine($"femaleList {femaleList.Count}");
+
             List<ChaControl> maleList = new List<ChaControl>();
-            var male = hSceneProcTraverse.Field("male").GetValue<ChaControl>();
+            var male = vrHSceneTraverse.Field("male").GetValue<ChaControl>();
             if (male != null)
                 maleList.Add(male);
 
-            var male1 = hSceneProcTraverse.Field("male1").GetValue<ChaControl>();
+            var male1 = vrHSceneTraverse.Field("male1").GetValue<ChaControl>();
             if (male1 != null)
                 maleList.Add(male1);
 
             if (maleList.IsNullOrEmpty())
                 return;
 
+            Console.WriteLine($"maleList {maleList.Count}");
+
             CoreGame.InitializeAgents(maleList, femaleList, danOptions, collisionOptions);
             CoreGame.SetAgentsBPBoneWeights(1f);
             inHScene = true;
             hSceneStarted = false;
+
+            Console.WriteLine($"inHScene {inHScene}");
         }
         private static void VRHScene_PreChangeAnimator(HSceneProc.AnimationListInfo _nextAinmInfo)
         {
             if (!inHScene || _nextAinmInfo == null || _nextAinmInfo.pathFemaleBase.file == null)
                 return;
+
+            Console.WriteLine($"VRHScene_PreChangeAnimator {_nextAinmInfo.pathFemaleBase.file}");
 
             CoreGame.OnChangeAnimation(_nextAinmInfo.pathFemaleBase.file);
         }
@@ -276,9 +303,10 @@ namespace KK_BetterPenetration
         [HarmonyPostfix, HarmonyPatch(typeof(Lookat_dan), "SetInfo")]
         private static void H_Lookat_dan_PostSetInfo(Lookat_dan __instance, ChaControl ___male)
         {
-
             if (!inHScene || loadingCharacter || __instance.strPlayMotion == null || ___male == null)
                 return;
+
+            Console.WriteLine($"SetInfo {___male.name}");
 
             int maleNum = 0;
             if (___male != null && ___male.chaID != 0)
@@ -314,6 +342,8 @@ namespace KK_BetterPenetration
         {
             if (!inHScene || loadingCharacter || __instance.strPlayMotion == null || ___male == null)
                 return;
+
+            Console.WriteLine($"Release {___male.name}");
 
             int maleNum = 0;
             if (___male != null && ___male.chaID != 0)
@@ -384,7 +414,7 @@ namespace KK_BetterPenetration
 
             for (int femaleNum = 0; femaleNum < FemaleLimit; femaleNum++)
             {
-                collisionOptions.Add(new CollisionOptions(_kokanOffsetForward.Value, _kokanOffsetUp.Value, _headOffsetForward.Value, _headOffsetUp.Value,
+                collisionOptions.Add(new CollisionOptions(_kokanOffset.Value, _innerKokanOffset.Value, _mouthOffset.Value, _innerMouthOffset.Value,
                     false, 0, 0, 0, _clippingDepth.Value, frontInfo, backInfo));
             }
 

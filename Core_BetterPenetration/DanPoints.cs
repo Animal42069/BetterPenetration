@@ -35,6 +35,13 @@ namespace Core_BetterPenetration
             AimDanTop();
         }
 
+        internal void ScaleDanPoints(float lengthScale)
+        {
+
+            foreach (var point in danPoints)
+                point.ScaleDanLength(lengthScale);
+        }
+
         internal void AimDanTop()
         {
             danTop.transform.rotation = danPoints[0].transform.rotation;

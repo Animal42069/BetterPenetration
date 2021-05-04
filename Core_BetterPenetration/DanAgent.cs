@@ -210,6 +210,7 @@ namespace Core_BetterPenetration
 
             m_danPoints.SquishDanGirth(girthScaleFactor);
             adjustedDanLength = GetMaxDanLength(adjustedDanLength, enterTarget, endTarget, danDistanceToTarget);
+            m_danPoints.ScaleDanPoints(adjustedDanLength / m_baseDanLength);
             ScaleDanColliders(adjustedDanLength);
 
             List<Vector3> adjustedDanPoints = AdjustDanPointsToTargets(enterTarget, endTarget, adjustedDanLength, danDistanceToTarget);
@@ -408,10 +409,10 @@ namespace Core_BetterPenetration
             Vector3 danStartPosition = m_danPoints.GetDanStartPosition();
             Vector3 danTarget = m_referenceTarget.position;
 
-            if (m_referenceTarget.name == LookTargets.KokanTarget)
-                danTarget += (m_referenceTarget.forward * targetAgent.m_collisionOptions.kokanForwardOffset) + (m_referenceTarget.up * targetAgent.m_collisionOptions.kokanUpOffset);
+            if (m_referenceTarget.name == LookTargets.KokanTarget || m_referenceTarget.name == LookTargets.BPKokanTarget)
+                danTarget += targetAgent.m_collisionOptions.kokanOffset;
             else if (m_referenceTarget.name == LookTargets.HeadTarget)
-                danTarget += (m_referenceTarget.forward * targetAgent.m_collisionOptions.headForwardOffset) + (m_referenceTarget.up * targetAgent.m_collisionOptions.headUpOffset);
+                danTarget += targetAgent.m_collisionOptions.mouthOffset;
 
             if (targetAgent.m_collisionOptions.kokan_adjust && targetAgent.adjustFAnimation && (m_referenceTarget.name == LookTargets.KokanTarget || m_referenceTarget.name == LookTargets.BPKokanTarget))
                 danTarget += m_referenceTarget.forward * targetAgent.m_collisionOptions.kokan_adjust_position_z;
@@ -445,14 +446,14 @@ namespace Core_BetterPenetration
                 if (m_referenceTarget.name == LookTargets.KokanTarget || m_referenceTarget.name == LookTargets.AnaTarget || m_referenceTarget.name == LookTargets.BPKokanTarget)
                 {
                     if (m_danOptions.simplifyPenetration && m_bpDanPointsFound)
-                        danEndTarget = targetAgent.m_innerTarget.position;
+                        danEndTarget = targetAgent.m_innerTarget.position + targetAgent.m_collisionOptions.innerKokanOffset;
                     else
                         danEndTarget = ConstrainDanToBody(targetAgent, danStart, danTargetVector, danLength, m_referenceTarget.name == LookTargets.AnaTarget);
                 }
                 else if (m_referenceTarget.name == LookTargets.HeadTarget)
                 {
                     if (m_danOptions.simplifyOral && m_bpDanPointsFound)
-                        danEndTarget = targetAgent.m_innerHeadTarget.position;
+                        danEndTarget = targetAgent.m_innerHeadTarget.position + targetAgent.m_collisionOptions.innerMouthOffset;
                     else
                         danEndTarget = ConstrainDanToHead(danStart, danTargetVector, danLength);
                 }
