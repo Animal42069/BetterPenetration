@@ -22,7 +22,7 @@ namespace KK_BetterPenetration
     {
         public static KK_BetterPenetration instance;
 
-        public const string VERSION = "3.1.6.0";
+        public const string VERSION = "3.2.1.0";
         private const int MaleLimit = 2;
         private const int FemaleLimit = 2;
 
@@ -145,8 +145,6 @@ namespace KK_BetterPenetration
         [HarmonyPostfix, HarmonyPatch(typeof(HSceneProc), "Start")]
         public static void HScene_PostStart(HSceneProc __instance)
         {
-            Console.WriteLine($"HScene_PostStart");
-
             hSceneProc = __instance;
             hSceneProcTraverse = Traverse.Create(__instance);
 
@@ -157,8 +155,6 @@ namespace KK_BetterPenetration
         [HarmonyPrefix, HarmonyPatch(typeof(HSceneProc), "EndProc")]
         internal static void HSceneProc_EndProc()
         {
-            Console.WriteLine($"HSceneProc_EndProc");
-
             CoreGame.SetAgentsBPBoneWeights(0f);
             CoreGame.OnEndScene();
 
@@ -179,8 +175,6 @@ namespace KK_BetterPenetration
         {
             if (!hSceneStarted || inHScene || hSceneProc == null || !hSceneProc.enabled || hSceneProcTraverse == null)
                 return;
-
-            Console.WriteLine($"HScene_PostUpdate");
 
             List<DanOptions> danOptions = PopulateDanOptionsList();
             List<CollisionOptions> collisionOptions = PopulateCollisionOptionsList();
@@ -218,15 +212,11 @@ namespace KK_BetterPenetration
             if (!inHScene || _nextAinmInfo == null || _nextAinmInfo.pathFemaleBase.file == null)
                 return;
 
-            Console.WriteLine($"HSceneProc_PreChangeAnimator {_nextAinmInfo.pathFemaleBase.file}");
-
             CoreGame.OnChangeAnimation(_nextAinmInfo.pathFemaleBase.file);
         }
 
         public static void VRHScene_PostStart(MonoBehaviour __instance)
         {
-            Console.WriteLine("VRHScene_PostStart");
-
             vrHSceneTraverse = Traverse.Create(__instance);
             vrHScene = __instance;
 
@@ -236,8 +226,6 @@ namespace KK_BetterPenetration
 
         internal static void VRHScene_EndProc()
         {
-            Console.WriteLine("VRHScene_EndProc");
-
             CoreGame.SetAgentsBPBoneWeights(0f);
             CoreGame.OnEndScene();
 
@@ -249,8 +237,6 @@ namespace KK_BetterPenetration
         {
             if (!hSceneStarted || inHScene || vrHScene == null || vrHSceneTraverse == null)
                 return;
-
-            Console.WriteLine($"VRHScene_PostUpdate vrHScene.enabled {vrHScene.enabled}");
 
             if (!vrHScene.enabled)
                 return;
@@ -267,8 +253,6 @@ namespace KK_BetterPenetration
                 if (female != null)
                     femaleList.Add(female);
 
-            Console.WriteLine($"femaleList {femaleList.Count}");
-
             List<ChaControl> maleList = new List<ChaControl>();
             var male = vrHSceneTraverse.Field("male").GetValue<ChaControl>();
             if (male != null)
@@ -281,21 +265,15 @@ namespace KK_BetterPenetration
             if (maleList.IsNullOrEmpty())
                 return;
 
-            Console.WriteLine($"maleList {maleList.Count}");
-
             CoreGame.InitializeAgents(maleList, femaleList, danOptions, collisionOptions);
             CoreGame.SetAgentsBPBoneWeights(1f);
             inHScene = true;
             hSceneStarted = false;
-
-            Console.WriteLine($"inHScene {inHScene}");
         }
         private static void VRHScene_PreChangeAnimator(HSceneProc.AnimationListInfo _nextAinmInfo)
         {
             if (!inHScene || _nextAinmInfo == null || _nextAinmInfo.pathFemaleBase.file == null)
                 return;
-
-            Console.WriteLine($"VRHScene_PreChangeAnimator {_nextAinmInfo.pathFemaleBase.file}");
 
             CoreGame.OnChangeAnimation(_nextAinmInfo.pathFemaleBase.file);
         }
@@ -306,15 +284,11 @@ namespace KK_BetterPenetration
             if (!inHScene || loadingCharacter || __instance.strPlayMotion == null || ___male == null)
                 return;
 
-            Console.WriteLine($"SetInfo {___male.name}");
-
             int maleNum = 0;
             if (___male != null && ___male.chaID != 0)
                 maleNum = 1;
 
             twoDans = false;
-            //       if (___assetName != null && ___assetName.Length != 0 && ___assetName.ToString().Contains("m2f"))
-            //           twoDans = true;
 
             CoreGame.LookAtDanSetup(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, maleNum, __instance.numFemale, twoDans);
         }
@@ -343,15 +317,11 @@ namespace KK_BetterPenetration
             if (!inHScene || loadingCharacter || __instance.strPlayMotion == null || ___male == null)
                 return;
 
-            Console.WriteLine($"Release {___male.name}");
-
             int maleNum = 0;
             if (___male != null && ___male.chaID != 0)
                 maleNum = 1;
 
             twoDans = false;
-            //       if (___assetName != null && ___assetName.Length != 0 && ___assetName.ToString().Contains("m2f"))
-            //           twoDans = true;
 
             CoreGame.LookAtDanRelease(maleNum, __instance.numFemale, twoDans);
         }

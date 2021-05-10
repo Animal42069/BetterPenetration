@@ -49,13 +49,5 @@ namespace Core_BetterPenetration
 
             transform.localScale = new Vector3(defaultLocalScale.x * girthScale, defaultLocalScale.y * girthScale, transform.localScale.z);
         }
-
-        internal void ScaleDanLength(float lengthScale)
-        {
-            if (transform == null)
-                return;
-
-            transform.localScale = new Vector3(transform.localScale.x, transform.localScale.y, defaultLocalScale.z * lengthScale);
-        }
     }
 }

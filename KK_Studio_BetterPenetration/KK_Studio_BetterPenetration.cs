@@ -21,7 +21,7 @@ namespace KK_Studio_BetterPenetration
     {
         internal const string GUID = "com.animal42069.kkstudiobetterpenetration";
         internal const string PluginName = "KK Studio Better Penetration";
-        internal const string VERSION = "1.0.0.0";
+        internal const string VERSION = "1.0.0.2";
         internal const string BEHAVIOR = "BetterPenetrationController";
         internal const string StudioCategoryName = "Better Penetration";
         internal Harmony harmony;
@@ -94,7 +94,7 @@ namespace KK_Studio_BetterPenetration
             });
             StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(lengthSlider);
 
-            var girthSlider = new CurrentStateCategorySlider("Girth Squish", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().DanGirthSquish, 0f, 1f);
+            var girthSlider = new CurrentStateCategorySlider("Girth Squish", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().DanGirthSquish, 0f, 2f);
             girthSlider.Value.Subscribe(value =>
             {
                 foreach (var controller in StudioAPI.GetSelectedControllers<BetterPenetrationController>())

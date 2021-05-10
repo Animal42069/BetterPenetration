@@ -20,6 +20,7 @@ namespace Core_BetterPenetration
         public Transform danEntryTarget;
         public Transform danEndTarget;
         public bool danTargetsValid = false;
+        private bool cardReloaded = false;
 
 #if AI_STUDIO || HS2_STUDIO
         public const float DefaultLengthSquish = 0.6f;
@@ -32,7 +33,7 @@ namespace Core_BetterPenetration
 
 #if KK_STUDIO
         public const float DefaultLengthSquish = 0.6f;
-        public const float DefaultGirthSquish = 0.15f;
+        public const float DefaultGirthSquish = 0.2f;
         public const float DefaultSquishThreshold = 0.2f;
         public const float DefaultColliderVertical = 0.0f;
         public const float DefaultColliderLength = 0.008f;
@@ -51,7 +52,6 @@ namespace Core_BetterPenetration
 
             SetExtendedData(data);
         }
-
         protected override void OnReload(GameMode currentGameMode, bool maintainState)
         {
             PluginData data = GetExtendedData();
@@ -88,7 +88,7 @@ namespace Core_BetterPenetration
             }
 
             danOptions = new DanOptions(colliderVertical, colliderRadius, colliderLength, lengthSquish, girthSquish, squishThreshold);
-            InitializeDanAgent();
+            cardReloaded = true;
 
             base.OnReload(currentGameMode, maintainState);
         }
@@ -102,6 +102,17 @@ namespace Core_BetterPenetration
         {
             ClearDanAgent();
             base.OnDestroy();
+        }
+
+        protected override void Update()
+        {
+            if (cardReloaded)
+            {
+                InitializeDanAgent();
+                cardReloaded = false;
+            }
+
+            base.Update();
         }
 
         protected void LateUpdate()
