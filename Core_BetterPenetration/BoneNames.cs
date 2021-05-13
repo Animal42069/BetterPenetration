@@ -40,6 +40,7 @@ namespace Core_BetterPenetration
         internal const string BPBone = "cf_J_Vagina";
         internal const string BPKokanTarget = "cf_J_Vagina_root";
         internal const string BPDanEntryTarget = "k_f_dan_entry";
+        internal const string BPDanEndTarget = "k_f_dan_end";
         internal const string TamaTop = "cm_J_dan_f_top";
 
         internal static readonly List<string> DanBones = new List<string> { "cm_J_dan101_00", "cm_J_dan103_00", "cm_J_dan105_00", "cm_J_dan107_00", "cm_J_dan109_00" };
@@ -91,6 +92,7 @@ namespace Core_BetterPenetration
         internal const string BPBone = "cf_J_Vagina";
         internal const string BPKokanTarget = "cf_J_Vagina_root";
         internal const string BPDanEntryTarget = "k_f_dan_entry";
+		internal const string BPDanEndTarget = "k_f_dan_end";
         internal const string TamaTop = "cm_J_dan_f_top";
 
         internal static readonly List<string> DanBones = new List<string> { "cm_J_dan101_00", "cm_J_dan103_00", "cm_J_dan105_00", "cm_J_dan107_00", "cm_J_dan109_00" };

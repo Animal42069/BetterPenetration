@@ -4,6 +4,8 @@ using KKAPI.Chara;
 using UnityEngine;
 using ExtensibleSaveFormat;
 using System.Linq;
+using BepInEx;
+using System.Reflection;
 using System;
 
 #if AI_STUDIO || HS2_STUDIO
@@ -21,6 +23,8 @@ namespace Core_BetterPenetration
         public Transform danEndTarget;
         public bool danTargetsValid = false;
         private bool cardReloaded = false;
+        internal object[] danEntryConstraint;
+        internal object[] danEndConstraint;
 
 #if AI_STUDIO || HS2_STUDIO
         public const float DefaultLengthSquish = 0.6f;
@@ -127,9 +131,10 @@ namespace Core_BetterPenetration
         {
             danTargetsValid = false;
 
-            if (danAgent != null)
-                danAgent.ClearDanAgent();
+            if (danAgent == null)
+                return;
 
+            danAgent.ClearDanAgent();
             danAgent = null;
         }
 
@@ -152,9 +157,11 @@ namespace Core_BetterPenetration
 
         public void ClearTama()
         {
-            if (danAgent != null)
-                danAgent.ClearTama();
-        }
+            if (danAgent == null)
+                return;
+
+            danAgent.ClearTama();
+       }
 
         public void InitializeTama()
         {
@@ -162,9 +169,14 @@ namespace Core_BetterPenetration
                 return;
 
             danAgent.InitializeTama();
+
+            if (collisionAgent == null)
+                return;
+
+            danAgent.AddTamaColliders(collisionAgent);
         }
 
-        public void SetCollisionAgent(ChaControl target)
+        public void SetCollisionAgent(ChaControl target, bool kokanTarget)
         {
             if (danAgent == null || danOptions == null || !danTargetsValid)
                 return;
@@ -176,7 +188,10 @@ namespace Core_BetterPenetration
             }
 
             collisionAgent = target;
-            danAgent.AddDanColliders(collisionAgent);
+
+            if (kokanTarget)
+                danAgent.AddDanColliders(collisionAgent);
+
             danAgent.AddTamaColliders(collisionAgent, false);
         }
 
@@ -191,6 +206,43 @@ namespace Core_BetterPenetration
             collisionAgent = null;
         }
 
+        public void SaveConstraintParams(bool isEntry, object[] constraintParams)
+        {
+            if (isEntry)
+                danEntryConstraint = constraintParams;
+            else
+                danEndConstraint = constraintParams;
+        }
+
+        public void AddDanConstraints(BaseUnityPlugin plugin)
+        {
+            if (danEntryTarget == null || danEndTarget == null || collisionAgent == null)
+                return;
+
+            if (danEntryConstraint != null && danEntryConstraint.GetValue(1) != null)
+            {
+                var parentTransform = collisionAgent.GetComponentsInChildren<Transform>().Where(x => x.name == danEntryConstraint.GetValue(1) as string).FirstOrDefault();
+
+                if (parentTransform != null)
+                {
+                    danEntryConstraint.SetValue(parentTransform, 1);
+                    danEntryConstraint.SetValue(danEntryTarget, 2);
+                    plugin.GetType().GetMethod("AddConstraint", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(plugin, danEntryConstraint);
+                }
+            }
+
+            if (danEndConstraint != null && danEndConstraint.GetValue(1) != null)
+            {
+                var parentTransform = collisionAgent.GetComponentsInChildren<Transform>().Where(x => x.name == danEndConstraint.GetValue(1) as string).FirstOrDefault();
+
+                if (parentTransform != null)
+                {
+                    danEndConstraint.SetValue(parentTransform, 1);
+                    danEndConstraint.SetValue(danEndTarget, 2);
+                    plugin.GetType().GetMethod("AddConstraint", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(plugin, danEndConstraint);
+                }
+            }
+        }
         public bool Enabled
         {
             get
