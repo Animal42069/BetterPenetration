@@ -50,10 +50,9 @@ namespace KK_BetterPenetration
         private static readonly ConfigEntry<float>[] _backCollisionOffset = new ConfigEntry<float>[backOffsets.Count];
 
         private static Harmony harmony;
-        private static HSceneProc hSceneProc;
-        private static MonoBehaviour vrHScene;
+        //In VR, type "VRHScene" is used instead of "HSceneProc". Use type "BaseLoader" as the type for "hSceneProc" since it's inherited by both "HSceneProc" and "VRHScene".
+        private static BaseLoader hSceneProc;
         private static Traverse hSceneProcTraverse;
-        private static Traverse vrHSceneTraverse;
         private static bool hSceneStarted = false;
         private static bool inHScene = false;
         private static readonly bool loadingCharacter = false;
@@ -109,14 +108,10 @@ namespace KK_BetterPenetration
             Type VRHSceneType = Type.GetType("VRHScene, Assembly-CSharp");
             if (VRHSceneType != null)
             {
-                harmony.Patch(VRHSceneType.GetMethod("Start", AccessTools.all), 
-                    postfix: new HarmonyMethod(typeof(KK_BetterPenetration).GetMethod(nameof(KK_BetterPenetration.VRHScene_PostStart), AccessTools.all)));
-                harmony.Patch(VRHSceneType.GetMethod("EndProc", AccessTools.all), 
-                    prefix: new HarmonyMethod(typeof(KK_BetterPenetration).GetMethod(nameof(KK_BetterPenetration.VRHScene_EndProc), AccessTools.all)));
-                harmony.Patch(VRHSceneType.GetMethod("Update", AccessTools.all), 
-                    postfix: new HarmonyMethod(typeof(KK_BetterPenetration).GetMethod(nameof(KK_BetterPenetration.VRHScene_PostUpdate), AccessTools.all)));
-                harmony.Patch(VRHSceneType.GetMethod("ChangeAnimator", AccessTools.all), 
-                    prefix: new HarmonyMethod(typeof(KK_BetterPenetration).GetMethod(nameof(KK_BetterPenetration.VRHScene_PreChangeAnimator), AccessTools.all)));
+                harmony.Patch(VRHSceneType.GetMethod("Start", AccessTools.all), postfix: new HarmonyMethod(typeof(KK_BetterPenetration).GetMethod(nameof(HScene_PostStart), AccessTools.all)));
+                harmony.Patch(VRHSceneType.GetMethod("EndProc", AccessTools.all), prefix: new HarmonyMethod(typeof(KK_BetterPenetration).GetMethod(nameof(HSceneProc_EndProc), AccessTools.all)));
+                harmony.Patch(VRHSceneType.GetMethod("Update", AccessTools.all), postfix: new HarmonyMethod(typeof(KK_BetterPenetration).GetMethod(nameof(HScene_PostUpdate), AccessTools.all)));
+                harmony.Patch(VRHSceneType.GetMethod("ChangeAnimator", AccessTools.all), prefix: new HarmonyMethod(typeof(KK_BetterPenetration).GetMethod(nameof(HSceneProc_PreChangeAnimator), AccessTools.all)));
             }
 
             Chainloader.PluginInfos.TryGetValue("com.deathweasel.bepinex.uncensorselector", out PluginInfo info);
@@ -143,7 +138,7 @@ namespace KK_BetterPenetration
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(HSceneProc), "Start")]
-        public static void HScene_PostStart(HSceneProc __instance)
+        public static void HScene_PostStart(BaseLoader __instance)
         {
             hSceneProc = __instance;
             hSceneProcTraverse = Traverse.Create(__instance);
@@ -163,8 +158,9 @@ namespace KK_BetterPenetration
             if (hSceneProc == null)
                 return;
 
-            if (hSceneProc.lookDan != null)
-                hSceneProc.lookDan.transLookAtNull = null;
+            var lookDan = hSceneProcTraverse.Field<Lookat_dan>("lookDan").Value;
+            if (lookDan != null)
+                lookDan.transLookAtNull = null;
 
             hSceneProcTraverse = null;
             hSceneProc = null;
@@ -208,69 +204,6 @@ namespace KK_BetterPenetration
 
         [HarmonyPrefix, HarmonyPatch(typeof(HSceneProc), "ChangeAnimator")]
         private static void HSceneProc_PreChangeAnimator(HSceneProc.AnimationListInfo _nextAinmInfo)
-        {
-            if (!inHScene || _nextAinmInfo == null || _nextAinmInfo.pathFemaleBase.file == null)
-                return;
-
-            CoreGame.OnChangeAnimation(_nextAinmInfo.pathFemaleBase.file);
-        }
-
-        public static void VRHScene_PostStart(MonoBehaviour __instance)
-        {
-            vrHSceneTraverse = Traverse.Create(__instance);
-            vrHScene = __instance;
-
-            hSceneStarted = true;
-            inHScene = false;
-        }
-
-        internal static void VRHScene_EndProc()
-        {
-            CoreGame.SetAgentsBPBoneWeights(0f);
-            CoreGame.OnEndScene();
-
-            inHScene = false;
-            vrHSceneTraverse = null;
-        }
-
-        public static void VRHScene_PostUpdate()
-        {
-            if (!hSceneStarted || inHScene || vrHScene == null || vrHSceneTraverse == null)
-                return;
-
-            if (!vrHScene.enabled)
-                return;
-
-            List<DanOptions> danOptions = PopulateDanOptionsList();
-            List<CollisionOptions> collisionOptions = PopulateCollisionOptionsList();
-
-            var lstFemale = vrHSceneTraverse.Field("lstFemale").GetValue<List<ChaControl>>();
-            if (lstFemale == null || lstFemale.Count == 0)
-                return;
-
-            List<ChaControl> femaleList = new List<ChaControl>();
-            foreach (var female in lstFemale)
-                if (female != null)
-                    femaleList.Add(female);
-
-            List<ChaControl> maleList = new List<ChaControl>();
-            var male = vrHSceneTraverse.Field("male").GetValue<ChaControl>();
-            if (male != null)
-                maleList.Add(male);
-
-            var male1 = vrHSceneTraverse.Field("male1").GetValue<ChaControl>();
-            if (male1 != null)
-                maleList.Add(male1);
-
-            if (maleList.IsNullOrEmpty())
-                return;
-
-            CoreGame.InitializeAgents(maleList, femaleList, danOptions, collisionOptions);
-            CoreGame.SetAgentsBPBoneWeights(1f);
-            inHScene = true;
-            hSceneStarted = false;
-        }
-        private static void VRHScene_PreChangeAnimator(HSceneProc.AnimationListInfo _nextAinmInfo)
         {
             if (!inHScene || _nextAinmInfo == null || _nextAinmInfo.pathFemaleBase.file == null)
                 return;
