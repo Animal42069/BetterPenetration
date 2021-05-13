@@ -6,7 +6,7 @@ using BepInEx.Bootstrap;
 using BepInEx.Configuration;
 using HarmonyLib;
 using Core_BetterPenetration;
-
+using UnityEngine;
 
 namespace KK_BetterPenetration
 {
@@ -22,7 +22,7 @@ namespace KK_BetterPenetration
     {
         public static KK_BetterPenetration instance;
 
-        public const string VERSION = "3.1.4.0";
+        public const string VERSION = "3.2.1.0";
         private const int MaleLimit = 2;
         private const int FemaleLimit = 2;
 
@@ -42,10 +42,10 @@ namespace KK_BetterPenetration
         private static readonly ConfigEntry<bool>[] _simplifyOral = new ConfigEntry<bool>[MaleLimit];
 
         private static ConfigEntry<float> _clippingDepth;
-        private static ConfigEntry<float> _kokanOffsetForward;
-        private static ConfigEntry<float> _kokanOffsetUp;
-        private static ConfigEntry<float> _headOffsetForward;
-        private static ConfigEntry<float> _headOffsetUp;
+        private static ConfigEntry<Vector3> _kokanOffset;
+        private static ConfigEntry<Vector3> _innerKokanOffset;
+        private static ConfigEntry<Vector3> _mouthOffset;
+        private static ConfigEntry<Vector3> _innerMouthOffset;
         private static readonly ConfigEntry<float>[] _frontCollisionOffset = new ConfigEntry<float>[frontOffsets.Count];
         private static readonly ConfigEntry<float>[] _backCollisionOffset = new ConfigEntry<float>[backOffsets.Count];
 
@@ -93,13 +93,13 @@ namespace KK_BetterPenetration
             for (int offset = 0; offset < backOffsets.Count; offset++)
                 (_backCollisionOffset[offset] = Config.Bind("Female Options", "Clipping Offset: Back Collision " + offset, backOffsets[offset], "Individual offset on colision point, to improve clipping")).SettingChanged += (s, e) =>
                 { UpdateCollisionOptions(); };
-            (_kokanOffsetForward = Config.Bind("Female Options", "Target Offset: Vagina Vertical", -0.007f, "Vertical offset of the vagina target")).SettingChanged += (s, e) =>
+            (_kokanOffset = Config.Bind("Female Options", "Target Offset: Vagina Target", new Vector3(0, 0, 0), "Offset of the vagina target")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_kokanOffsetUp = Config.Bind("Female Options", "Target Offset: Vagina Depth", 0.0f, "Depth offset of the vagina target")).SettingChanged += (s, e) =>
+            (_innerKokanOffset = Config.Bind("Female Options", "Target Offset: Inner Vagina Target", new Vector3(0, 0, 0), "Offset of the simplified inner vagina target")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_headOffsetForward = Config.Bind("Female Options", "Target Offset: Mouth Depth", 0.0f, "Depth offset of the mouth target")).SettingChanged += (s, e) =>
+            (_mouthOffset = Config.Bind("Female Options", "Target Offset: Mouth Target", new Vector3(0, 0, 0), "Offset of the mouth target")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_headOffsetUp = Config.Bind("Female Options", "Target Offset: Mouth Vertical", 0.00f, "Vertical offset of the mouth target")).SettingChanged += (s, e) =>
+            (_innerMouthOffset = Config.Bind("Female Options", "Target Offset: Inner Mouth Target", new Vector3(0, 0, 0), "Offset of the simplified inner mouth target")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
 
             harmony = new Harmony("KK_BetterPenetration");
@@ -214,7 +214,6 @@ namespace KK_BetterPenetration
         [HarmonyPostfix, HarmonyPatch(typeof(Lookat_dan), "SetInfo")]
         private static void H_Lookat_dan_PostSetInfo(Lookat_dan __instance, ChaControl ___male)
         {
-
             if (!inHScene || loadingCharacter || __instance.strPlayMotion == null || ___male == null)
                 return;
 
@@ -223,8 +222,6 @@ namespace KK_BetterPenetration
                 maleNum = 1;
 
             twoDans = false;
-            //       if (___assetName != null && ___assetName.Length != 0 && ___assetName.ToString().Contains("m2f"))
-            //           twoDans = true;
 
             CoreGame.LookAtDanSetup(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, maleNum, __instance.numFemale, twoDans);
         }
@@ -258,8 +255,6 @@ namespace KK_BetterPenetration
                 maleNum = 1;
 
             twoDans = false;
-            //       if (___assetName != null && ___assetName.Length != 0 && ___assetName.ToString().Contains("m2f"))
-            //           twoDans = true;
 
             CoreGame.LookAtDanRelease(maleNum, __instance.numFemale, twoDans);
         }
@@ -322,7 +317,7 @@ namespace KK_BetterPenetration
 
             for (int femaleNum = 0; femaleNum < FemaleLimit; femaleNum++)
             {
-                collisionOptions.Add(new CollisionOptions(_kokanOffsetForward.Value, _kokanOffsetUp.Value, _headOffsetForward.Value, _headOffsetUp.Value,
+                collisionOptions.Add(new CollisionOptions(_kokanOffset.Value, _innerKokanOffset.Value, _mouthOffset.Value, _innerMouthOffset.Value,
                     false, 0, 0, 0, _clippingDepth.Value, frontInfo, backInfo));
             }
 

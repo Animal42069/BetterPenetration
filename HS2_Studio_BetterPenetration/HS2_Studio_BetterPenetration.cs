@@ -16,16 +16,18 @@ namespace HS2_Studio_BetterPenetration
 {
     [BepInPlugin(GUID, PluginName, VERSION)]
     [BepInDependency("com.deathweasel.bepinex.uncensorselector", "3.10")]
-    [BepInDependency("com.joan6694.illusionplugins.bonesframework", "1.4.2")]
+    [BepInDependency("com.joan6694.illusionplugins.bonesframework", "1.4.3")]
+    [BepInDependency("com.joan6694.illusionplugins.nodesconstraints")]
     [BepInProcess("StudioNEOV2")]
     public class HS2_Studio_BetterPenetration : BaseUnityPlugin
     {
         internal const string GUID = "com.animal42069.studiobetterpenetration";
         internal const string PluginName = "HS2 Studio Better Penetration";
-        internal const string VERSION = "2.0.0.0";
+        internal const string VERSION = "2.0.1.0";
         internal const string BEHAVIOR = "BetterPenetrationController";
         internal const string StudioCategoryName = "Better Penetration";
-        internal Harmony harmony;
+        internal static Harmony harmony;
+        internal static BaseUnityPlugin nodeConstraintPlugin;
 
         internal void Main()
         {
@@ -46,35 +48,32 @@ namespace HS2_Studio_BetterPenetration
             if (methodInfo == null)
                 return;
 
-            harmony.Patch(methodInfo, new HarmonyMethod(typeof(HS2_Studio_BetterPenetration), "BeforeDanCharacterReload"),
-                                      new HarmonyMethod(typeof(HS2_Studio_BetterPenetration), "AfterDanCharacterReload"),
-                                      null, null);
-            Debug.Log("Studio_BetterPenetration: patched UncensorSelectorController::ReloadCharacterPenis correctly");
+            harmony.Patch(methodInfo, prefix: new HarmonyMethod(typeof(HS2_Studio_BetterPenetration), "BeforeDanCharacterReload"),
+                                      postfix: new HarmonyMethod(typeof(HS2_Studio_BetterPenetration), "AfterDanCharacterReload"));
+            Debug.Log("Studio_BetterPenetration: patched UncensorSelector::ReloadCharacterPenis correctly");
 
             methodInfo = AccessTools.Method(nestedType, "ReloadCharacterBalls", null, null);
             if (methodInfo == null)
                 return;
 
-            harmony.Patch(methodInfo, new HarmonyMethod(typeof(HS2_Studio_BetterPenetration), "BeforeTamaCharacterReload"),
-                                      new HarmonyMethod(typeof(HS2_Studio_BetterPenetration), "AfterTamaCharacterReload"),
-                                      null, null);
+            harmony.Patch(methodInfo, prefix: new HarmonyMethod(typeof(HS2_Studio_BetterPenetration), "BeforeTamaCharacterReload"),
+                                      postfix: new HarmonyMethod(typeof(HS2_Studio_BetterPenetration), "AfterTamaCharacterReload"));
             Debug.Log("Studio_BetterPenetration: patched UncensorSelectorController::ReloadCharacterBalls correctly");
 
             Chainloader.PluginInfos.TryGetValue("com.joan6694.illusionplugins.nodesconstraints", out pluginInfo);
             if (pluginInfo == null || pluginInfo.Instance == null)
                 return;
 
-            Type pluginType = pluginInfo.Instance.GetType();
-            if (pluginType == null)
+            nodeConstraintPlugin = pluginInfo.Instance;
+            Type nodeConstraintType = nodeConstraintPlugin.GetType();
+            if (nodeConstraintType == null)
                 return;
 
-            methodInfo = AccessTools.Method(pluginType, "AddConstraint", null, null);
+            methodInfo = AccessTools.Method(nodeConstraintType, "AddConstraint", null, null);
             if (methodInfo == null)
                 return;
 
-            harmony.Patch(methodInfo, null,
-                                      new HarmonyMethod(typeof(HS2_Studio_BetterPenetration), "AfterAddConstraint"),
-                                      null, null);
+            harmony.Patch(methodInfo, postfix: new HarmonyMethod(typeof(HS2_Studio_BetterPenetration), "AfterAddConstraint"));
             Debug.Log("Studio_BetterPenetration: patched NodeConstraints::AddConstraint correctly");
         }
 
@@ -140,70 +139,91 @@ namespace HS2_Studio_BetterPenetration
             StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(colliderVertical);
         }
 
-        internal static void BeforeDanCharacterReload(object __instance)
+        internal static void BeforeDanCharacterReload()
         {
-            ChaControl chaControl = (ChaControl)__instance.GetPrivateProperty("ChaControl");
-            if (chaControl == null)
+            var bpControllers = FindObjectsOfType<BetterPenetrationController>();
+            if (bpControllers == null)
                 return;
 
-            var controller = chaControl.GetComponent<BetterPenetrationController>();
-            if (controller != null)
+            foreach (var controller in bpControllers)
+            {
+                if (controller == null)
+                    continue;
+
                 controller.ClearDanAgent();
+            }
         }
 
-        internal static void AfterDanCharacterReload(object __instance)
+        internal static void AfterDanCharacterReload()
         {
-            ChaControl chaControl = (ChaControl)__instance.GetPrivateProperty("ChaControl");
-            if (chaControl == null)
+            var bpControllers = FindObjectsOfType<BetterPenetrationController>();
+            if (bpControllers == null)
                 return;
 
-            var controller = chaControl.GetComponent<BetterPenetrationController>();
-            if (controller != null)
+            foreach (var controller in bpControllers)
+            {
+                if (controller == null)
+                    continue;
+
                 controller.InitializeDanAgent();
+                controller.AddDanConstraints(nodeConstraintPlugin);
+            }
         }
 
-        internal static void BeforeTamaCharacterReload(object __instance)
+        internal static void BeforeTamaCharacterReload()
         {
-            ChaControl chaControl = (ChaControl)__instance.GetPrivateProperty("ChaControl");
-            if (chaControl == null)
+            var bpControllers = FindObjectsOfType<BetterPenetrationController>();
+            if (bpControllers == null)
                 return;
 
-            var controller = chaControl.GetComponent<BetterPenetrationController>();
-            if (controller != null)
+            foreach (var controller in bpControllers)
+            {
+                if (controller == null)
+                    continue;
+
                 controller.ClearTama();
+            }
         }
 
-        internal static void AfterTamaCharacterReload(object __instance)
+        internal static void AfterTamaCharacterReload()
         {
-            ChaControl chaControl = (ChaControl)__instance.GetPrivateProperty("ChaControl");
-            if (chaControl == null)
+            var bpControllers = FindObjectsOfType<BetterPenetrationController>();
+            if (bpControllers == null)
                 return;
 
-            var controller = chaControl.GetComponent<BetterPenetrationController>();
-            if (controller != null)
+            foreach (var controller in bpControllers)
+            {
+                if (controller == null)
+                    continue;
+
                 controller.InitializeTama();
+            }
         }
 
-        internal static void AfterAddConstraint(Transform parentTransform, Transform childTransform)
+        internal static void AfterAddConstraint(bool enabled, Transform parentTransform, Transform childTransform,
+            bool linkPosition, Vector3 positionOffset, bool linkRotation, Quaternion rotationOffset, bool linkScale,
+            Vector3 scaleOffset, string alias)
         {
-            if (childTransform.name != BoneNames.BPDanEntryTarget)
+            if (childTransform.name != BoneNames.BPDanEntryTarget && childTransform.name != BoneNames.BPDanEndTarget)
                 return;
 
             var controller = childTransform.GetComponentInParent<BetterPenetrationController>();
             if (controller == null)
                 return;
 
-            if (parentTransform.name != BoneNames.BPKokanTarget)
-            {
-                controller.RemoveCollisionAgent();
+            var constrainParams = new object[] { enabled, parentTransform.name, childTransform, linkPosition, positionOffset,
+                                                 linkRotation, rotationOffset, linkScale, scaleOffset, alias};
+
+            controller.SaveConstraintParams(childTransform.name == BoneNames.BPDanEntryTarget, constrainParams);
+
+            if (childTransform.name != BoneNames.BPDanEntryTarget)
                 return;
-            }
 
             var targetChaControl = parentTransform.GetComponentInParent<ChaControl>();
             if (targetChaControl == null)
                 return;
 
-            controller.SetCollisionAgent(targetChaControl);
+            controller.SetCollisionAgent(targetChaControl, parentTransform.name == BoneNames.BPKokanTarget);
         }
     }
 }

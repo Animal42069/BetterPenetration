@@ -47,7 +47,7 @@ namespace Core_BetterPenetration
             if (transform == null)
                 return;
 
-            transform.localScale = new Vector3(defaultLocalScale.x * girthScale, defaultLocalScale.y * girthScale, defaultLocalScale.z);
+            transform.localScale = new Vector3(defaultLocalScale.x * girthScale, defaultLocalScale.y * girthScale, transform.localScale.z);
         }
     }
 }

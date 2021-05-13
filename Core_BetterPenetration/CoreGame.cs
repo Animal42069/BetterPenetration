@@ -244,6 +244,15 @@ namespace Core_BetterPenetration
 
         internal static void SetAgentsBPBoneWeights(float weight)
         {
+            SetDanAgentsBPBoneWeights(weight);
+            SetCollisionAgentsBPBoneWeights(weight);
+        }
+
+        internal static void SetDanAgentsBPBoneWeights(float weight)
+        {
+            if (danAgents == null)
+                return;
+
             foreach (var agent in danAgents)
             {
                 if (agent?.m_danCharacter == null)
@@ -251,6 +260,12 @@ namespace Core_BetterPenetration
 
                 SetBPBoneWeights(agent.m_danCharacter, weight);
             }
+        }
+
+        internal static void SetCollisionAgentsBPBoneWeights(float weight)
+        {
+            if (collisionAgents == null)
+                return;
 
             foreach (var agent in collisionAgents)
             {
