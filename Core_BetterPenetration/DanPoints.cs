@@ -18,7 +18,7 @@ namespace Core_BetterPenetration
                 danPoints.Add(new DanPoint(transform));
         }
 
-        internal void AimDanPoints(List<Vector3> newDanPositions)
+        internal void AimDanPoints(List<Vector3> newDanPositions, bool aimTop)
         {
             if (newDanPositions.Count != danPoints.Count)
                 return;
@@ -32,7 +32,9 @@ namespace Core_BetterPenetration
             }
 
             danPoints[danPoints.Count - 1].transform.SetPositionAndRotation(newDanPositions[danPoints.Count - 1], danQuaternion);
-            AimDanTop();
+
+            if (aimTop)
+                AimDanTop();
         }
 
         internal void AimDanTop()
@@ -92,6 +94,14 @@ namespace Core_BetterPenetration
                 return Vector3.zero;
 
             return danPoints[0].transform.position;
+        }
+
+        internal Vector3 GetDanEndPosition()
+        {
+            if (danPoints == null)
+                return Vector3.zero;
+
+            return danPoints[danPoints.Count - 1].transform.position;
         }
 
         internal float GetDanLossyScale()

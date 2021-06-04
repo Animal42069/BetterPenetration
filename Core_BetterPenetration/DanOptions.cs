@@ -15,11 +15,12 @@
         public bool simplifyPenetration;
         public bool simplifyOral;
         public bool squishOralGirth;
+        public bool rotateTamaWithShaft;
 
         public DanOptions(float danVerticalCenter, float danRadius, float danHeadLength, 
             float danLengthSquish, float danGirthSquish, float squishThreshold, bool squishOralGirth,
             float fingerRadius, float fingerLength, bool useFingerColliders, 
-            bool simplifyPenetration, bool simplifyOral)
+            bool simplifyPenetration, bool simplifyOral, bool rotateTamaWithShaft)
         {
             this.danVerticalCenter = danVerticalCenter;
             this.danRadius = danRadius;
@@ -33,7 +34,8 @@
             this.simplifyPenetration = simplifyPenetration;
             this.simplifyOral = simplifyOral;
             this.squishOralGirth = squishOralGirth;
-        }
+            this.rotateTamaWithShaft = rotateTamaWithShaft;
+    }
 #else
         public DanOptions(float danVerticalCenter, float danRadius, float danHeadLength,
             float danLengthSquish, float danGirthSquish, float squishThreshold)

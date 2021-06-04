@@ -15,7 +15,7 @@ namespace AI_BetterPenetration
     [BepInProcess("AI-Syoujyo")]
     public class AI_BetterPenetration : BaseUnityPlugin
     {
-        internal const string VERSION = "4.0.0.0";
+        internal const string VERSION = "4.0.2.0";
         private const int MaleLimit = 1;
         private const int FemaleLimit = 2;
 
@@ -36,6 +36,7 @@ namespace AI_BetterPenetration
         private static ConfigEntry<bool> _useFingerColliders;
         private static ConfigEntry<bool> _simplifyPenetration;
         private static ConfigEntry<bool> _simplifyOral;
+        private static ConfigEntry<bool> _rotateTamaWithShaft;
 
         private static ConfigEntry<float> _clippingDepth;
         private static ConfigEntry<Vector3> _kokanOffset;
@@ -81,6 +82,8 @@ namespace AI_BetterPenetration
             (_simplifyPenetration = Config.Bind("Male Options", "Simplify Penetration Calculation", false, "Simplifys penetration calclation by always having it target the same internal point.  Only valid for BP penis uncensors.")).SettingChanged += (s, e) =>
             { UpdateDanOptions(); };
             (_simplifyOral = Config.Bind("Male Options", "Simplify Oral Calculation", false, "Simplifys oral penetration calclation by always having it target the same internal point.  Only valid for BP penis uncensors.")).SettingChanged += (s, e) =>
+            { UpdateDanOptions(); };
+            (_rotateTamaWithShaft = Config.Bind("Male Options", "Rotate Balls with Shaft", true, "If enabled, the base of the balls will be locked to the base of the shaft")).SettingChanged += (s, e) =>
             { UpdateDanOptions(); };
 
             (_clippingDepth = Config.Bind("Female Options", "Clipping Depth", 0.25f, "Set how close to body surface to limit penis for clipping purposes. Smaller values will result in more clipping through the body, larger values will make the shaft wander further away from the intended penetration point.")).SettingChanged += (s, e) =>
@@ -133,7 +136,7 @@ namespace AI_BetterPenetration
             if (!inHScene)
                 return;
 
-            CoreGame.UpdateDanOptions(0, _danLengthSquishFactor.Value, _danGirthSquishFactor.Value, _danSquishThreshold.Value, _danSquishOralGirth.Value, _useFingerColliders.Value, _simplifyPenetration.Value, _simplifyOral.Value);
+            CoreGame.UpdateDanOptions(0, _danLengthSquishFactor.Value, _danGirthSquishFactor.Value, _danSquishThreshold.Value, _danSquishOralGirth.Value, _useFingerColliders.Value, _simplifyPenetration.Value, _simplifyOral.Value, _rotateTamaWithShaft.Value);
         }
 
         private static void UpdateCollisionOptions()
@@ -189,7 +192,7 @@ namespace AI_BetterPenetration
                 new DanOptions(_danColliderVerticalCenter.Value, _danColliderRadius.Value, _danColliderHeadLength.Value,
                  _danLengthSquishFactor.Value, _danGirthSquishFactor.Value, _danSquishThreshold.Value, _danSquishOralGirth.Value,
                 _fingerColliderRadius.Value, _fingerColliderLength.Value, _useFingerColliders.Value, 
-                _simplifyPenetration.Value, _simplifyOral.Value)
+                _simplifyPenetration.Value, _simplifyOral.Value, _rotateTamaWithShaft.Value)
             };
 
             return danOptions;

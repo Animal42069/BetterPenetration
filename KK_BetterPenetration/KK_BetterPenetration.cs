@@ -22,12 +22,12 @@ namespace KK_BetterPenetration
     {
         public static KK_BetterPenetration instance;
 
-        public const string VERSION = "3.2.1.0";
+        public const string VERSION = "4.0.2.0";
         private const int MaleLimit = 2;
         private const int FemaleLimit = 2;
 
         private static readonly List<float> frontOffsets = new List<float> { -0.04f, 0.04f, 0.06f };
-        private static readonly List<float> backOffsets = new List<float> { -0.04f, 0.04f, 0f };
+        private static readonly List<float> backOffsets = new List<float> { -0.04f, 0.02f, 0f };
         private static readonly List<bool> frontPointsInward = new List<bool> { false, false, false, };
         private static readonly List<bool> backPointsInward = new List<bool> { false, true, true };
 
@@ -40,6 +40,7 @@ namespace KK_BetterPenetration
         private static readonly ConfigEntry<bool>[] _danSquishOralGirth = new ConfigEntry<bool>[MaleLimit];
         private static readonly ConfigEntry<bool>[] _simplifyPenetration = new ConfigEntry<bool>[MaleLimit];
         private static readonly ConfigEntry<bool>[] _simplifyOral = new ConfigEntry<bool>[MaleLimit];
+        private static readonly ConfigEntry<bool>[] _rotateTamaWithShaft = new ConfigEntry<bool>[MaleLimit];
 
         private static ConfigEntry<float> _clippingDepth;
         private static ConfigEntry<Vector3> _kokanOffset;
@@ -58,6 +59,7 @@ namespace KK_BetterPenetration
         private static readonly bool loadingCharacter = false;
         private static bool twoDans = false;
         private static Type _uncensorSelectorType;
+        private static bool resetParticles = false;
 
         private void Awake()
         {
@@ -82,6 +84,8 @@ namespace KK_BetterPenetration
                 (_simplifyPenetration[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Simplify Penetration Calculation", false, "Simplifys penetration calclation by always having it target the same internal point.  Only valid for BP penis uncensors.")).SettingChanged += (s, e) =>
                 { UpdateDanOptions(); };
                 (_simplifyOral[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Simplify Oral Calculation", false, "Simplifys oral penetration calclation by always having it target the same internal point.  Only valid for BP penis uncensors.")).SettingChanged += (s, e) =>
+                { UpdateDanOptions(); };
+                (_rotateTamaWithShaft[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Rotate Balls with Shaft", true, "If enabled, the base of the balls will be locked to the base of the shaft")).SettingChanged += (s, e) =>
                 { UpdateDanOptions(); };
             }
 
@@ -211,6 +215,21 @@ namespace KK_BetterPenetration
             CoreGame.OnChangeAnimation(_nextAinmInfo.pathFemaleBase.file);
         }
 
+        [HarmonyPostfix, HarmonyPatch(typeof(HSceneProc), "ChangeAnimator")]
+        private static void HSceneProc_PostChangeAnimator()
+        {
+            if (!inHScene)
+                return;
+
+            resetParticles = true;
+        }
+
+        [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "setPlay")]
+        private static void ChaControl_PostSetPlay()
+        {
+            resetParticles = true;
+        }
+
         [HarmonyPostfix, HarmonyPatch(typeof(Lookat_dan), "SetInfo")]
         private static void H_Lookat_dan_PostSetInfo(Lookat_dan __instance, ChaControl ___male)
         {
@@ -232,6 +251,12 @@ namespace KK_BetterPenetration
             if (!inHScene || loadingCharacter || __instance.strPlayMotion == null || ___male == null)
                 return;
 
+            if (resetParticles)
+            {
+                CoreGame.ResetParticles();
+                resetParticles = false;
+            }
+
             int maleNum = 0;
 
             if (___male.chaID != 0)
@@ -242,6 +267,15 @@ namespace KK_BetterPenetration
             }
 
             CoreGame.LookAtDanUpdate(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, false, maleNum, __instance.numFemale);
+
+            var lstFemale = hSceneProcTraverse.Field("lstFemale").GetValue<List<ChaControl>>();
+            if (lstFemale == null || lstFemale.Count == 0)
+                return;
+
+            List<ChaControl> femaleList = new List<ChaControl>();
+            foreach (var female in lstFemale)
+                if (female != null)
+                    femaleList.Add(female);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(Lookat_dan), "Release")]
@@ -276,7 +310,7 @@ namespace KK_BetterPenetration
             for (int index = 0; index < MaleLimit; index++)
                 CoreGame.UpdateDanOptions(index, _danLengthSquishFactor[index].Value, _danGirthSquishFactor[index].Value,
                     _danSquishThreshold[index].Value, _danSquishOralGirth[index].Value, false,
-                    _simplifyPenetration[index].Value, _simplifyOral[index].Value);
+                    _simplifyPenetration[index].Value, _simplifyOral[index].Value, _rotateTamaWithShaft[index].Value);
         }
 
         private static void UpdateCollisionOptions()
@@ -297,7 +331,7 @@ namespace KK_BetterPenetration
             {
                 danOptions.Add(new DanOptions(_danColliderVerticalCenter[maleNum].Value, _danColliderRadius[maleNum].Value, _danColliderHeadLength[maleNum].Value,
                     _danLengthSquishFactor[maleNum].Value, _danGirthSquishFactor[maleNum].Value, _danSquishThreshold[maleNum].Value, _danSquishOralGirth[maleNum].Value,
-                    0, 0, false, _simplifyPenetration[maleNum].Value, _simplifyOral[maleNum].Value));
+                    0, 0, false, _simplifyPenetration[maleNum].Value, _simplifyOral[maleNum].Value, _rotateTamaWithShaft[maleNum].Value));
             }
 
             return danOptions;

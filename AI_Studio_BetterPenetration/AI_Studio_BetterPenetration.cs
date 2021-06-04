@@ -23,7 +23,7 @@ namespace AI_Studio_BetterPenetration
     {
         internal const string GUID = "com.animal42069.studiobetterpenetration";
         internal const string PluginName = "AI Studio Better Penetration";
-        internal const string VERSION = "2.0.1.0";
+        internal const string VERSION = "2.0.2.0";
         internal const string BEHAVIOR = "BetterPenetrationController";
         internal const string StudioCategoryName = "Better Penetration";
         internal static Harmony harmony;
@@ -137,6 +137,31 @@ namespace AI_Studio_BetterPenetration
                     controller.DanColliderVertical = value;
             });
             StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(colliderVertical);
+        }
+
+        [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "LoadCharaFbxDataAsync")]
+        public static void ChaControl_LoadCharaFbxDataAsync(ChaControl __instance)
+        {
+            var dynamicBones = __instance.GetComponentsInChildren<DynamicBone>(true);
+
+            if (dynamicBones == null)
+                return;
+
+            foreach (var dynamicBone in dynamicBones)
+            {
+                if (dynamicBone == null ||
+                    dynamicBone.m_Colliders == null ||
+                    (dynamicBone.name != null && (dynamicBone.name.Contains("Vagina") || dynamicBone.name.Contains("cm_J_dan"))))
+                    continue;
+
+                for (int collider = 0; collider < dynamicBone.m_Colliders.Count; collider++)
+                {
+                    if (dynamicBone.m_Colliders[collider] != null &&
+                        dynamicBone.m_Colliders[collider].name != null &&
+                        (dynamicBone.m_Colliders[collider].name.Contains("Vagina") || dynamicBone.m_Colliders[collider].name.Contains("cm_J_dan")))
+                        dynamicBone.m_Colliders.RemoveAt(collider);
+                }
+            }
         }
 
         internal static void BeforeDanCharacterReload()

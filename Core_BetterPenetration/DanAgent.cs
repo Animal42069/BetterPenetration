@@ -214,8 +214,11 @@ namespace Core_BetterPenetration
             ScaleDanColliders(adjustedDanLength);
 
             List<Vector3> adjustedDanPoints = AdjustDanPointsToTargets(enterTarget, endTarget, adjustedDanLength, danDistanceToTarget);
-            m_danPoints.AimDanPoints(adjustedDanPoints);
-
+#if !HS2_STUDIO && !AI_STUDIO && !KK_STUDIO
+            m_danPoints.AimDanPoints(adjustedDanPoints, m_danOptions.rotateTamaWithShaft);
+#else
+            m_danPoints.AimDanPoints(adjustedDanPoints, true);
+#endif
             m_danPoints.GetDanLossyScale();
         }
 
@@ -369,7 +372,7 @@ namespace Core_BetterPenetration
         }
 
 #if !HS2_STUDIO && !AI_STUDIO && !KK_STUDIO
-        internal void UpdateDanOptions(float danLengthSquish, float danGirthSquish, float squishThreshold, bool squishOralGirth, bool useFingerColliders, bool simplifyPenetration, bool simplifyOral)
+        internal void UpdateDanOptions(float danLengthSquish, float danGirthSquish, float squishThreshold, bool squishOralGirth, bool useFingerColliders, bool simplifyPenetration, bool simplifyOral, bool rotateTamaWithShaft)
         {
             m_danOptions.danLengthSquish = danLengthSquish;
             m_danOptions.danGirthSquish = danGirthSquish;
@@ -378,6 +381,7 @@ namespace Core_BetterPenetration
             m_danOptions.useFingerColliders = useFingerColliders;
             m_danOptions.simplifyPenetration = simplifyPenetration;
             m_danOptions.simplifyOral = simplifyOral;
+            m_danOptions.rotateTamaWithShaft = rotateTamaWithShaft;
         }
 
         internal void UpdateFingerColliders(float fingerRadius, float fingerLength)
@@ -403,65 +407,118 @@ namespace Core_BetterPenetration
                 return;
 
             if (m_referenceTarget == null)
-            {
-                m_danPoints.AimDanTop();
-                return;
-            }
+                AdjustDanToTargetNull();
+            else if (m_referenceTarget.name == LookTargets.KokanTarget || m_referenceTarget.name == LookTargets.BPKokanTarget)
+                AdjustDanToTargetKokan(targetAgent);
+            else if (m_referenceTarget.name == LookTargets.AnaTarget)
+                AdjustDanToTargetAna(targetAgent);
+            else if (m_referenceTarget.name == LookTargets.HeadTarget)
+                AdjustDanToTargetHead(targetAgent);
+            else
+                AdjustDanToTargetNull();
+        }
 
+        internal void AdjustDanToTargetNull()
+        {
+            Vector3 danStartPosition = m_danPoints.GetDanStartPosition();
+            Vector3 danTarget = m_danPoints.GetDanEndPosition();
+            Vector3 danTargetVector = Vector3.Normalize(danTarget - danStartPosition);
+            Vector3 danEndTarget = danStartPosition + danTargetVector * m_baseDanLength;
+            float danDistanceToTarget = Vector3.Distance(danStartPosition, danTarget);
+
+            List<Vector3> adjustedDanPoints = AdjustDanPointsToTargets(danTarget, danEndTarget, m_baseDanLength, danDistanceToTarget);
+            m_danPoints.AimDanPoints(adjustedDanPoints, m_danOptions.rotateTamaWithShaft);
+        }
+
+        internal void AdjustDanToTargetKokan(CollisionAgent targetAgent)
+        {
             Vector3 danStartPosition = m_danPoints.GetDanStartPosition();
             Vector3 danTarget = m_referenceTarget.position;
 
-            if (m_referenceTarget.name == LookTargets.KokanTarget || m_referenceTarget.name == LookTargets.BPKokanTarget)
-            {
-                danTarget += targetAgent.m_collisionOptions.kokanOffset.x * m_referenceTarget.right +
-                             targetAgent.m_collisionOptions.kokanOffset.y * m_referenceTarget.up +
-                             targetAgent.m_collisionOptions.kokanOffset.z * m_referenceTarget.forward;
-            }
-            else if (m_referenceTarget.name == LookTargets.HeadTarget)
-            {
-                danTarget += targetAgent.m_collisionOptions.mouthOffset.x * m_referenceTarget.right +
-                             targetAgent.m_collisionOptions.mouthOffset.y * m_referenceTarget.up +
-                             targetAgent.m_collisionOptions.mouthOffset.z * m_referenceTarget.forward;
-            }
+            danTarget += targetAgent.m_collisionOptions.kokanOffset.x * m_referenceTarget.right +
+                         targetAgent.m_collisionOptions.kokanOffset.y * m_referenceTarget.up +
+                         targetAgent.m_collisionOptions.kokanOffset.z * m_referenceTarget.forward;
 
-            danTarget += targetAgent.m_collisionOptions.mouthOffset;
-
-            if (targetAgent.m_collisionOptions.kokan_adjust && targetAgent.adjustFAnimation && (m_referenceTarget.name == LookTargets.KokanTarget || m_referenceTarget.name == LookTargets.BPKokanTarget))
+            if (targetAgent.m_collisionOptions.kokan_adjust && targetAgent.adjustFAnimation)
                 danTarget += m_referenceTarget.forward * targetAgent.m_collisionOptions.kokan_adjust_position_z;
 
             Vector3 danTargetVector = Vector3.Normalize(danTarget - danStartPosition);
             Vector3 danEndTarget = danStartPosition + danTargetVector * m_baseDanLength;
-            Vector3 innerLimit = danEndTarget;
 
             float danDistanceToTarget = Vector3.Distance(danStartPosition, danTarget);
             float adjustedDanLength = GetSquishedDanLength(danDistanceToTarget);
             float girthScaleFactor = GetSquishedDanGirth(danDistanceToTarget);
 
-            if (m_referenceTarget.name != LookTargets.HeadTarget || m_danOptions.squishOralGirth)
+            m_danPoints.SquishDanGirth(girthScaleFactor);
+
+            Vector3 innerLimit = targetAgent.m_innerTarget.position +
+                                 targetAgent.m_collisionOptions.innerKokanOffset.x * m_referenceTarget.right +
+                                 targetAgent.m_collisionOptions.innerKokanOffset.y * m_referenceTarget.up +
+                                 targetAgent.m_collisionOptions.innerKokanOffset.z * m_referenceTarget.forward;
+
+            danEndTarget = ConstrainDan(danStartPosition, danTargetVector, danEndTarget, innerLimit, adjustedDanLength, danDistanceToTarget, targetAgent);
+            ScaleDanColliders(adjustedDanLength);
+
+            List<Vector3> adjustedDanPoints = AdjustDanPointsToTargets(danTarget, danEndTarget, adjustedDanLength, danDistanceToTarget);
+            m_danPoints.AimDanPoints(adjustedDanPoints, m_danOptions.rotateTamaWithShaft);
+        }
+
+        internal void AdjustDanToTargetHead(CollisionAgent targetAgent)
+        {
+            Vector3 danStartPosition = m_danPoints.GetDanStartPosition();
+            Vector3 danTarget = m_referenceTarget.position;
+
+            danTarget += targetAgent.m_collisionOptions.mouthOffset.x * m_referenceTarget.right +
+                         targetAgent.m_collisionOptions.mouthOffset.y * m_referenceTarget.up +
+                         targetAgent.m_collisionOptions.mouthOffset.z * m_referenceTarget.forward;
+
+            Vector3 danTargetVector = Vector3.Normalize(danTarget - danStartPosition);
+            Vector3 danEndTarget = danStartPosition + danTargetVector * m_baseDanLength;
+
+            float danDistanceToTarget = Vector3.Distance(danStartPosition, danTarget);
+            float adjustedDanLength = GetSquishedDanLength(danDistanceToTarget);
+            float girthScaleFactor = GetSquishedDanGirth(danDistanceToTarget);
+
+            if (m_danOptions.squishOralGirth)
                 m_danPoints.SquishDanGirth(girthScaleFactor);
 
-            if (m_referenceTarget.name == LookTargets.KokanTarget || m_referenceTarget.name == LookTargets.AnaTarget || m_referenceTarget.name == LookTargets.BPKokanTarget)
-            {
-                innerLimit = targetAgent.m_innerTarget.position +
-                             targetAgent.m_collisionOptions.innerKokanOffset.x * m_referenceTarget.right +
-                             targetAgent.m_collisionOptions.innerKokanOffset.y * m_referenceTarget.up +
-                             targetAgent.m_collisionOptions.innerKokanOffset.z * m_referenceTarget.forward;
-
-            }
-            else if (m_referenceTarget.name == LookTargets.HeadTarget)
-            {
-                innerLimit = targetAgent.m_innerHeadTarget.position +
-                             targetAgent.m_collisionOptions.innerMouthOffset.x * m_referenceTarget.right +
-                             targetAgent.m_collisionOptions.innerMouthOffset.y * m_referenceTarget.up +
-                             targetAgent.m_collisionOptions.innerMouthOffset.z * m_referenceTarget.forward;
-            }
+            Vector3 innerLimit = targetAgent.m_innerHeadTarget.position +
+                                 targetAgent.m_collisionOptions.innerMouthOffset.x * m_referenceTarget.right +
+                                 targetAgent.m_collisionOptions.innerMouthOffset.y * m_referenceTarget.up +
+                                 targetAgent.m_collisionOptions.innerMouthOffset.z * m_referenceTarget.forward;
 
             adjustedDanLength = GetMaxDanLength(adjustedDanLength, danTarget, innerLimit, danDistanceToTarget);
             danEndTarget = ConstrainDan(danStartPosition, danTargetVector, danEndTarget, innerLimit, adjustedDanLength, danDistanceToTarget, targetAgent);
             ScaleDanColliders(adjustedDanLength);
 
             List<Vector3> adjustedDanPoints = AdjustDanPointsToTargets(danTarget, danEndTarget, adjustedDanLength, danDistanceToTarget);
-            m_danPoints.AimDanPoints(adjustedDanPoints);
+            m_danPoints.AimDanPoints(adjustedDanPoints, m_danOptions.rotateTamaWithShaft);
+        }
+
+        internal void AdjustDanToTargetAna(CollisionAgent targetAgent)
+        {
+            Vector3 danStartPosition = m_danPoints.GetDanStartPosition();
+            Vector3 danTarget = m_referenceTarget.position;
+            Vector3 danTargetVector = Vector3.Normalize(danTarget - danStartPosition);
+            Vector3 danEndTarget = danStartPosition + danTargetVector * m_baseDanLength;
+
+            float danDistanceToTarget = Vector3.Distance(danStartPosition, danTarget);
+            float adjustedDanLength = GetSquishedDanLength(danDistanceToTarget);
+            float girthScaleFactor = GetSquishedDanGirth(danDistanceToTarget);
+
+            if (m_danOptions.squishOralGirth)
+                m_danPoints.SquishDanGirth(girthScaleFactor);
+
+            Vector3 innerLimit = targetAgent.m_innerTarget.position +
+                                 targetAgent.m_collisionOptions.innerKokanOffset.x * m_referenceTarget.right +
+                                 targetAgent.m_collisionOptions.innerKokanOffset.y * m_referenceTarget.up +
+                                 targetAgent.m_collisionOptions.innerKokanOffset.z * m_referenceTarget.forward;
+
+            danEndTarget = ConstrainDan(danStartPosition, danTargetVector, danEndTarget, innerLimit, adjustedDanLength, danDistanceToTarget, targetAgent);
+            ScaleDanColliders(adjustedDanLength);
+
+            List<Vector3> adjustedDanPoints = AdjustDanPointsToTargets(danTarget, danEndTarget, adjustedDanLength, danDistanceToTarget);
+            m_danPoints.AimDanPoints(adjustedDanPoints, m_danOptions.rotateTamaWithShaft);
         }
 
         private Vector3 ConstrainDan(Vector3 danStart, Vector3 danTargetVector, Vector3 danEndTarget, Vector3 innerLimit, float danLength, float danDistanceToTarget, CollisionAgent targetAgent)

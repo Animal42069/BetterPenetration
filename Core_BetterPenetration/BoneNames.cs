@@ -73,11 +73,14 @@ namespace Core_BetterPenetration
         internal const string BPBone = "cf_J_Vagina";
 
         internal static readonly List<string> DanBones = new List<string> { "cm_J_dan101_00", "cm_J_dan103_00", "cm_J_dan105_00", "cm_J_dan107_00", "cm_J_dan109_00" };
-        internal static readonly List<string> TamaBones = new List<string> { "cm_J_dan_Pivot_f_top", "cm_J_dan_Pivot_f_L", "cm_J_dan_Pivot_f_R"};
-        internal static readonly List<string> MidSectionColliders = new List<string> { "cf_hit_Kosi02_s", "cf_hit_LegUp01_s_L", "cf_hit_LegUp01_s_R"};
-        internal static readonly List<string> BodyColliders = new List<string> { "cf_hit_Kosi02_s", "cf_hit_LegLow02_s_L", "cf_hit_LegLow02_s_R", "cf_hit_LegUp01_s_L", "cf_hit_LegUp01_s_R", 
-                                                                                 "cf_J_Spine01_s", "cf_J_Spine02_s", "cf_J_Spine03_s", "cf_hit_Mune02_s_L", "cf_hit_Mune02_s_R", 
-                                                                                 "ColFace01", "ColFace02", "cf_J_Neck_s", "cf_J_ArmUp02_s_L", "cf_J_ArmUp02_s_R" };
+        internal static readonly List<string> TamaBones = new List<string> { "cm_J_dan_Pivot_f_L", "cm_J_dan_Pivot_f_R" };
+        internal static readonly List<string> MidSectionColliders = new List<string> { "cm_J_dan101_00", "cm_J_dan103_00", "cf_hit_waist02", "cf_hit_LegLow02_s_L", "cf_hit_LegLow02_s_R" };
+        internal static readonly List<string> BodyColliders = new List<string> { "cf_hit_thigh01_L", "cf_hit_thigh01_R", "cf_hit_thigh02_L", "cf_hit_thigh02_R", 
+                                                                                 "cf_hit_waist_L", "cf_hit_berry", "cf_hit_waist01", "cf_hit_waist02",
+                                                                                 "cf_hit_spine01", "cf_hit_spine02", "cf_hit_spine03", "cf_hit_spine03_2", 
+                                                                                 "cf_hit_bust00", "cf_hit_bust02_L", "cf_hit_bust02_R",
+                                                                                 "cf_hit_neck", "cf_hit_head", 
+                                                                                 "cf_hit_arm_L", "cf_hit_arm_R", "cf_hit_shoulder_L", "cf_hit_shoulder_R" };
 
         internal static readonly List<string> frontCollisionList = new List<string> { LookTargets.KokanTarget, "a_n_waist_f", "a_n_bust_f" };
         internal static readonly List<string> backCollisionList = new List<string> { LookTargets.AnaTarget, "a_n_waist_b", "a_n_back" };
@@ -96,11 +99,15 @@ namespace Core_BetterPenetration
         internal const string TamaTop = "cm_J_dan_f_top";
 
         internal static readonly List<string> DanBones = new List<string> { "cm_J_dan101_00", "cm_J_dan103_00", "cm_J_dan105_00", "cm_J_dan107_00", "cm_J_dan109_00" };
-        internal static readonly List<string> TamaBones = new List<string> { "cm_J_dan_Pivot_f_top", "cm_J_dan_Pivot_f_L", "cm_J_dan_Pivot_f_R"};
-        internal static readonly List<string> MidSectionColliders = new List<string> { "cf_hit_Kosi02_s", "cf_hit_LegUp01_s_L", "cf_hit_LegUp01_s_R"};
-        internal static readonly List<string> BodyColliders = new List<string> { "cf_hit_Kosi02_s", "cf_hit_LegLow02_s_L", "cf_hit_LegLow02_s_R", "cf_hit_LegUp01_s_L", "cf_hit_LegUp01_s_R", 
-                                                                                 "cf_J_Spine01_s", "cf_J_Spine02_s", "cf_J_Spine03_s", "cf_hit_Mune02_s_L", "cf_hit_Mune02_s_R", 
-                                                                                 "ColFace01", "ColFace02", "cf_J_Neck_s", "cf_J_ArmUp02_s_L", "cf_J_ArmUp02_s_R" };
+        internal static readonly List<string> TamaBones = new List<string> { "cm_J_dan_Pivot_f_L", "cm_J_dan_Pivot_f_R" };
+        internal static readonly List<string> MidSectionColliders = new List<string> { "cf_hit_waist02", "cf_hit_LegLow02_s_L", "cf_hit_LegLow02_s_R" };
+        internal static readonly List<string> BodyColliders = new List<string> { "cf_hit_thigh01_L", "cf_hit_thigh01_R", "cf_hit_thigh02_L", "cf_hit_thigh02_R", 
+                                                                                 "cf_hit_waist_L", "cf_hit_berry", "cf_hit_waist01", "cf_hit_waist02",
+                                                                                 "cf_hit_spine01", "cf_hit_spine02", "cf_hit_spine03", "cf_hit_spine03_2", 
+                                                                                 "cf_hit_bust00", "cf_hit_bust02_L", "cf_hit_bust02_R",
+                                                                                 "cf_hit_neck", "cf_hit_head", 
+                                                                                 "cf_hit_arm_L", "cf_hit_arm_R", "cf_hit_shoulder_L", "cf_hit_shoulder_R" };
+
     }
 #endif
 

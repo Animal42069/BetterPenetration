@@ -19,7 +19,7 @@ namespace HS2_BetterPenetration
     [BepInProcess("HoneySelect2VR")]
     public class HS2_BetterPenetration : BaseUnityPlugin
     {
-        internal const string VERSION = "4.0.0.0";
+        internal const string VERSION = "4.0.2.0";
         private const int MaleLimit = 2;
         private const int FemaleLimit = 2;
 
@@ -40,6 +40,7 @@ namespace HS2_BetterPenetration
         private static readonly ConfigEntry<bool>[] _useFingerColliders = new ConfigEntry<bool>[MaleLimit];
         private static readonly ConfigEntry<bool>[] _simplifyPenetration = new ConfigEntry<bool>[MaleLimit];
         private static readonly ConfigEntry<bool>[] _simplifyOral = new ConfigEntry<bool>[MaleLimit];
+        private static readonly ConfigEntry<bool>[] _rotateTamaWithShaft = new ConfigEntry<bool>[MaleLimit];
 
         private static ConfigEntry<float> _clippingDepth;
         private static ConfigEntry<Vector3> _kokanOffset;
@@ -59,7 +60,7 @@ namespace HS2_BetterPenetration
         private static bool inHScene = false;
         private static bool loadingCharacter = false;
         private static bool twoDans;
-        private static bool resetTamaParticles = false;
+        private static bool resetParticles = false;
 
         private void Awake()
         {
@@ -88,6 +89,8 @@ namespace HS2_BetterPenetration
                 (_simplifyPenetration[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Simplify Penetration Calculation", false, "Simplifys penetration calclation by always having it target the same internal point.  Only valid for BP penis uncensors.")).SettingChanged += (s, e) =>
                 { UpdateDanOptions(); };
                 (_simplifyOral[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Simplify Oral Calculation", false, "Simplifys oral penetration calclation by always having it target the same internal point.  Only valid for BP penis uncensors.")).SettingChanged += (s, e) =>
+                { UpdateDanOptions(); };
+                (_rotateTamaWithShaft[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Rotate Balls with Shaft", true, "If enabled, the base of the balls will be locked to the base of the shaft")).SettingChanged += (s, e) =>
                 { UpdateDanOptions(); };
             }
 
@@ -147,7 +150,7 @@ namespace HS2_BetterPenetration
             for (int index = 0; index < MaleLimit; index++)
                 CoreGame.UpdateDanOptions(index, _danLengthSquishFactor[index].Value, _danGirthSquishFactor[index].Value, 
                     _danSquishThreshold[index].Value, _danSquishOralGirth[index].Value, _useFingerColliders[index].Value, 
-                    _simplifyPenetration[index].Value, _simplifyOral[index].Value);
+                    _simplifyPenetration[index].Value, _simplifyOral[index].Value, _rotateTamaWithShaft[index].Value);
         }
 
         private static void UpdateCollisionOptions()
@@ -280,7 +283,7 @@ namespace HS2_BetterPenetration
                 danOptions.Add(new DanOptions(_danColliderVerticalCenter[maleNum].Value, _danColliderRadius[maleNum].Value, _danColliderHeadLength[maleNum].Value,
                     _danLengthSquishFactor[maleNum].Value, _danGirthSquishFactor[maleNum].Value, _danSquishThreshold[maleNum].Value, _danSquishOralGirth[maleNum].Value,
                     _fingerColliderRadius[maleNum].Value, _fingerColliderLength[maleNum].Value, _useFingerColliders[maleNum].Value, 
-                    _simplifyPenetration[maleNum].Value, _simplifyOral[maleNum].Value));
+                    _simplifyPenetration[maleNum].Value, _simplifyOral[maleNum].Value, _rotateTamaWithShaft[maleNum].Value));
             }
 
             return danOptions;
@@ -314,19 +317,19 @@ namespace HS2_BetterPenetration
                 return;
 
             CoreGame.OnChangeAnimation(_info.fileFemale);
-            resetTamaParticles = true;
+            resetParticles = true;
         }
 
         [HarmonyPrefix, HarmonyPatch(typeof(HScene), "SetMovePositionPoint")]
         private static void HScene_SetMovePositionPoint()
         {
-            resetTamaParticles = true;
+            resetParticles = true;
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "setPlay")]
         private static void ChaControl_PostSetPlay()
         {
-            resetTamaParticles = true;
+            resetParticles = true;
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(H_Lookat_dan), "setInfo")]
@@ -352,10 +355,10 @@ namespace HS2_BetterPenetration
             if (!inHScene || loadingCharacter || __instance.strPlayMotion == null || ___male == null)
                 return;
 
-            if (resetTamaParticles && !hScene.NowChangeAnim)
+            if (resetParticles && !hScene.NowChangeAnim)
             {
                 CoreGame.ResetParticles();
-                resetTamaParticles = false;
+                resetParticles = false;
             }
 
             int maleNum = 0;

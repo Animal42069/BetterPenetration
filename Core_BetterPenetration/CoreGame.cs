@@ -193,12 +193,12 @@ namespace Core_BetterPenetration
             danAgents[maleNum].UpdateFingerColliders(fingerRadius, fingerLength);
         }
 
-        public static void UpdateDanOptions(int maleNum, float danLengthSquish, float danGirthSquish, float squishThreshold, bool squishOralGirth, bool useFingerColliders, bool simplifyPenetration, bool simplifyOral)
+        public static void UpdateDanOptions(int maleNum, float danLengthSquish, float danGirthSquish, float squishThreshold, bool squishOralGirth, bool useFingerColliders, bool simplifyPenetration, bool simplifyOral, bool rotateTamaWithShaft)
         {
             if (maleNum >= danAgents.Count || danAgents[maleNum] == null)
                 return;
 
-            danAgents[maleNum].UpdateDanOptions(danLengthSquish, danGirthSquish, squishThreshold, squishOralGirth, useFingerColliders, simplifyPenetration, simplifyOral);
+            danAgents[maleNum].UpdateDanOptions(danLengthSquish, danGirthSquish, squishThreshold, squishOralGirth, useFingerColliders, simplifyPenetration, simplifyOral, rotateTamaWithShaft);
         }
 
         public static void UpdateCollisionOptions(int femaleNum, CollisionOptions options)
