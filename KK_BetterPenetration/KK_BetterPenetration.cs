@@ -22,7 +22,7 @@ namespace KK_BetterPenetration
     {
         public static KK_BetterPenetration instance;
 
-        public const string VERSION = "4.0.2.0";
+        public const string VERSION = "4.0.3.0";
         private const int MaleLimit = 2;
         private const int FemaleLimit = 2;
 

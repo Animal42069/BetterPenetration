@@ -1,7 +1,0 @@
-<Project>
-  <Target Name="IllusionLibsAIGirlAssembly-CSharp-firstpass" AfterTargets="ResolveReferences">
-    <ItemGroup>
-      <ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths)" Condition="'%(ReferenceCopyLocalPaths.NuGetPackageId)' == 'IllusionLibs.AIGirl.Assembly-CSharp-firstpass'" />
-    </ItemGroup>
-  </Target>
-</Project>

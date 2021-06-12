@@ -684,8 +684,8 @@ namespace Core_BetterPenetration
 #endif
 
             if (m_danPenetration && firstTarget.m_bpKokanTarget != null &&
-               (m_referenceTarget == null || m_referenceTarget.name == LookTargets.KokanTarget) && 
-               !currentMotion.Contains("Idle") && !currentMotion.Contains("Pull") && !currentMotion.Contains("OUT"))
+               (m_referenceTarget == null || m_referenceTarget.name == LookTargets.KokanTarget) &&
+               (currentMotion.Contains("Insert") || (!currentMotion.Contains("Idle") && !currentMotion.Contains("Pull") && !currentMotion.Contains("OUT"))))
                 m_referenceTarget = firstTarget.m_bpKokanTarget;
         }
 

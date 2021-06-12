@@ -75,9 +75,11 @@ namespace HS2_Studio_BetterPenetration
 
             harmony.Patch(methodInfo, postfix: new HarmonyMethod(typeof(HS2_Studio_BetterPenetration), "AfterAddConstraint"));
             Debug.Log("Studio_BetterPenetration: patched NodeConstraints::AddConstraint correctly");
+
+            RegisterStudioControllerEnable();
         }
 
-        public static void RegisterStudioControls()
+        public static void RegisterStudioControllerEnable()
         {
             if (!StudioAPI.InsideStudio)
                 return;
@@ -89,6 +91,12 @@ namespace HS2_Studio_BetterPenetration
                     controller.enabled = value;
             });
             StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(bpEnable);
+        }
+
+        public static void RegisterStudioControls()
+        {
+            if (!StudioAPI.InsideStudio)
+                return;
 
             var lengthSlider = new CurrentStateCategorySlider("Length Squish", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().DanLengthSquish, 0f, 1f);
             lengthSlider.Value.Subscribe(value =>
