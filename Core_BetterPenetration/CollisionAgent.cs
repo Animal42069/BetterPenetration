@@ -133,6 +133,17 @@ namespace Core_BetterPenetration
                 kokanBone.ResetParticlesPosition();
             }
         }
+
+        internal void EnableKokanParticles(bool enable)
+        {
+            foreach (var kokanBone in m_kokanDynamicBones)
+            {
+                if (kokanBone == null)
+                    continue;
+
+                kokanBone.enabled = enable;
+            }
+        }
     }
 }
 #endif

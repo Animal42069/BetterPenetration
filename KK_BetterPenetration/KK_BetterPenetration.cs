@@ -31,9 +31,8 @@ namespace KK_BetterPenetration
         private static readonly List<bool> frontPointsInward = new List<bool> { false, false, false, };
         private static readonly List<bool> backPointsInward = new List<bool> { false, true, true };
 
-        private static readonly ConfigEntry<float>[] _danColliderHeadLength = new ConfigEntry<float>[MaleLimit];
-        private static readonly ConfigEntry<float>[] _danColliderRadius = new ConfigEntry<float>[MaleLimit];
-        private static readonly ConfigEntry<float>[] _danColliderVerticalCenter = new ConfigEntry<float>[MaleLimit];
+        private static readonly ConfigEntry<float>[] _danColliderLengthScale = new ConfigEntry<float>[MaleLimit];
+        private static readonly ConfigEntry<float>[] _danColliderRadiusScale = new ConfigEntry<float>[MaleLimit];
         private static readonly ConfigEntry<float>[] _danLengthSquishFactor = new ConfigEntry<float>[MaleLimit];
         private static readonly ConfigEntry<float>[] _danGirthSquishFactor = new ConfigEntry<float>[MaleLimit];
         private static readonly ConfigEntry<float>[] _danSquishThreshold = new ConfigEntry<float>[MaleLimit];
@@ -59,19 +58,19 @@ namespace KK_BetterPenetration
         private static readonly bool loadingCharacter = false;
         private static bool twoDans = false;
         private static Type _uncensorSelectorType;
-        private static bool resetParticles = false;
+        private static bool resetParticlesStep1 = false;
+        private static bool resetParticlesStep2 = false;
+        private static int resetParticlesCount = 0;
 
         private void Awake()
         {
             instance = this;
 
-            for (int maleNum = 0; maleNum < _danColliderHeadLength.Length; maleNum++)
+            for (int maleNum = 0; maleNum < _danColliderLengthScale.Length; maleNum++)
             {
-                (_danColliderHeadLength[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis Collider: Length of Head", 0.008f, "Distance from the center of the head bone to the tip, used for collision purposes.")).SettingChanged += (s, e) =>
+                (_danColliderLengthScale[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis Collider: Length Scale", 1.0f, new ConfigDescription("How much to scale collider length", new AcceptableValueRange<float>(0.5f, 1.5f)))).SettingChanged += (s, e) =>
                 { UpdateDanColliders(); };
-                (_danColliderRadius[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis Collider: Radius of Shaft", 0.024f, "Radius of the shaft collider.")).SettingChanged += (s, e) =>
-                { UpdateDanColliders(); };
-                (_danColliderVerticalCenter[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis Collider: Vertical Center", 0.0f, "Vertical Center of the shaft collider")).SettingChanged += (s, e) =>
+                (_danColliderRadiusScale[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis Collider: Radius Scale", 1.0f, new ConfigDescription("How much to scale collider radius", new AcceptableValueRange<float>(0.5f, 1.5f)))).SettingChanged += (s, e) =>
                 { UpdateDanColliders(); };
                 (_danLengthSquishFactor[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis: Squish Length Factor", 0.6f, new ConfigDescription("How much the length of the penis squishes after it has passed the squish threshold", new AcceptableValueRange<float>(0, 1)))).SettingChanged += (s, e) =>
                 { UpdateDanOptions(); };
@@ -221,13 +220,13 @@ namespace KK_BetterPenetration
             if (!inHScene)
                 return;
 
-            resetParticles = true;
+            resetParticlesStep1 = true;
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "setPlay")]
         private static void ChaControl_PostSetPlay()
         {
-            resetParticles = true;
+            resetParticlesStep1 = true;
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(Lookat_dan), "SetInfo")]
@@ -251,10 +250,19 @@ namespace KK_BetterPenetration
             if (!inHScene || loadingCharacter || __instance.strPlayMotion == null || ___male == null)
                 return;
 
-            if (resetParticles)
+            if (resetParticlesStep1)
             {
                 CoreGame.ResetParticles();
-                resetParticles = false;
+                CoreGame.EnableParticles(false);
+                resetParticlesStep1 = false;
+                resetParticlesStep2 = true;
+                resetParticlesCount = 0;
+            }
+
+            if (resetParticlesStep2 && ++resetParticlesCount > 3)
+            {
+                CoreGame.EnableParticles(true);
+                resetParticlesStep2 = false;
             }
 
             int maleNum = 0;
@@ -299,7 +307,7 @@ namespace KK_BetterPenetration
                 return;
 
             for (int index = 0; index < MaleLimit; index++)
-                CoreGame.UpdateDanCollider(index, _danColliderRadius[index].Value, _danColliderHeadLength[index].Value, _danColliderVerticalCenter[index].Value);
+                CoreGame.UpdateDanCollider(index, _danColliderRadiusScale[index].Value, _danColliderLengthScale[index].Value);
         }
 
         private static void UpdateDanOptions()
@@ -329,9 +337,9 @@ namespace KK_BetterPenetration
 
             for (int maleNum = 0; maleNum < MaleLimit; maleNum++)
             {
-                danOptions.Add(new DanOptions(_danColliderVerticalCenter[maleNum].Value, _danColliderRadius[maleNum].Value, _danColliderHeadLength[maleNum].Value,
+                danOptions.Add(new DanOptions(0, 0, 0,
                     _danLengthSquishFactor[maleNum].Value, _danGirthSquishFactor[maleNum].Value, _danSquishThreshold[maleNum].Value, _danSquishOralGirth[maleNum].Value,
-                    0, 0, false, _simplifyPenetration[maleNum].Value, _simplifyOral[maleNum].Value, _rotateTamaWithShaft[maleNum].Value));
+                    0, 0, false, _simplifyPenetration[maleNum].Value, _simplifyOral[maleNum].Value, _rotateTamaWithShaft[maleNum].Value, _danColliderRadiusScale[maleNum].Value, _danColliderLengthScale[maleNum].Value));
             }
 
             return danOptions;

@@ -26,23 +26,12 @@ namespace Core_BetterPenetration
         internal object[] danEntryConstraint;
         internal object[] danEndConstraint;
 
-#if AI_STUDIO || HS2_STUDIO
         public const float DefaultLengthSquish = 0.6f;
         public const float DefaultGirthSquish = 0.2f;
         public const float DefaultSquishThreshold = 0.2f;
-        public const float DefaultColliderVertical = -0.03f;
-        public const float DefaultColliderLength = 0.15f;
-        public const float DefaultColliderRadius = 0.18f;
-#endif
+        public const float DefaultColliderLengthScale = 1f;
+        public const float DefaultColliderRadiusScale = 1f;
 
-#if KK_STUDIO
-        public const float DefaultLengthSquish = 0.6f;
-        public const float DefaultGirthSquish = 0.2f;
-        public const float DefaultSquishThreshold = 0.2f;
-        public const float DefaultColliderVertical = 0.0f;
-        public const float DefaultColliderLength = 0.008f;
-        public const float DefaultColliderRadius = 0.024f;
-#endif
         protected override void OnCardBeingSaved(GameMode currentGameMode)
         {
             PluginData data = new PluginData { version = 1 };
@@ -50,9 +39,8 @@ namespace Core_BetterPenetration
             data.data.Add("LengthSquish", danOptions.danLengthSquish);
             data.data.Add("GirthSquish", danOptions.danGirthSquish);
             data.data.Add("SquishThreshold", danOptions.squishThreshold);
-            data.data.Add("ColliderRadius", danOptions.danRadius);
-            data.data.Add("ColliderLength", danOptions.danHeadLength);
-            data.data.Add("ColliderVertical", danOptions.danVerticalCenter);
+            data.data.Add("ColliderRadiusScale", danOptions.danRadiusScale);
+            data.data.Add("ColliderLengthScale", danOptions.danLengthScale);
 
             SetExtendedData(data);
         }
@@ -63,9 +51,8 @@ namespace Core_BetterPenetration
             float lengthSquish = DefaultLengthSquish;
             float girthSquish = DefaultGirthSquish;
             float squishThreshold = DefaultSquishThreshold;
-            float colliderRadius = DefaultColliderRadius;
-            float colliderLength = DefaultColliderLength;
-            float colliderVertical = DefaultColliderVertical;
+            float colliderRadiusScale = DefaultColliderRadiusScale;
+            float colliderLengthScale = DefaultColliderLengthScale;
 
             if (data != null)
             {
@@ -81,17 +68,15 @@ namespace Core_BetterPenetration
                 if (data.data.TryGetValue("SquishThreshold", out var SquishThreshold))
                     squishThreshold = (float)SquishThreshold;
 
-                if (data.data.TryGetValue("ColliderRadius", out var ColliderRadius))
-                    colliderRadius = (float)ColliderRadius;
+                if (data.data.TryGetValue("ColliderRadiusScale", out var ColliderRadiusScale))
+                    colliderRadiusScale = (float)ColliderRadiusScale;
 
-                if (data.data.TryGetValue("ColliderLength", out var ColliderLength))
-                    colliderLength = (float)ColliderLength;
+                if (data.data.TryGetValue("ColliderLengthScale", out var ColliderLengthScale))
+                    colliderLengthScale = (float)ColliderLengthScale;
 
-                if (data.data.TryGetValue("ColliderVertical", out var ColliderVertical))
-                    colliderVertical = (float)ColliderVertical;
             }
 
-            danOptions = new DanOptions(colliderVertical, colliderRadius, colliderLength, lengthSquish, girthSquish, squishThreshold);
+            danOptions = new DanOptions(colliderRadiusScale, colliderLengthScale, lengthSquish, girthSquish, squishThreshold);
             cardReloaded = true;
 
             base.OnReload(currentGameMode, maintainState);
@@ -149,7 +134,7 @@ namespace Core_BetterPenetration
                 return;
 
             if (danOptions == null)
-                danOptions = new DanOptions(DefaultColliderVertical, DefaultColliderRadius, DefaultColliderLength, DefaultLengthSquish, DefaultGirthSquish, DefaultSquishThreshold);
+                danOptions = new DanOptions(DefaultColliderRadiusScale, DefaultColliderLengthScale, DefaultLengthSquish, DefaultGirthSquish, DefaultSquishThreshold);
 
             danAgent = new DanAgent(ChaControl, danOptions);
             danTargetsValid = true;
@@ -318,60 +303,41 @@ namespace Core_BetterPenetration
             }
         }
 
-        public float DanColliderRadius
+        public float DanColliderRadiusScale
         {
             get
             {
                 if (danAgent == null || danOptions == null || !danTargetsValid)
-                    return DefaultColliderRadius;
+                    return DefaultColliderRadiusScale;
 
-                return danOptions.danRadius;
+                return danOptions.danRadiusScale;
             }
             set
             {
                 if (danAgent == null || !danTargetsValid)
                     return;
 
-                danOptions.danRadius = value;
-                danAgent.UpdateDanCollider(danOptions);
+                danOptions.danRadiusScale = value;
+                danAgent.UpdateDanColliders(danOptions.danRadiusScale, danOptions.danLengthScale);
             }
         }
 
-        public float DanColliderLength
+        public float DanColliderLengthScale
         {
             get
             {
                 if (danAgent == null || danOptions == null || !danTargetsValid)
-                    return DefaultColliderLength;
+                    return DefaultColliderLengthScale;
 
-                return danOptions.danHeadLength;
+                return danOptions.danLengthScale;
             }
             set
             {
                 if (danAgent == null || !danTargetsValid)
                     return;
 
-                danOptions.danHeadLength = value;
-                danAgent.UpdateDanCollider(danOptions);
-            }
-        }
-
-        public float DanColliderVertical
-        {
-            get
-            {
-                if (danAgent == null || danOptions == null || !danTargetsValid)
-                    return DefaultColliderVertical;
-
-                return danOptions.danVerticalCenter;
-            }
-            set
-            {
-                if (danAgent == null || !danTargetsValid)
-                    return;
-
-                danOptions.danVerticalCenter = value;
-                danAgent.UpdateDanCollider(danOptions);
+                danOptions.danLengthScale = value;
+                danAgent.UpdateDanColliders(danOptions.danRadiusScale, danOptions.danLengthScale);
             }
         }
     }

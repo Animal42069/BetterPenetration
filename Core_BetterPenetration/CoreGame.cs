@@ -171,10 +171,24 @@ namespace Core_BetterPenetration
                 agent.ResetKokanParticles();
         }
 
+        public static void EnableParticles(bool enable)
+        {
+            foreach (var agent in collisionAgents)
+                agent.EnableKokanParticles(enable);
+        }
+
         public static void SetDansHaveNewTarget(bool set)
         {
             for (int index = 0; index < danHasNewTarget.Count; index++)
                 danHasNewTarget[index] = set;
+        }
+
+        public static void UpdateDanCollider(int maleNum, float danRadiusScale, float danLengthScale)
+        {
+            if (maleNum >= danAgents.Count || danAgents[maleNum] == null)
+                return;
+
+            danAgents[maleNum].UpdateDanColliders(danRadiusScale, danLengthScale);
         }
 
         public static void UpdateDanCollider(int maleNum, float danRadius, float danHeadLength, float danVerticalCenter)

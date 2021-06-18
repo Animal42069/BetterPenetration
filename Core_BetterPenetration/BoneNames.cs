@@ -72,7 +72,7 @@ namespace Core_BetterPenetration
         internal const string RingFinger = "cf_j_ring03_R";
         internal const string BPBone = "cf_J_Vagina";
 
-        internal static readonly List<string> DanBones = new List<string> { "cm_J_dan101_00", "cm_J_dan103_00", "cm_J_dan105_00", "cm_J_dan107_00", "cm_J_dan109_00" };
+        internal static readonly List<string> DanBones = new List<string> { "cm_J_dan101_00", "cm_J_dan102_00", "cm_J_dan103_00", "cm_J_dan104_00", "cm_J_dan105_00", "cm_J_dan106_00", "cm_J_dan107_00", "cm_J_dan108_00", "cm_J_dan109_00" };
         internal static readonly List<string> TamaBones = new List<string> { "cm_J_dan_Pivot_f_L", "cm_J_dan_Pivot_f_R" };
         internal static readonly List<string> MidSectionColliders = new List<string> { "cm_J_dan101_00", "cm_J_dan103_00", "cf_hit_waist02", "cf_hit_LegLow02_s_L", "cf_hit_LegLow02_s_R" };
         internal static readonly List<string> BodyColliders = new List<string> { "cf_hit_thigh01_L", "cf_hit_thigh01_R", "cf_hit_thigh02_L", "cf_hit_thigh02_R", 
@@ -98,7 +98,7 @@ namespace Core_BetterPenetration
 		internal const string BPDanEndTarget = "k_f_dan_end";
         internal const string TamaTop = "cm_J_dan_f_top";
 
-        internal static readonly List<string> DanBones = new List<string> { "cm_J_dan101_00", "cm_J_dan103_00", "cm_J_dan105_00", "cm_J_dan107_00", "cm_J_dan109_00" };
+        internal static readonly List<string> DanBones = new List<string> { "cm_J_dan101_00", "cm_J_dan102_00", "cm_J_dan103_00", "cm_J_dan104_00", "cm_J_dan105_00", "cm_J_dan106_00", "cm_J_dan107_00", "cm_J_dan108_00", "cm_J_dan109_00" };
         internal static readonly List<string> TamaBones = new List<string> { "cm_J_dan_Pivot_f_L", "cm_J_dan_Pivot_f_R" };
         internal static readonly List<string> MidSectionColliders = new List<string> { "cf_hit_waist02", "cf_hit_LegLow02_s_L", "cf_hit_LegLow02_s_R" };
         internal static readonly List<string> BodyColliders = new List<string> { "cf_hit_thigh01_L", "cf_hit_thigh01_R", "cf_hit_thigh02_L", "cf_hit_thigh02_R", 
