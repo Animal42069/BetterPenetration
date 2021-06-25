@@ -191,14 +191,6 @@ namespace Core_BetterPenetration
             danAgents[maleNum].UpdateDanColliders(danRadiusScale, danLengthScale);
         }
 
-        public static void UpdateDanCollider(int maleNum, float danRadius, float danHeadLength, float danVerticalCenter)
-        {
-            if (maleNum >= danAgents.Count || danAgents[maleNum] == null)
-                return;
-
-            danAgents[maleNum].UpdateDanCollider(danRadius, danHeadLength, danVerticalCenter);
-        }
-
         public static void UpdateFingerColliders(int maleNum, float fingerRadius, float fingerLength)
         {
             if (maleNum >= danAgents.Count || danAgents[maleNum] == null)

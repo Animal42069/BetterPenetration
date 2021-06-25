@@ -10,7 +10,7 @@ namespace Core_BetterPenetration
         internal const string BPKokanTarget = "cf_J_Vagina_root";
         internal const string AnaTarget = "k_f_ana_00";
         internal const string InnerTarget = "cf_J_Kosi01";
-        internal const string InnerHeadTarget = "cf_J_Head";
+        internal const string InnerHeadTarget = "cf_J_FaceBase";
     }
 
     static class BoneNames
@@ -22,7 +22,7 @@ namespace Core_BetterPenetration
         internal const string RingFinger = "cf_J_Hand_Ring03_R";
         internal const string BPBone = "cf_J_Vagina";
 
-        internal static readonly List<string> DanBones = new List<string> { "cm_J_dan101_00", "cm_J_dan103_00", "cm_J_dan105_00", "cm_J_dan107_00", "cm_J_dan109_00" };
+        internal static readonly List<string> DanBones = new List<string> { "cm_J_dan101_00", "cm_J_dan102_00", "cm_J_dan103_00", "cm_J_dan104_00", "cm_J_dan105_00", "cm_J_dan106_00", "cm_J_dan107_00", "cm_J_dan108_00", "cm_J_dan109_00" };
         internal static readonly List<string> TamaBones = new List<string> { "cm_J_dan_Pivot_f_top", "cm_J_dan_Pivot_f_L", "cm_J_dan_Pivot_f_R"};
         internal static readonly List<string> MidSectionColliders = new List<string> { "cf_hit_Kosi02_s", "cf_hit_LegUp01_s_L", "cf_hit_LegUp01_s_R"};
         internal static readonly List<string> BodyColliders = new List<string> { "cf_hit_Kosi02_s", "cf_hit_LegLow02_s_L", "cf_hit_LegLow02_s_R", "cf_hit_LegUp01_s_L", "cf_hit_LegUp01_s_R", 
@@ -38,12 +38,16 @@ namespace Core_BetterPenetration
     static class BoneNames
     {
         internal const string BPBone = "cf_J_Vagina";
+        internal const string HeadTarget = "cf_J_MouthLow";
         internal const string BPKokanTarget = "cf_J_Vagina_root";
+        internal const string AnaTarget = "cf_J_Ana";
         internal const string BPDanEntryTarget = "k_f_dan_entry";
         internal const string BPDanEndTarget = "k_f_dan_end";
         internal const string TamaTop = "cm_J_dan_f_top";
+        internal const string InnerTarget = "cf_J_Kosi01";
+        internal const string InnerHeadTarget = "cf_J_FaceBase";
 
-        internal static readonly List<string> DanBones = new List<string> { "cm_J_dan101_00", "cm_J_dan103_00", "cm_J_dan105_00", "cm_J_dan107_00", "cm_J_dan109_00" };
+        internal static readonly List<string> DanBones = new List<string> { "cm_J_dan101_00", "cm_J_dan102_00", "cm_J_dan103_00", "cm_J_dan104_00", "cm_J_dan105_00", "cm_J_dan106_00", "cm_J_dan107_00", "cm_J_dan108_00", "cm_J_dan109_00" };
         internal static readonly List<string> TamaBones = new List<string> { "cm_J_dan_Pivot_f_top", "cm_J_dan_Pivot_f_L", "cm_J_dan_Pivot_f_R"};
         internal static readonly List<string> MidSectionColliders = new List<string> { "cf_hit_Kosi02_s", "cf_hit_LegUp01_s_L", "cf_hit_LegUp01_s_R"};
         internal static readonly List<string> BodyColliders = new List<string> { "cf_hit_Kosi02_s", "cf_hit_LegLow02_s_L", "cf_hit_LegLow02_s_R", "cf_hit_LegUp01_s_L", "cf_hit_LegUp01_s_R", 
@@ -93,10 +97,14 @@ namespace Core_BetterPenetration
     static class BoneNames
     {
         internal const string BPBone = "cf_J_Vagina";
+        internal const string HeadTarget = "cf_J_MouthLow";
         internal const string BPKokanTarget = "cf_J_Vagina_root";
+        internal const string AnaTarget = "cf_j_ana";
         internal const string BPDanEntryTarget = "k_f_dan_entry";
 		internal const string BPDanEndTarget = "k_f_dan_end";
         internal const string TamaTop = "cm_J_dan_f_top";
+        internal const string InnerTarget = "cf_j_waist01";
+        internal const string InnerHeadTarget = "cf_J_FaceBase";
 
         internal static readonly List<string> DanBones = new List<string> { "cm_J_dan101_00", "cm_J_dan102_00", "cm_J_dan103_00", "cm_J_dan104_00", "cm_J_dan105_00", "cm_J_dan106_00", "cm_J_dan107_00", "cm_J_dan108_00", "cm_J_dan109_00" };
         internal static readonly List<string> TamaBones = new List<string> { "cm_J_dan_Pivot_f_L", "cm_J_dan_Pivot_f_R" };

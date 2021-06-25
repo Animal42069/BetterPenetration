@@ -28,9 +28,8 @@ namespace HS2_BetterPenetration
         private static readonly List<bool> frontPointsInward = new List<bool> { false, false };
         private static readonly List<bool> backPointsInward = new List<bool> { false, true };
         
-        private static readonly ConfigEntry<float>[] _danColliderHeadLength = new ConfigEntry<float>[MaleLimit];
-        private static readonly ConfigEntry<float>[] _danColliderRadius = new ConfigEntry<float>[MaleLimit];
-        private static readonly ConfigEntry<float>[] _danColliderVerticalCenter = new ConfigEntry<float>[MaleLimit];
+        private static readonly ConfigEntry<float>[] _danColliderLengthScale = new ConfigEntry<float>[MaleLimit];
+        private static readonly ConfigEntry<float>[] _danColliderRadiusScale = new ConfigEntry<float>[MaleLimit];
         private static readonly ConfigEntry<float>[] _fingerColliderLength = new ConfigEntry<float>[MaleLimit];
         private static readonly ConfigEntry<float>[] _fingerColliderRadius = new ConfigEntry<float>[MaleLimit];
         private static readonly ConfigEntry<float>[] _danLengthSquishFactor = new ConfigEntry<float>[MaleLimit];
@@ -64,17 +63,15 @@ namespace HS2_BetterPenetration
 
         private void Awake()
         {
-            for (int maleNum = 0; maleNum < _danColliderHeadLength.Length; maleNum++)
+            for (int maleNum = 0; maleNum < MaleLimit; maleNum++)
             {
                 (_fingerColliderLength[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Finger Collider: Length", 0.18f, "Lenght of the finger colliders.")).SettingChanged += (s, e) =>
                 { UpdateFingerColliders(); };
                 (_fingerColliderRadius[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Finger Collider: Radius", 0.06f, "Radius of the finger colliders.")).SettingChanged += (s, e) =>
                 { UpdateFingerColliders(); };
-                (_danColliderHeadLength[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis Collider: Length of Head", 0.15f, "Distance from the center of the head bone to the tip, used for collision purposes.")).SettingChanged += (s, e) =>
+                (_danColliderLengthScale[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis Collider: Length Scale", 1.0f, new ConfigDescription("How much to scale collider length", new AcceptableValueRange<float>(0.5f, 1.5f)))).SettingChanged += (s, e) =>
                 { UpdateDanColliders(); };
-                (_danColliderRadius[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis Collider: Radius of Shaft", 0.18f, "Radius of the shaft collider.")).SettingChanged += (s, e) =>
-                { UpdateDanColliders(); };
-                (_danColliderVerticalCenter[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis Collider: Vertical Center", -0.03f, "Vertical Center of the shaft collider")).SettingChanged += (s, e) =>
+                (_danColliderRadiusScale[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis Collider: Radius Scale", 1.0f, new ConfigDescription("How much to scale collider radius", new AcceptableValueRange<float>(0.5f, 1.5f)))).SettingChanged += (s, e) =>
                 { UpdateDanColliders(); };
                 (_danLengthSquishFactor[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis: Squish Length Factor", 0.6f, new ConfigDescription("How much the length of the penis squishes after it has passed the squish threshold", new AcceptableValueRange<float>(0, 1)))).SettingChanged += (s, e) =>
                 { UpdateDanOptions(); };
@@ -124,13 +121,112 @@ namespace HS2_BetterPenetration
             SceneManager.sceneUnloaded += SceneManager_sceneUnloaded;
         }
 
+        [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "LoadCharaFbxDataAsync")]
+        private static void ChaControl_LoadCharaFbxDataAsync(ChaControl __instance)
+        {
+            CoreGame.RemoveCollidersFromCoordinate(__instance);
+        }
+
+        [HarmonyPostfix, HarmonyPatch(typeof(HScene), "SetStartVoice")]
+        private static void HScene_PostSetStartVoice(HScene __instance)
+        {
+            hScene = __instance;
+
+            List<DanOptions> danOptions = PopulateDanOptionsList();
+            List<CollisionOptions> collisionOptions = PopulateCollisionOptionsList();
+
+            ChaControl[] femaleArray = hScene.GetFemales();
+            List<ChaControl> femaleList = new List<ChaControl>();
+            foreach (var character in femaleArray)
+            {
+                if (character == null)
+                    continue;
+                femaleList.Add(character);
+            }
+
+            ChaControl[] maleArray = hScene.GetMales();
+            List<ChaControl> maleList = new List<ChaControl>();
+            foreach (var character in maleArray)
+            {
+                if (character == null)
+                    continue;
+                maleList.Add(character);
+            }
+
+            CoreGame.InitializeAgents(maleList, femaleList, danOptions, collisionOptions);
+            inHScene = true;
+        }
+		
+        [HarmonyPrefix, HarmonyPatch(typeof(HScene), "ChangeAnimation")]
+        private static void HScene_PreChangeAnimation(HScene.AnimationListInfo _info)
+        {
+            if (!inHScene || _info == null || _info.fileFemale == null)
+                return;
+
+            CoreGame.OnChangeAnimation(_info.fileFemale);
+            resetParticles = true;
+        }
+
+        [HarmonyPrefix, HarmonyPatch(typeof(HScene), "SetMovePositionPoint")]
+        private static void HScene_SetMovePositionPoint()
+        {
+            resetParticles = true;
+        }
+
+        [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "setPlay")]
+        private static void ChaControl_PostSetPlay()
+        {
+            resetParticles = true;
+        }
+
+        [HarmonyPostfix, HarmonyPatch(typeof(H_Lookat_dan), "setInfo")]
+        private static void H_Lookat_dan_PostSetInfo(H_Lookat_dan __instance, System.Text.StringBuilder ___assetName, ChaControl ___male)
+        {
+            if (!inHScene || loadingCharacter || __instance.strPlayMotion == null)
+                return;
+
+            int maleNum = 0;
+            if (___male != null && ___male.chaID != 99)
+                maleNum = 1;
+
+            twoDans = false;
+            if (___assetName != null && ___assetName.Length != 0 && ___assetName.ToString().Contains("m2f"))
+                twoDans = true;
+
+            CoreGame.LookAtDanSetup(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, maleNum, __instance.numFemale, twoDans);
+        }
+
+        [HarmonyPostfix, HarmonyPatch(typeof(H_Lookat_dan), "LateUpdate")]
+        private static void H_Lookat_dan_PostLateUpdate(H_Lookat_dan __instance, ChaControl ___male)
+        {
+            if (!inHScene || loadingCharacter || __instance.strPlayMotion == null || ___male == null)
+                return;
+
+            if (resetParticles && !hScene.NowChangeAnim)
+            {
+                CoreGame.ResetParticles();
+                resetParticles = false;
+            }
+
+            int maleNum = 0;
+
+            if (___male.chaID != 99)
+            {
+                if (!twoDans)
+                    return;
+                maleNum = 1;
+            }
+
+            CoreGame.LookAtDanUpdate(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, hScene.NowChangeAnim, maleNum, __instance.numFemale);
+        }
+		
         private static void UpdateDanColliders()
         {
             if (!inHScene)
                 return;
 
             for (int index = 0; index < MaleLimit; index++)
-                CoreGame.UpdateDanCollider(index, _danColliderRadius[index].Value, _danColliderHeadLength[index].Value, _danColliderVerticalCenter[index].Value);
+                CoreGame.UpdateDanCollider(index, _danColliderRadiusScale[index].Value, _danColliderLengthScale[index].Value);
         }
 
         private static void UpdateFingerColliders()
@@ -161,6 +257,42 @@ namespace HS2_BetterPenetration
             List<CollisionOptions> collisionOptions = PopulateCollisionOptionsList();
             for (int index = 0; index < FemaleLimit; index++)
                 CoreGame.UpdateCollisionOptions(index, collisionOptions[index]);
+        }
+
+        private static List<DanOptions> PopulateDanOptionsList()
+        {
+            List<DanOptions> danOptions = new List<DanOptions>();
+
+            for (int maleNum = 0; maleNum < MaleLimit; maleNum++)
+            {
+                danOptions.Add(new DanOptions(_danColliderRadiusScale[maleNum].Value, _danColliderLengthScale[maleNum].Value,
+                    _danLengthSquishFactor[maleNum].Value, _danGirthSquishFactor[maleNum].Value, _danSquishThreshold[maleNum].Value, _danSquishOralGirth[maleNum].Value,
+                    _fingerColliderRadius[maleNum].Value, _fingerColliderLength[maleNum].Value, _useFingerColliders[maleNum].Value, 
+                    _simplifyPenetration[maleNum].Value, _simplifyOral[maleNum].Value, _rotateTamaWithShaft[maleNum].Value));
+            }
+
+            return danOptions;
+        }
+
+        private static List<CollisionOptions> PopulateCollisionOptionsList()
+        {
+            List<CollisionOptions> collisionOptions = new List<CollisionOptions>();
+
+            List<CollisionPointInfo> frontInfo = new List<CollisionPointInfo>();
+            for (int info = 0; info < BoneNames.frontCollisionList.Count; info++)
+                frontInfo.Add(new CollisionPointInfo(BoneNames.frontCollisionList[info], _frontCollisionOffset[info].Value, frontPointsInward[info]));
+
+            List<CollisionPointInfo> backInfo = new List<CollisionPointInfo>();
+            for (int info = 0; info < BoneNames.backCollisionList.Count; info++)
+                backInfo.Add(new CollisionPointInfo(BoneNames.backCollisionList[info], _backCollisionOffset[info].Value, backPointsInward[info]));
+
+            for (int femaleNum = 0; femaleNum < FemaleLimit; femaleNum++)
+            {
+                collisionOptions.Add(new CollisionOptions(_kokanOffset.Value, _innerKokanOffset.Value, _mouthOffset.Value, _innerMouthOffset.Value, _useKokanFix.Value,
+                    _kokanFixPositionZ.Value, _kokanFixPositionY.Value, _kokanFixRotationX.Value, _clippingDepth.Value, frontInfo, backInfo));
+            }
+
+            return collisionOptions;
         }
 
         private static void BeforeCharacterReload(object __instance)
@@ -238,140 +370,6 @@ namespace HS2_BetterPenetration
             loadingCharacter = false;
         }
 
-        [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "LoadCharaFbxDataAsync")]
-        private static void ChaControl_LoadCharaFbxDataAsync(ChaControl __instance)
-        {
-            CoreGame.RemoveCollidersFromCoordinate(__instance);
-        }
-
-        [HarmonyPostfix, HarmonyPatch(typeof(HScene), "SetStartVoice")]
-        private static void HScene_PostSetStartVoice(HScene __instance)
-        {
-            hScene = __instance;
-
-            List<DanOptions> danOptions = PopulateDanOptionsList();
-            List<CollisionOptions> collisionOptions = PopulateCollisionOptionsList();
-
-            ChaControl[] femaleArray = hScene.GetFemales();
-            List<ChaControl> femaleList = new List<ChaControl>();
-            foreach (var character in femaleArray)
-            {
-                if (character == null)
-                    continue;
-                femaleList.Add(character);
-            }
-
-            ChaControl[] maleArray = hScene.GetMales();
-            List<ChaControl> maleList = new List<ChaControl>();
-            foreach (var character in maleArray)
-            {
-                if (character == null)
-                    continue;
-                maleList.Add(character);
-            }
-
-            CoreGame.InitializeAgents(maleList, femaleList, danOptions, collisionOptions);
-            inHScene = true;
-        }
-
-        private static List<DanOptions> PopulateDanOptionsList()
-        {
-            List<DanOptions> danOptions = new List<DanOptions>();
-
-            for (int maleNum = 0; maleNum < MaleLimit; maleNum++)
-            {
-                danOptions.Add(new DanOptions(_danColliderVerticalCenter[maleNum].Value, _danColliderRadius[maleNum].Value, _danColliderHeadLength[maleNum].Value,
-                    _danLengthSquishFactor[maleNum].Value, _danGirthSquishFactor[maleNum].Value, _danSquishThreshold[maleNum].Value, _danSquishOralGirth[maleNum].Value,
-                    _fingerColliderRadius[maleNum].Value, _fingerColliderLength[maleNum].Value, _useFingerColliders[maleNum].Value, 
-                    _simplifyPenetration[maleNum].Value, _simplifyOral[maleNum].Value, _rotateTamaWithShaft[maleNum].Value));
-            }
-
-            return danOptions;
-        }
-
-        private static List<CollisionOptions> PopulateCollisionOptionsList()
-        {
-            List<CollisionOptions> collisionOptions = new List<CollisionOptions>();
-
-            List<CollisionPointInfo> frontInfo = new List<CollisionPointInfo>();
-            for (int info = 0; info < BoneNames.frontCollisionList.Count; info++)
-                frontInfo.Add(new CollisionPointInfo(BoneNames.frontCollisionList[info], _frontCollisionOffset[info].Value, frontPointsInward[info]));
-
-            List<CollisionPointInfo> backInfo = new List<CollisionPointInfo>();
-            for (int info = 0; info < BoneNames.backCollisionList.Count; info++)
-                backInfo.Add(new CollisionPointInfo(BoneNames.backCollisionList[info], _backCollisionOffset[info].Value, backPointsInward[info]));
-
-            for (int femaleNum = 0; femaleNum < FemaleLimit; femaleNum++)
-            {
-                collisionOptions.Add(new CollisionOptions(_kokanOffset.Value, _innerKokanOffset.Value, _mouthOffset.Value, _innerMouthOffset.Value, _useKokanFix.Value,
-                    _kokanFixPositionZ.Value, _kokanFixPositionY.Value, _kokanFixRotationX.Value, _clippingDepth.Value, frontInfo, backInfo));
-            }
-
-            return collisionOptions;
-        }
-
-        [HarmonyPrefix, HarmonyPatch(typeof(HScene), "ChangeAnimation")]
-        private static void HScene_PreChangeAnimation(HScene.AnimationListInfo _info)
-        {
-            if (!inHScene || _info == null || _info.fileFemale == null)
-                return;
-
-            CoreGame.OnChangeAnimation(_info.fileFemale);
-            resetParticles = true;
-        }
-
-        [HarmonyPrefix, HarmonyPatch(typeof(HScene), "SetMovePositionPoint")]
-        private static void HScene_SetMovePositionPoint()
-        {
-            resetParticles = true;
-        }
-
-        [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "setPlay")]
-        private static void ChaControl_PostSetPlay()
-        {
-            resetParticles = true;
-        }
-
-        [HarmonyPostfix, HarmonyPatch(typeof(H_Lookat_dan), "setInfo")]
-        private static void H_Lookat_dan_PostSetInfo(H_Lookat_dan __instance, System.Text.StringBuilder ___assetName, ChaControl ___male)
-        {
-            if (!inHScene || loadingCharacter || __instance.strPlayMotion == null)
-                return;
-
-            int maleNum = 0;
-            if (___male != null && ___male.chaID != 99)
-                maleNum = 1;
-
-            twoDans = false;
-            if (___assetName != null && ___assetName.Length != 0 && ___assetName.ToString().Contains("m2f"))
-                twoDans = true;
-
-            CoreGame.LookAtDanSetup(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, maleNum, __instance.numFemale, twoDans);
-        }
-
-        [HarmonyPostfix, HarmonyPatch(typeof(H_Lookat_dan), "LateUpdate")]
-        private static void H_Lookat_dan_PostLateUpdate(H_Lookat_dan __instance, ChaControl ___male)
-        {
-            if (!inHScene || loadingCharacter || __instance.strPlayMotion == null || ___male == null)
-                return;
-
-            if (resetParticles && !hScene.NowChangeAnim)
-            {
-                CoreGame.ResetParticles();
-                resetParticles = false;
-            }
-
-            int maleNum = 0;
-
-            if (___male.chaID != 99)
-            {
-                if (!twoDans)
-                    return;
-                maleNum = 1;
-            }
-
-            CoreGame.LookAtDanUpdate(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, hScene.NowChangeAnim, maleNum, __instance.numFemale);
-        }
 
         private static void SceneManager_sceneLoaded(Scene scene, LoadSceneMode lsm)
         {

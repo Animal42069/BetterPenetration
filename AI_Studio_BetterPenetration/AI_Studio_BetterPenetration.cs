@@ -11,6 +11,8 @@ using System.Linq;
 using System.Reflection;
 using AIChara;
 using Core_BetterPenetration;
+using System.Collections.Generic;
+using System.Reflection.Emit;
 
 namespace AI_Studio_BetterPenetration
 {
@@ -23,7 +25,7 @@ namespace AI_Studio_BetterPenetration
     {
         internal const string GUID = "com.animal42069.studiobetterpenetration";
         internal const string PluginName = "AI Studio Better Penetration";
-        internal const string VERSION = "2.0.2.0";
+        internal const string VERSION = "2.1.0.0";
         internal const string BEHAVIOR = "BetterPenetrationController";
         internal const string StudioCategoryName = "Better Penetration";
         internal static Harmony harmony;
@@ -32,13 +34,14 @@ namespace AI_Studio_BetterPenetration
         internal static bool[] controllerEnableState;
 		internal static bool reloadConstraints = false;
         internal static bool reloadNodeConstraints = false;
+        internal static int updateCount = 0;
 
         internal void Main()
         {
             CharacterApi.RegisterExtraBehaviour<BetterPenetrationController>(BEHAVIOR);
 
             harmony = new Harmony("AI_Studio_BetterPenetration");
-            harmony.PatchAll(typeof(AI_Studio_BetterPenetration));
+            harmony.PatchAll(GetType());
 
             Chainloader.PluginInfos.TryGetValue("com.deathweasel.bepinex.uncensorselector", out PluginInfo pluginInfo);
             if (pluginInfo == null || pluginInfo.Instance == null)
@@ -52,16 +55,16 @@ namespace AI_Studio_BetterPenetration
             if (methodInfo == null)
                 return;
 
-            harmony.Patch(methodInfo, prefix: new HarmonyMethod(typeof(AI_Studio_BetterPenetration), "BeforeDanCharacterReload"),
-                                      postfix: new HarmonyMethod(typeof(AI_Studio_BetterPenetration), "AfterDanCharacterReload"));
+            harmony.Patch(methodInfo, prefix: new HarmonyMethod(GetType(), "BeforeDanCharacterReload"),
+                                      postfix: new HarmonyMethod(GetType(), "AfterDanCharacterReload"));
             Debug.Log("Studio_BetterPenetration: patched UncensorSelector::ReloadCharacterPenis correctly");
 
             methodInfo = AccessTools.Method(nestedType, "ReloadCharacterBalls", null, null);
             if (methodInfo == null)
                 return;
 
-            harmony.Patch(methodInfo, prefix: new HarmonyMethod(typeof(AI_Studio_BetterPenetration), "BeforeTamaCharacterReload"),
-                                      postfix: new HarmonyMethod(typeof(AI_Studio_BetterPenetration), "AfterTamaCharacterReload"));
+            harmony.Patch(methodInfo, prefix: new HarmonyMethod(GetType(), "BeforeTamaCharacterReload"),
+                                      postfix: new HarmonyMethod(GetType(), "AfterTamaCharacterReload"));
             Debug.Log("Studio_BetterPenetration: patched UncensorSelectorController::ReloadCharacterBalls correctly");
 
             Chainloader.PluginInfos.TryGetValue("com.joan6694.illusionplugins.nodesconstraints", out pluginInfo);
@@ -77,27 +80,38 @@ namespace AI_Studio_BetterPenetration
             if (methodInfo == null)
                 return;
 
-            harmony.Patch(methodInfo, postfix: new HarmonyMethod(typeof(AI_Studio_BetterPenetration), "AfterAddConstraint"));
+            harmony.Patch(methodInfo, postfix: new HarmonyMethod(GetType(), nameof(AfterAddConstraint)));
             Debug.Log("Studio_BetterPenetration: patched NodeConstraints::AddConstraint correctly");
 
             methodInfo = AccessTools.Method(nodeConstraintType, "ApplyNodesConstraints", null, null);
             if (methodInfo == null)
                 return;
 
-            harmony.Patch(methodInfo, postfix: new HarmonyMethod(typeof(AI_Studio_BetterPenetration), "AfterApplyNodesConstraints"));
+            harmony.Patch(methodInfo, postfix: new HarmonyMethod(GetType(), nameof(AfterApplyNodesConstraints)));
             Debug.Log("Studio_BetterPenetration: patched NodeConstraints::ApplyNodesConstraints correctly");
 
             methodInfo = AccessTools.Method(nodeConstraintType, "ApplyConstraints", null, null);
             if (methodInfo == null)
                 return;
 
-            harmony.Patch(methodInfo, postfix: new HarmonyMethod(typeof(AI_Studio_BetterPenetration), "AfterApplyConstraints"));
+            harmony.Patch(methodInfo, postfix: new HarmonyMethod(GetType(), nameof(AfterApplyConstraints)));
             Debug.Log("Studio_BetterPenetration: patched NodeConstraints::ApplyConstraints correctly");
 
-			RegisterStudioControllerEnable();
+            methodInfo = AccessTools.Method(nodeConstraintType.GetNestedType("Constraint", BindingFlags.NonPublic | BindingFlags.Instance), "Destroy", null, null);
+            if (methodInfo == null)
+            {
+                Debug.Log("methodInfo null");
+
+                return;
+            }
+
+            harmony.Patch(methodInfo, prefix: new HarmonyMethod(GetType(), nameof(BeforeDestroyConstraint)));
+            Debug.Log("Studio_BetterPenetration: patched NodeConstraints::Destroy correctly");
+
+            RegisterStudioControllerBasic();
         }
 
-        public static void RegisterStudioControllerEnable()
+        public static void RegisterStudioControllerBasic()
         {
             if (!StudioAPI.InsideStudio)
                 return;
@@ -121,12 +135,22 @@ namespace AI_Studio_BetterPenetration
                 }
             });
             StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(bpEnable);
-        }
 
-        public static void RegisterStudioControls()
-        {
-            if (!StudioAPI.InsideStudio)
-                return;
+            var colliderRadiusScale = new CurrentStateCategorySlider("Collilder Radius Scale", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().DanColliderRadiusScale, 0.5f, 1.5f);
+            colliderRadiusScale.Value.Subscribe(value =>
+            {
+                foreach (var controller in StudioAPI.GetSelectedControllers<BetterPenetrationController>())
+                    controller.DanColliderRadiusScale = value;
+            });
+            StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(colliderRadiusScale);
+
+            var colliderLengthScale = new CurrentStateCategorySlider("Collilder Length Scale", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().DanColliderLengthScale, 0.5f, 1.5f);
+            colliderLengthScale.Value.Subscribe(value =>
+            {
+                foreach (var controller in StudioAPI.GetSelectedControllers<BetterPenetrationController>())
+                    controller.DanColliderLengthScale = value;
+            });
+            StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(colliderLengthScale);
 
             var lengthSlider = new CurrentStateCategorySlider("Length Squish", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().DanLengthSquish, 0f, 1f);
             lengthSlider.Value.Subscribe(value =>
@@ -151,22 +175,20 @@ namespace AI_Studio_BetterPenetration
                     controller.DanSquishThreshold = value;
             });
             StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(thresholdSlider);
+        }
 
-            var colliderRadiusScale = new CurrentStateCategorySlider("Collilder Radius Scale", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().DanColliderRadiusScale, 0.5f, 1.5f);
-            colliderRadiusScale.Value.Subscribe(value =>
+        public static void RegisterStudioControls()
+        {
+            if (!StudioAPI.InsideStudio)
+                return;
+
+            var autoTargeter = new CurrentStateCategoryDropdown("Auto-Target", new string[] { "Off", "Vaginal", "Anal", "Oral" }, c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().DanAutoTarget);
+            autoTargeter.Value.Subscribe(value =>
             {
                 foreach (var controller in StudioAPI.GetSelectedControllers<BetterPenetrationController>())
-                    controller.DanColliderRadiusScale = value;
+                    controller.DanAutoTarget = value;
             });
-            StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(colliderRadiusScale);
-
-            var colliderLengthScale = new CurrentStateCategorySlider("Collilder Length Scale", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().DanColliderLengthScale, 0.5f, 1.5f);
-            colliderLengthScale.Value.Subscribe(value =>
-            {
-                foreach (var controller in StudioAPI.GetSelectedControllers<BetterPenetrationController>())
-                    controller.DanColliderLengthScale = value;
-            });
-            StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(colliderLengthScale);
+            StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(autoTargeter);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "LoadCharaFbxDataAsync")]
@@ -285,6 +307,18 @@ namespace AI_Studio_BetterPenetration
             controller.SetCollisionAgent(targetChaControl, parentTransform.name == BoneNames.BPKokanTarget);
         }
 
+        internal static void BeforeDestroyConstraint(Transform ___childTransform)
+        {
+            if (___childTransform == null || ___childTransform.name != BoneNames.BPDanEntryTarget && ___childTransform.name != BoneNames.BPDanEndTarget)
+                return;
+
+            var controller = ___childTransform.GetComponentInParent<BetterPenetrationController>();
+            if (controller == null)
+                return;
+
+            controller.RemoveConstraintParams(___childTransform.name == BoneNames.BPDanEntryTarget);
+        }
+
         internal static void AfterApplyConstraints()
         {
             if (!reloadConstraints)
@@ -320,6 +354,22 @@ namespace AI_Studio_BetterPenetration
                 controller.InitializeDanAgent();
                 controller.AddDanConstraints(nodeConstraintPlugin);
             }
+        }
+
+        internal void Update()
+        {
+            if (nodeConstraintPlugin == null || bpControllers == null || ++updateCount < 60)
+                return;
+
+            updateCount = 0;
+            
+            foreach (var controller in bpControllers)
+            {
+                if (controller == null)
+                    continue;
+
+                controller.CheckAutoTarget(nodeConstraintPlugin);
+            }           
         }
     }
 }

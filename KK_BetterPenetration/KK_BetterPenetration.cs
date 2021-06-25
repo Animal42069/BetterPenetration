@@ -22,7 +22,7 @@ namespace KK_BetterPenetration
     {
         public static KK_BetterPenetration instance;
 
-        public const string VERSION = "4.0.3.0";
+        public const string VERSION = "4.1.0.0";
         private const int MaleLimit = 2;
         private const int FemaleLimit = 2;
 
@@ -50,6 +50,7 @@ namespace KK_BetterPenetration
         private static readonly ConfigEntry<float>[] _backCollisionOffset = new ConfigEntry<float>[backOffsets.Count];
 
         private static Harmony harmony;
+		
         //In VR, type "VRHScene" is used instead of "HSceneProc". Use type "BaseLoader" as the type for "hSceneProc" since it's inherited by both "HSceneProc" and "VRHScene".
         private static BaseLoader hSceneProc;
         private static Traverse hSceneProcTraverse;
@@ -66,7 +67,7 @@ namespace KK_BetterPenetration
         {
             instance = this;
 
-            for (int maleNum = 0; maleNum < _danColliderLengthScale.Length; maleNum++)
+            for (int maleNum = 0; maleNum < MaleLimit; maleNum++)
             {
                 (_danColliderLengthScale[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis Collider: Length Scale", 1.0f, new ConfigDescription("How much to scale collider length", new AcceptableValueRange<float>(0.5f, 1.5f)))).SettingChanged += (s, e) =>
                 { UpdateDanColliders(); };
@@ -74,7 +75,7 @@ namespace KK_BetterPenetration
                 { UpdateDanColliders(); };
                 (_danLengthSquishFactor[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis: Squish Length Factor", 0.6f, new ConfigDescription("How much the length of the penis squishes after it has passed the squish threshold", new AcceptableValueRange<float>(0, 1)))).SettingChanged += (s, e) =>
                 { UpdateDanOptions(); };
-                (_danGirthSquishFactor[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis: Squish Girth Factor", 0.15f, new ConfigDescription("How much the girth of the penis squishes after it has passed the squish threshold", new AcceptableValueRange<float>(0, 1)))).SettingChanged += (s, e) =>
+                (_danGirthSquishFactor[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis: Squish Girth Factor", 0.2f, new ConfigDescription("How much the girth of the penis squishes after it has passed the squish threshold", new AcceptableValueRange<float>(0, 1)))).SettingChanged += (s, e) =>
                 { UpdateDanOptions(); };
                 (_danSquishThreshold[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis: Squish Threshold", 0.2f, new ConfigDescription("Allows the penis to begin squishing (shorten length increase girth) after this amount of the penis has penetrated.", new AcceptableValueRange<float>(0, 1)))).SettingChanged += (s, e) =>
                 { UpdateDanOptions(); };
@@ -106,15 +107,15 @@ namespace KK_BetterPenetration
             { UpdateCollisionOptions(); };
 
             harmony = new Harmony("KK_BetterPenetration");
-            harmony.PatchAll(typeof(KK_BetterPenetration));
+            harmony.PatchAll(GetType());
 
             Type VRHSceneType = Type.GetType("VRHScene, Assembly-CSharp");
             if (VRHSceneType != null)
             {
-                harmony.Patch(VRHSceneType.GetMethod("Start", AccessTools.all), postfix: new HarmonyMethod(typeof(KK_BetterPenetration).GetMethod(nameof(HScene_PostStart), AccessTools.all)));
-                harmony.Patch(VRHSceneType.GetMethod("EndProc", AccessTools.all), prefix: new HarmonyMethod(typeof(KK_BetterPenetration).GetMethod(nameof(HSceneProc_EndProc), AccessTools.all)));
-                harmony.Patch(VRHSceneType.GetMethod("Update", AccessTools.all), postfix: new HarmonyMethod(typeof(KK_BetterPenetration).GetMethod(nameof(HScene_PostUpdate), AccessTools.all)));
-                harmony.Patch(VRHSceneType.GetMethod("ChangeAnimator", AccessTools.all), prefix: new HarmonyMethod(typeof(KK_BetterPenetration).GetMethod(nameof(HSceneProc_PreChangeAnimator), AccessTools.all)));
+                harmony.Patch(VRHSceneType.GetMethod("Start", AccessTools.all), postfix: new HarmonyMethod(GetType().GetMethod(nameof(HScene_PostStart), AccessTools.all)));
+                harmony.Patch(VRHSceneType.GetMethod("EndProc", AccessTools.all), prefix: new HarmonyMethod(GetType().GetMethod(nameof(HSceneProc_EndProc), AccessTools.all)));
+                harmony.Patch(VRHSceneType.GetMethod("Update", AccessTools.all), postfix: new HarmonyMethod(GetType().GetMethod(nameof(HScene_PostUpdate), AccessTools.all)));
+                harmony.Patch(VRHSceneType.GetMethod("ChangeAnimator", AccessTools.all), prefix: new HarmonyMethod(GetType().GetMethod(nameof(HSceneProc_PreChangeAnimator), AccessTools.all)));
             }
 
             Chainloader.PluginInfos.TryGetValue("com.deathweasel.bepinex.uncensorselector", out PluginInfo info);
@@ -130,18 +131,18 @@ namespace KK_BetterPenetration
             if (uncensorSelectorReloadCharacterBody == null)
                 return;
             
-            harmony.Patch(uncensorSelectorReloadCharacterBody, postfix: new HarmonyMethod(typeof(KK_BetterPenetration), nameof(UncensorSelector_ReloadCharacterBody_Postfix), new[] { typeof(object) }));
+            harmony.Patch(uncensorSelectorReloadCharacterBody, postfix: new HarmonyMethod(GetType(), nameof(UncensorSelector_ReloadCharacterBody_Postfix), new[] { typeof(object) }));
             Debug.Log("KK_BetterPenetration: UncensorSelector patched ReloadCharacterBody correctly");
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "LoadCharaFbxDataAsync")]
-        public static void ChaControl_LoadCharaFbxDataAsync(ChaControl __instance)
+        private static void ChaControl_LoadCharaFbxDataAsync(ChaControl __instance)
         {
             CoreGame.RemoveCollidersFromCoordinate(__instance);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(HSceneProc), "Start")]
-        public static void HScene_PostStart(BaseLoader __instance)
+        private static void HScene_PostStart(BaseLoader __instance)
         {
             hSceneProc = __instance;
             hSceneProcTraverse = Traverse.Create(__instance);
@@ -170,7 +171,7 @@ namespace KK_BetterPenetration
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(HSceneProc), "Update")]
-        public static void HScene_PostUpdate()
+        private static void HScene_PostUpdate()
         {
             if (!hSceneStarted || inHScene || hSceneProc == null || !hSceneProc.enabled || hSceneProcTraverse == null)
                 return;
@@ -337,9 +338,9 @@ namespace KK_BetterPenetration
 
             for (int maleNum = 0; maleNum < MaleLimit; maleNum++)
             {
-                danOptions.Add(new DanOptions(0, 0, 0,
+                danOptions.Add(new DanOptions(_danColliderRadiusScale[maleNum].Value, _danColliderLengthScale[maleNum].Value,
                     _danLengthSquishFactor[maleNum].Value, _danGirthSquishFactor[maleNum].Value, _danSquishThreshold[maleNum].Value, _danSquishOralGirth[maleNum].Value,
-                    0, 0, false, _simplifyPenetration[maleNum].Value, _simplifyOral[maleNum].Value, _rotateTamaWithShaft[maleNum].Value, _danColliderRadiusScale[maleNum].Value, _danColliderLengthScale[maleNum].Value));
+                    0, 0, false, _simplifyPenetration[maleNum].Value, _simplifyOral[maleNum].Value, _rotateTamaWithShaft[maleNum].Value));
             }
 
             return danOptions;

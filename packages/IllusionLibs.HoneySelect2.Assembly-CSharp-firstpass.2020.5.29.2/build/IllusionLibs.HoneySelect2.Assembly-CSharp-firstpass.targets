@@ -1,7 +1,0 @@
-<Project>
-  <Target Name="IllusionLibsHoneySelect2Assembly-CSharp-firstpass" AfterTargets="ResolveReferences">
-    <ItemGroup>
-      <ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths)" Condition="'%(ReferenceCopyLocalPaths.NuGetPackageId)' == 'IllusionLibs.HoneySelect2.Assembly-CSharp-firstpass'" />
-    </ItemGroup>
-  </Target>
-</Project>

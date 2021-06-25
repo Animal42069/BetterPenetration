@@ -1,9 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 #if HS2 || AI || HS2_STUDIO || AI_STUDIO
-using AIProject;
 using AIChara;
 #endif
 
@@ -12,7 +10,7 @@ namespace Core_BetterPenetration
     class DanAgent
     {
         internal ChaControl m_danCharacter;
-        private DanPoints m_danPoints;
+        internal DanPoints m_danPoints;
         private DanOptions m_danOptions;
 		private List<DynamicBoneCollider> m_danColliders;
         private List<float> m_danColliderRadius;
@@ -34,12 +32,17 @@ namespace Core_BetterPenetration
 
 #if HS2 || AI || HS2_STUDIO || AI_STUDIO
         private const float DefaultDanLength = 1.898f;
+        private const float DefaultColliderVertical = -0.03f;
+        private const float DefaultColliderLength = 0.15f;
+        private const float DefaultColliderRadius = 0.18f;
 #elif KK || KK_STUDIO
         private const float DefaultDanLength = 0.1898f;
+        private const float DefaultColliderVertical = 0.0f;
+        private const float DefaultColliderLength = 0.008f;
+        private const float DefaultColliderRadius = 0.024f;
 #endif
 
-        private float m_baseDanLength = DefaultDanLength;
-        private float m_baseSectionHalfLength = DefaultDanLength / 2;
+        internal float m_baseDanLength = DefaultDanLength;
 
         public DanAgent(ChaControl character, DanOptions options)
         {
@@ -80,7 +83,6 @@ namespace Core_BetterPenetration
             if (tamaTop == null || danTransforms.Count < 2)
                 return;
 
-            //   if (danTransforms.Count == BoneNames.DanBones.Count)
             if (danTransforms.Count > 2)
                 m_bpDanPointsFound = true;
 
@@ -89,12 +91,8 @@ namespace Core_BetterPenetration
 
             m_danPoints = new DanPoints(danTransforms, tamaTop);
             m_danPointsFound = true;
-
             //           m_baseDanLength = DefaultDanLength * m_danPoints.GetDanLossyScale();
             m_baseDanLength = Vector3.Distance(danTransforms[0].position, danTransforms[1].position) * (danTransforms.Count - 1);
-            m_baseSectionHalfLength = m_baseDanLength / (2 * (m_danPoints.danPoints.Count - 1));
-
-            Console.WriteLine($"InitializeDan {m_baseDanLength} {danTransforms.Count}");
 
             if (m_bpColliderBonesFound)
             {
@@ -113,31 +111,13 @@ namespace Core_BetterPenetration
             }
             else
             {
-#if !HS2_STUDIO && !AI_STUDIO && !KK_STUDIO
-                for (int danPoint = 1; danPoint < m_danPoints.danPoints.Count; danPoint++)
-                {
-                    m_danColliders.Add(InitializeCollider(m_danPoints.danPoints[danPoint - 1].transform, m_danOptions.danRadius * m_danPoints.danPoints[danPoint].defaultLossyScale.x, ((m_baseSectionHalfLength + m_danOptions.danHeadLength) * 2),
-                        new Vector3(0, m_danOptions.danVerticalCenter, m_baseSectionHalfLength), DynamicBoneCollider.Direction.Z));
-                }
-#else
-
-#if AI_STUDIO || HS2_STUDIO
-                const float DefaultColliderVertical = -0.03f;
-                const float DefaultColliderLength = 0.15f;
-                const float DefaultColliderRadius = 0.18f;
-#else
-
-                const float DefaultColliderVertical = 0.0f;
-                const float DefaultColliderLength = 0.008f;
-                const float DefaultColliderRadius = 0.024f;
-#endif
+                float baseSectionHalfLength = m_baseDanLength / (2 * (m_danPoints.danPoints.Count - 1));
 
                 for (int danPoint = 1; danPoint < m_danPoints.danPoints.Count; danPoint++)
                 {
-                    m_danColliders.Add(InitializeCollider(m_danPoints.danPoints[danPoint - 1].transform, DefaultColliderRadius * m_danPoints.danPoints[danPoint].defaultLossyScale.x, ((m_baseSectionHalfLength + DefaultColliderLength) * 2),
-                        new Vector3(0, DefaultColliderVertical, m_baseSectionHalfLength), DynamicBoneCollider.Direction.Z));
+                    m_danColliders.Add(InitializeCollider(m_danPoints.danPoints[danPoint - 1].transform, DefaultColliderRadius * m_danPoints.danPoints[danPoint].defaultLossyScale.x, ((baseSectionHalfLength + DefaultColliderLength) * 2),
+                        new Vector3(0, DefaultColliderVertical, baseSectionHalfLength), DynamicBoneCollider.Direction.Z));
                 }
-#endif
             }
         }
 
@@ -208,7 +188,7 @@ namespace Core_BetterPenetration
 
         internal void UpdateDanColliders(float radiusScale, float lengthScale)
         {
-            if (!m_danPointsFound || !m_bpColliderBonesFound || m_danColliders.Count < 1 || m_danColliders.Count >= m_danPoints.danPoints.Count)
+            if (!m_danPointsFound || m_danColliders.Count < 1 || m_danColliders.Count >= m_danPoints.danPoints.Count)
                 return;
 
             m_danOptions.danRadiusScale = radiusScale;
@@ -218,47 +198,14 @@ namespace Core_BetterPenetration
             {
                 m_danColliders[collider].m_Radius = m_danColliderRadius[collider] * m_danOptions.danRadiusScale;
                 m_danColliders[collider].m_Height = m_danColliderLength[collider] * m_danOptions.danLengthScale;
-
-            }
-        }
-#if !HS2_STUDIO && !AI_STUDIO && !KK_STUDIO
-        internal void UpdateDanCollider(float danRadius, float danHeadLength, float danVerticalCenter)
-        {
-            if (!m_danPointsFound || m_bpColliderBonesFound || m_danColliders.Count < 1 || m_danColliders.Count >= m_danPoints.danPoints.Count)
-                return;
-
-            m_danOptions.danRadius = danRadius;
-            m_danOptions.danHeadLength = danHeadLength;
-            m_danOptions.danVerticalCenter = danVerticalCenter;
-
-            for (int danCollider = 0; danCollider < m_danColliders.Count; danCollider++)
-            {
-                m_danColliders[danCollider] = InitializeCollider(m_danPoints.danPoints[danCollider].transform, m_danOptions.danRadius * m_danPoints.danPoints[danCollider + 1].defaultLossyScale.x, ((m_baseSectionHalfLength + m_danOptions.danHeadLength) * 2),
-                    new Vector3(0, m_danOptions.danVerticalCenter, m_baseSectionHalfLength), DynamicBoneCollider.Direction.Z);
             }
         }
 
-        internal void UpdateDanCollider(DanOptions danOptions)
-        {
-            if (!m_danPointsFound || m_bpColliderBonesFound || m_danColliders.Count < 1 || m_danColliders.Count >= m_danPoints.danPoints.Count)
-                return;
-
-            m_danOptions.danRadius = danOptions.danRadius;
-            m_danOptions.danHeadLength = danOptions.danHeadLength;
-            m_danOptions.danVerticalCenter = danOptions.danVerticalCenter;
-
-            for (int danCollider = 0; danCollider < m_danColliders.Count; danCollider++)
-            {
-                m_danColliders[danCollider] = InitializeCollider(m_danPoints.danPoints[danCollider].transform, m_danOptions.danRadius * m_danPoints.danPoints[danCollider + 1].defaultLossyScale.x, ((m_baseSectionHalfLength + m_danOptions.danHeadLength) * 2),
-                    new Vector3(0, m_danOptions.danVerticalCenter, m_baseSectionHalfLength), DynamicBoneCollider.Direction.Z);
-            }
-        }
-#endif
         internal void UpdateDanOptions(DanOptions danOptions)
         {
             m_danOptions = danOptions;
         }
-
+         
         internal void UpdateDanOptions(float danLengthSquish, float danGirthSquish, float squishThreshold)
         {
             m_danOptions.danLengthSquish = danLengthSquish;
@@ -279,8 +226,6 @@ namespace Core_BetterPenetration
 
             m_danPoints.SquishDanGirth(girthScaleFactor);
             adjustedDanLength = GetMaxDanLength(adjustedDanLength, enterTarget, endTarget, danDistanceToTarget);
-  //          m_danPoints.ScaleDanPoints(adjustedDanLength / m_baseDanLength);
-            ScaleDanColliders(adjustedDanLength);
 
             List<Vector3> adjustedDanPoints = AdjustDanPointsToTargets(enterTarget, endTarget, adjustedDanLength, danDistanceToTarget);
 #if !HS2_STUDIO && !AI_STUDIO && !KK_STUDIO
@@ -367,16 +312,6 @@ namespace Core_BetterPenetration
             }
 
             return adjustedDanPoints;
-        }
-
-        private void ScaleDanColliders(float danLength)
-        {
-            if (m_danColliders == null || m_bpColliderBonesFound)
-                return;
-
-            float danSegmentLength = danLength / m_danColliders.Count;
-            foreach (var collider in m_danColliders)
-                collider.m_Center = new Vector3(collider.m_Center.x, collider.m_Center.y, danSegmentLength / 2);
         }
 
         internal void AddDanColliders(ChaControl target)
@@ -526,7 +461,6 @@ namespace Core_BetterPenetration
                                  targetAgent.m_collisionOptions.innerKokanOffset.z * m_referenceTarget.forward;
 
             danEndTarget = ConstrainDan(danStartPosition, danTargetVector, danEndTarget, innerLimit, adjustedDanLength, danDistanceToTarget, targetAgent);
-            ScaleDanColliders(adjustedDanLength);
 
             List<Vector3> adjustedDanPoints = AdjustDanPointsToTargets(danTarget, danEndTarget, adjustedDanLength, danDistanceToTarget);
             m_danPoints.AimDanPoints(adjustedDanPoints, m_danOptions.rotateTamaWithShaft);
@@ -558,7 +492,6 @@ namespace Core_BetterPenetration
 
             adjustedDanLength = GetMaxDanLength(adjustedDanLength, danTarget, innerLimit, danDistanceToTarget);
             danEndTarget = ConstrainDan(danStartPosition, danTargetVector, danEndTarget, innerLimit, adjustedDanLength, danDistanceToTarget, targetAgent);
-            ScaleDanColliders(adjustedDanLength);
 
             List<Vector3> adjustedDanPoints = AdjustDanPointsToTargets(danTarget, danEndTarget, adjustedDanLength, danDistanceToTarget);
             m_danPoints.AimDanPoints(adjustedDanPoints, m_danOptions.rotateTamaWithShaft);
@@ -584,7 +517,6 @@ namespace Core_BetterPenetration
                                  targetAgent.m_collisionOptions.innerKokanOffset.z * m_referenceTarget.forward;
 
             danEndTarget = ConstrainDan(danStartPosition, danTargetVector, danEndTarget, innerLimit, adjustedDanLength, danDistanceToTarget, targetAgent);
-            ScaleDanColliders(adjustedDanLength);
 
             List<Vector3> adjustedDanPoints = AdjustDanPointsToTargets(danTarget, danEndTarget, adjustedDanLength, danDistanceToTarget);
             m_danPoints.AimDanPoints(adjustedDanPoints, m_danOptions.rotateTamaWithShaft);
@@ -695,7 +627,7 @@ namespace Core_BetterPenetration
         private void ResetDanAdjustment()
         {
             m_danPoints.ResetDanPoints();
-            ScaleDanColliders(m_baseDanLength);
+    //        ScaleDanColliders(m_baseDanLength);
         }
 
         internal void ClearDanTarget(CollisionAgent firstTarget, CollisionAgent secondTarget = null)

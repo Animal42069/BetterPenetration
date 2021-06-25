@@ -15,7 +15,7 @@ namespace AI_BetterPenetration
     [BepInProcess("AI-Syoujyo")]
     public class AI_BetterPenetration : BaseUnityPlugin
     {
-        internal const string VERSION = "4.0.2.0";
+        internal const string VERSION = "4.1.0.0";
         private const int MaleLimit = 1;
         private const int FemaleLimit = 2;
 
@@ -24,9 +24,8 @@ namespace AI_BetterPenetration
         private static readonly List<bool> frontPointsInward = new List<bool> { false, false };
         private static readonly List<bool> backPointsInward = new List<bool> { false, true };
 
-        private static ConfigEntry<float> _danColliderHeadLength;
-        private static ConfigEntry<float> _danColliderRadius;
-        private static ConfigEntry<float> _danColliderVerticalCenter;
+        private static ConfigEntry<float> _danColliderLengthScale;
+        private static ConfigEntry<float> _danColliderRadiusScale;
         private static ConfigEntry<float> _fingerColliderLength;
         private static ConfigEntry<float> _fingerColliderRadius;
         private static ConfigEntry<float> _danLengthSquishFactor;
@@ -63,11 +62,9 @@ namespace AI_BetterPenetration
             { UpdateFingerColliders(); };
             (_fingerColliderRadius = Config.Bind("Male Options", "Finger Collider: Radius", 0.06f, "Radius of the finger colliders.")).SettingChanged += (s, e) =>
             { UpdateFingerColliders(); };
-            (_danColliderHeadLength = Config.Bind("Male Options", "Penis Collider: Length of Head", 0.15f, "Distance from the center of the head bone to the tip, used for collision purposes.")).SettingChanged += (s, e) =>
+            (_danColliderLengthScale = Config.Bind("Male Options", "Penis Collider: Length Scale", 1.0f, new ConfigDescription("How much to scale collider length", new AcceptableValueRange<float>(0.5f, 1.5f)))).SettingChanged += (s, e) =>
             { UpdateDanColliders(); };
-            (_danColliderRadius = Config.Bind("Male Options", "Penis Collider: Radius of Shaft", 0.18f, "Radius of the shaft collider.")).SettingChanged += (s, e) =>
-            { UpdateDanColliders(); };
-            (_danColliderVerticalCenter = Config.Bind("Male Options", "Penis Collider: Vertical Center", -0.03f, "Vertical Center of the shaft collider")).SettingChanged += (s, e) =>
+            (_danColliderRadiusScale = Config.Bind("Male Options", "Penis Collider: Radius Scale", 1.0f, new ConfigDescription("How much to scale collider radius", new AcceptableValueRange<float>(0.5f, 1.5f)))).SettingChanged += (s, e) =>
             { UpdateDanColliders(); };
             (_danLengthSquishFactor = Config.Bind("Male Options", "Penis: Squish Length Factor", 0.6f, new ConfigDescription("How much the length of the penis squishes after it has passed the squish threshold", new AcceptableValueRange<float>(0, 1)))).SettingChanged += (s, e) =>
             { UpdateDanOptions(); };
@@ -114,40 +111,6 @@ namespace AI_BetterPenetration
 			harmony = new Harmony("AI_BetterPenetration");
         }
 
-        private static void UpdateDanColliders()
-        {
-            if (!inHScene)
-                return;
-
-            CoreGame.UpdateDanCollider(0, _danColliderRadius.Value, _danColliderHeadLength.Value, _danColliderVerticalCenter.Value);
-        }
-
-        private static void UpdateFingerColliders()
-        {
-            if (!inHScene)
-                return;
-
-            for (int index = 0; index < MaleLimit; index++)
-                CoreGame.UpdateFingerColliders(0, _fingerColliderRadius.Value, _fingerColliderLength.Value);
-        }
-
-        private static void UpdateDanOptions()
-        {
-            if (!inHScene)
-                return;
-
-            CoreGame.UpdateDanOptions(0, _danLengthSquishFactor.Value, _danGirthSquishFactor.Value, _danSquishThreshold.Value, _danSquishOralGirth.Value, _useFingerColliders.Value, _simplifyPenetration.Value, _simplifyOral.Value, _rotateTamaWithShaft.Value);
-        }
-
-        private static void UpdateCollisionOptions()
-        {
-            if (!inHScene)
-                return;
-
-            List<CollisionOptions> collisionOptions = PopulateCollisionOptionsList();
-            for (int index = 0; index < FemaleLimit; index++)
-                CoreGame.UpdateCollisionOptions(index, collisionOptions[index]);
-        }
 
         [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "LoadCharaFbxDataAsync")]
         private static void ChaControl_LoadCharaFbxDataAsync(ChaControl __instance)
@@ -183,40 +146,6 @@ namespace AI_BetterPenetration
 
             CoreGame.InitializeAgents(maleList, femaleList, danOptions, collisionOptions);
             inHScene = true;
-        }
-
-        private static List<DanOptions> PopulateDanOptionsList()
-        {
-            List<DanOptions> danOptions = new List<DanOptions>
-            {
-                new DanOptions(_danColliderVerticalCenter.Value, _danColliderRadius.Value, _danColliderHeadLength.Value,
-                 _danLengthSquishFactor.Value, _danGirthSquishFactor.Value, _danSquishThreshold.Value, _danSquishOralGirth.Value,
-                _fingerColliderRadius.Value, _fingerColliderLength.Value, _useFingerColliders.Value, 
-                _simplifyPenetration.Value, _simplifyOral.Value, _rotateTamaWithShaft.Value)
-            };
-
-            return danOptions;
-        }
-
-        private static List<CollisionOptions> PopulateCollisionOptionsList()
-        {
-            List<CollisionOptions> collisionOptions = new List<CollisionOptions>();
-
-            List<CollisionPointInfo> frontInfo = new List<CollisionPointInfo>();
-            for (int info = 0; info < BoneNames.frontCollisionList.Count; info++)
-                frontInfo.Add(new CollisionPointInfo(BoneNames.frontCollisionList[info], _frontCollisionOffset[info].Value, frontPointsInward[info]));
-
-            List<CollisionPointInfo> backInfo = new List<CollisionPointInfo>();
-            for (int info = 0; info < BoneNames.backCollisionList.Count; info++)
-                backInfo.Add(new CollisionPointInfo(BoneNames.backCollisionList[info], _backCollisionOffset[info].Value, backPointsInward[info]));
-
-            for (int femaleNum = 0; femaleNum < FemaleLimit; femaleNum++)
-            {
-                collisionOptions.Add(new CollisionOptions(_kokanOffset.Value, _innerKokanOffset.Value, _mouthOffset.Value, _innerMouthOffset.Value, _useKokanFix.Value,
-                    _kokanFixPositionZ.Value, _kokanFixPositionY.Value, _kokanFixRotationX.Value, _clippingDepth.Value, frontInfo, backInfo));
-            }
-
-            return collisionOptions;
         }
 
         [HarmonyPrefix, HarmonyPatch(typeof(HScene), "ChangeAnimation")]
@@ -276,6 +205,76 @@ namespace AI_BetterPenetration
         {
             HScene_sceneUnloaded();
         }
+		
+        private static void UpdateDanColliders()
+        {
+            if (!inHScene)
+                return;
+
+            CoreGame.UpdateDanCollider(0, _danColliderRadiusScale.Value, _danColliderLengthScale.Value);
+        }
+
+        private static void UpdateFingerColliders()
+        {
+            if (!inHScene)
+                return;
+
+            for (int index = 0; index < MaleLimit; index++)
+                CoreGame.UpdateFingerColliders(0, _fingerColliderRadius.Value, _fingerColliderLength.Value);
+        }
+
+        private static void UpdateDanOptions()
+        {
+            if (!inHScene)
+                return;
+
+            CoreGame.UpdateDanOptions(0, _danLengthSquishFactor.Value, _danGirthSquishFactor.Value, _danSquishThreshold.Value, _danSquishOralGirth.Value, _useFingerColliders.Value, _simplifyPenetration.Value, _simplifyOral.Value, _rotateTamaWithShaft.Value);
+        }
+
+        private static void UpdateCollisionOptions()
+        {
+            if (!inHScene)
+                return;
+
+            List<CollisionOptions> collisionOptions = PopulateCollisionOptionsList();
+            for (int index = 0; index < FemaleLimit; index++)
+                CoreGame.UpdateCollisionOptions(index, collisionOptions[index]);
+        }
+
+        private static List<DanOptions> PopulateDanOptionsList()
+        {
+            List<DanOptions> danOptions = new List<DanOptions>
+            {
+                new DanOptions(_danColliderRadiusScale.Value, _danColliderLengthScale.Value,
+                 _danLengthSquishFactor.Value, _danGirthSquishFactor.Value, _danSquishThreshold.Value, _danSquishOralGirth.Value,
+                _fingerColliderRadius.Value, _fingerColliderLength.Value, _useFingerColliders.Value, 
+                _simplifyPenetration.Value, _simplifyOral.Value, _rotateTamaWithShaft.Value)
+            };
+
+            return danOptions;
+        }
+
+        private static List<CollisionOptions> PopulateCollisionOptionsList()
+        {
+            List<CollisionOptions> collisionOptions = new List<CollisionOptions>();
+
+            List<CollisionPointInfo> frontInfo = new List<CollisionPointInfo>();
+            for (int info = 0; info < BoneNames.frontCollisionList.Count; info++)
+                frontInfo.Add(new CollisionPointInfo(BoneNames.frontCollisionList[info], _frontCollisionOffset[info].Value, frontPointsInward[info]));
+
+            List<CollisionPointInfo> backInfo = new List<CollisionPointInfo>();
+            for (int info = 0; info < BoneNames.backCollisionList.Count; info++)
+                backInfo.Add(new CollisionPointInfo(BoneNames.backCollisionList[info], _backCollisionOffset[info].Value, backPointsInward[info]));
+
+            for (int femaleNum = 0; femaleNum < FemaleLimit; femaleNum++)
+            {
+                collisionOptions.Add(new CollisionOptions(_kokanOffset.Value, _innerKokanOffset.Value, _mouthOffset.Value, _innerMouthOffset.Value, _useKokanFix.Value,
+                    _kokanFixPositionZ.Value, _kokanFixPositionY.Value, _kokanFixRotationX.Value, _clippingDepth.Value, frontInfo, backInfo));
+            }
+
+            return collisionOptions;
+        }
+
 
         private void Update()
         {
