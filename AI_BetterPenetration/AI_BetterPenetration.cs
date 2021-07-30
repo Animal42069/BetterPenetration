@@ -15,48 +15,48 @@ namespace AI_BetterPenetration
     [BepInProcess("AI-Syoujyo")]
     public class AI_BetterPenetration : BaseUnityPlugin
     {
-        internal const string VERSION = "4.1.0.0";
-        private const int MaleLimit = 1;
-        private const int FemaleLimit = 2;
+        internal const string VERSION = "4.2.1.0";
+        internal const int MaleLimit = 1;
+        internal const int FemaleLimit = 2;
 
-        private static readonly List<float> frontOffsets = new List<float> { -0.35f, 0f };
-        private static readonly List<float> backOffsets = new List<float> { -0.05f, 0.05f };
-        private static readonly List<bool> frontPointsInward = new List<bool> { false, false };
-        private static readonly List<bool> backPointsInward = new List<bool> { false, true };
+        internal static readonly List<float> frontOffsets = new List<float> { -0.35f, 0f };
+        internal static readonly List<float> backOffsets = new List<float> { -0.05f, 0.05f };
+        internal static readonly List<bool> frontPointsInward = new List<bool> { false, false };
+        internal static readonly List<bool> backPointsInward = new List<bool> { false, true };
 
-        private static ConfigEntry<float> _danColliderLengthScale;
-        private static ConfigEntry<float> _danColliderRadiusScale;
-        private static ConfigEntry<float> _fingerColliderLength;
-        private static ConfigEntry<float> _fingerColliderRadius;
-        private static ConfigEntry<float> _danLengthSquishFactor;
-        private static ConfigEntry<float> _danGirthSquishFactor;
-        private static ConfigEntry<float> _danSquishThreshold;
-        private static ConfigEntry<bool> _danSquishOralGirth;
-        private static ConfigEntry<bool> _useFingerColliders;
-        private static ConfigEntry<bool> _simplifyPenetration;
-        private static ConfigEntry<bool> _simplifyOral;
-        private static ConfigEntry<bool> _rotateTamaWithShaft;
+        internal static ConfigEntry<float> _danColliderLengthScale;
+        internal static ConfigEntry<float> _danColliderRadiusScale;
+        internal static ConfigEntry<float> _fingerColliderLength;
+        internal static ConfigEntry<float> _fingerColliderRadius;
+        internal static ConfigEntry<float> _danLengthSquishFactor;
+        internal static ConfigEntry<float> _danGirthSquishFactor;
+        internal static ConfigEntry<float> _danSquishThreshold;
+        internal static ConfigEntry<bool> _danSquishOralGirth;
+        internal static ConfigEntry<bool> _useFingerColliders;
+        internal static ConfigEntry<bool> _simplifyPenetration;
+        internal static ConfigEntry<bool> _simplifyOral;
+        internal static ConfigEntry<bool> _rotateTamaWithShaft;
 
-        private static ConfigEntry<float> _clippingDepth;
-        private static ConfigEntry<Vector3> _kokanOffset;
-        private static ConfigEntry<Vector3> _innerKokanOffset;
-        private static ConfigEntry<Vector3> _mouthOffset;
-        private static ConfigEntry<Vector3> _innerMouthOffset;
-        private static ConfigEntry<bool> _useKokanFix;
-        private static ConfigEntry<float> _kokanFixPositionY;
-        private static ConfigEntry<float> _kokanFixPositionZ;
-        private static ConfigEntry<float> _kokanFixRotationX;
-        private static readonly ConfigEntry<float>[] _frontCollisionOffset = new ConfigEntry<float>[frontOffsets.Count];
-        private static readonly ConfigEntry<float>[] _backCollisionOffset = new ConfigEntry<float>[backOffsets.Count];
+        internal static ConfigEntry<float> _clippingDepth;
+        internal static ConfigEntry<Vector3> _kokanOffset;
+        internal static ConfigEntry<Vector3> _innerKokanOffset;
+        internal static ConfigEntry<Vector3> _mouthOffset;
+        internal static ConfigEntry<Vector3> _innerMouthOffset;
+        internal static ConfigEntry<bool> _useKokanFix;
+        internal static ConfigEntry<float> _kokanFixPositionY;
+        internal static ConfigEntry<float> _kokanFixPositionZ;
+        internal static ConfigEntry<float> _kokanFixRotationX;
+        internal static readonly ConfigEntry<float>[] _frontCollisionOffset = new ConfigEntry<float>[frontOffsets.Count];
+        internal static readonly ConfigEntry<float>[] _backCollisionOffset = new ConfigEntry<float>[backOffsets.Count];
 
-        private static Harmony harmony;
-        private static HScene hScene;
-        private static bool patched = false;
-        private static bool inHScene = false;
-        private static bool loadingCharacter = false;
-        private static bool resetParticles = false;
+        internal static Harmony harmony;
+        internal static HScene hScene;
+        internal static bool patched = false;
+        internal static bool inHScene = false;
+        internal static bool loadingCharacter = false;
+        internal static bool resetParticles = false;
 
-        private void Awake()
+        internal void Awake()
         {
             (_fingerColliderLength = Config.Bind("Male Options", "Finger Collider: Length", 0.18f, "Lenght of the finger colliders.")).SettingChanged += (s, e) =>
             { UpdateFingerColliders(); };
@@ -91,13 +91,13 @@ namespace AI_BetterPenetration
             for (int offset = 0; offset < backOffsets.Count; offset++)
                 (_backCollisionOffset[offset] = Config.Bind("Female Options", "Clipping Offset: Back Collision " + offset, backOffsets[offset], "Individual offset on colision point, to improve clipping")).SettingChanged += (s, e) =>
                 { UpdateCollisionOptions(); };
-            (_kokanOffset = Config.Bind("Female Options", "Target Offset: Vagina Target", new Vector3(0, 0, 0), "Offset of the vagina target")).SettingChanged += (s, e) =>
+            (_kokanOffset = Config.Bind("Female Options", "Target Offset: Vagina Target", Vector3.zero, "Offset of the vagina target")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_innerKokanOffset = Config.Bind("Female Options", "Target Offset: Inner Vagina Target", new Vector3(0, 0, 0), "Offset of the simplified inner vagina target")).SettingChanged += (s, e) =>
+            (_innerKokanOffset = Config.Bind("Female Options", "Target Offset: Inner Vagina Target", Vector3.zero, "Offset of the simplified inner vagina target")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_mouthOffset = Config.Bind("Female Options", "Target Offset: Mouth Target", new Vector3(0, 0, 0), "Offset of the mouth target")).SettingChanged += (s, e) =>
+            (_mouthOffset = Config.Bind("Female Options", "Target Offset: Mouth Target", new Vector3(0, 0.025f, 0), "Offset of the mouth target")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_innerMouthOffset = Config.Bind("Female Options", "Target Offset: Inner Mouth Target", new Vector3(0, 0, 0), "Offset of the simplified inner mouth target")).SettingChanged += (s, e) =>
+            (_innerMouthOffset = Config.Bind("Female Options", "Target Offset: Inner Mouth Target", Vector3.zero, "Offset of the simplified inner mouth target")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
             (_useKokanFix = Config.Bind("Female Options", "Joint Adjustment: Missionary Correction", false, "NOTE: There is an Illusion bug that causes the vagina to appear sunken in certain missionary positions.  It is best to use Advanced Bonemod and adjust your female character's cf_J_Kokan Offset Y to 0.001.  If you don't do that, enabling this option will attempt to fix the problem by guessing where the bone should be")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
@@ -113,13 +113,13 @@ namespace AI_BetterPenetration
 
 
         [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "LoadCharaFbxDataAsync")]
-        private static void ChaControl_LoadCharaFbxDataAsync(ChaControl __instance)
+        internal static void ChaControl_LoadCharaFbxDataAsync(ChaControl __instance)
         {
             CoreGame.RemoveCollidersFromCoordinate(__instance);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(HScene), "SetStartVoice")]
-        private static void HScene_PostSetStartVoice(HScene __instance)
+        internal static void HScene_PostSetStartVoice(HScene __instance)
         {
             hScene = __instance;
 
@@ -149,7 +149,7 @@ namespace AI_BetterPenetration
         }
 
         [HarmonyPrefix, HarmonyPatch(typeof(HScene), "ChangeAnimation")]
-        private static void HScene_PreChangeAnimation(HScene.AnimationListInfo _info)
+        internal static void HScene_PreChangeAnimation(HScene.AnimationListInfo _info)
         {
             if (!inHScene || _info == null || _info.fileFemale == null)
                 return;
@@ -159,19 +159,19 @@ namespace AI_BetterPenetration
         }
 
         [HarmonyPrefix, HarmonyPatch(typeof(HScene), "SetMovePositionPoint")]
-        private static void HScene_SetMovePositionPoint()
+        internal static void HScene_SetMovePositionPoint()
         {
             resetParticles = true;
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "setPlay")]
-        private static void ChaControl_PostSetPlay()
+        internal static void ChaControl_PostSetPlay()
         {
             resetParticles = true;
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(H_Lookat_dan), "setInfo")]
-        private static void H_Lookat_dan_PostSetInfo(H_Lookat_dan __instance)
+        internal static void H_Lookat_dan_PostSetInfo(H_Lookat_dan __instance)
         {
             if (!inHScene || loadingCharacter || __instance.strPlayMotion == null)
                 return;
@@ -180,7 +180,7 @@ namespace AI_BetterPenetration
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(H_Lookat_dan), "LateUpdate")]
-        private static void H_Lookat_dan_PostLateUpdate(H_Lookat_dan __instance)
+        internal static void H_Lookat_dan_PostLateUpdate(H_Lookat_dan __instance)
         {
             if (!inHScene || loadingCharacter || hScene == null || __instance.strPlayMotion == null)
                 return;
@@ -195,18 +195,18 @@ namespace AI_BetterPenetration
         }
 
         [HarmonyPrefix, HarmonyPatch(typeof(HScene), "EndProc")]
-        private static void HScene_EndProc_Patch()
+        internal static void HScene_EndProc_Patch()
         {
             HScene_sceneUnloaded();
         }
 
         [HarmonyPrefix, HarmonyPatch(typeof(HScene), "EndProcADV")]
-        private static void HScene_EndProcADV_Patch()
+        internal static void HScene_EndProcADV_Patch()
         {
             HScene_sceneUnloaded();
         }
 		
-        private static void UpdateDanColliders()
+        internal static void UpdateDanColliders()
         {
             if (!inHScene)
                 return;
@@ -214,7 +214,7 @@ namespace AI_BetterPenetration
             CoreGame.UpdateDanCollider(0, _danColliderRadiusScale.Value, _danColliderLengthScale.Value);
         }
 
-        private static void UpdateFingerColliders()
+        internal static void UpdateFingerColliders()
         {
             if (!inHScene)
                 return;
@@ -223,7 +223,7 @@ namespace AI_BetterPenetration
                 CoreGame.UpdateFingerColliders(0, _fingerColliderRadius.Value, _fingerColliderLength.Value);
         }
 
-        private static void UpdateDanOptions()
+        internal static void UpdateDanOptions()
         {
             if (!inHScene)
                 return;
@@ -231,7 +231,7 @@ namespace AI_BetterPenetration
             CoreGame.UpdateDanOptions(0, _danLengthSquishFactor.Value, _danGirthSquishFactor.Value, _danSquishThreshold.Value, _danSquishOralGirth.Value, _useFingerColliders.Value, _simplifyPenetration.Value, _simplifyOral.Value, _rotateTamaWithShaft.Value);
         }
 
-        private static void UpdateCollisionOptions()
+        internal static void UpdateCollisionOptions()
         {
             if (!inHScene)
                 return;
@@ -241,7 +241,7 @@ namespace AI_BetterPenetration
                 CoreGame.UpdateCollisionOptions(index, collisionOptions[index]);
         }
 
-        private static List<DanOptions> PopulateDanOptionsList()
+        internal static List<DanOptions> PopulateDanOptionsList()
         {
             List<DanOptions> danOptions = new List<DanOptions>
             {
@@ -254,7 +254,7 @@ namespace AI_BetterPenetration
             return danOptions;
         }
 
-        private static List<CollisionOptions> PopulateCollisionOptionsList()
+        internal static List<CollisionOptions> PopulateCollisionOptionsList()
         {
             List<CollisionOptions> collisionOptions = new List<CollisionOptions>();
 
@@ -276,7 +276,7 @@ namespace AI_BetterPenetration
         }
 
 
-        private void Update()
+        internal void Update()
         {
             var isHScene = HSceneManager.isHScene;
             
@@ -286,7 +286,7 @@ namespace AI_BetterPenetration
                 HScene_sceneUnloaded();
         }
 
-        private static void HScene_sceneLoaded()
+        internal static void HScene_sceneLoaded()
         {
             if (patched)
                 return;
@@ -295,7 +295,7 @@ namespace AI_BetterPenetration
             patched = true;
         }
 
-        private static void HScene_sceneUnloaded()
+        internal static void HScene_sceneUnloaded()
         {
             if (!patched)
                 return;

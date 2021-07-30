@@ -13,7 +13,7 @@ namespace Core_BetterPenetration
         }
 
         // Casts a point onto an infinite line defined by two points on the line
-        private static Vector3 CastToSegment(Vector3 position, Vector3 lineStart, Vector3 lineVector)
+        internal static Vector3 CastToSegment(Vector3 position, Vector3 lineStart, Vector3 lineVector)
         {
             Vector3 lineEnd = lineStart + lineVector;
             float normDistAlongSegment = Vector3.Dot(position - lineStart, lineVector) / Vector3.Magnitude(lineVector);

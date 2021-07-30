@@ -21,6 +21,7 @@ namespace Core_BetterPenetration
         internal const string MiddleFinger = "cf_J_Hand_Middle03_R";
         internal const string RingFinger = "cf_J_Hand_Ring03_R";
         internal const string BPBone = "cf_J_Vagina";
+        internal const string BPDanEnd = "cm_J_dan119_00";
 
         internal static readonly List<string> DanBones = new List<string> { "cm_J_dan101_00", "cm_J_dan102_00", "cm_J_dan103_00", "cm_J_dan104_00", "cm_J_dan105_00", "cm_J_dan106_00", "cm_J_dan107_00", "cm_J_dan108_00", "cm_J_dan109_00" };
         internal static readonly List<string> TamaBones = new List<string> { "cm_J_dan_Pivot_f_top", "cm_J_dan_Pivot_f_L", "cm_J_dan_Pivot_f_R"};
@@ -46,6 +47,7 @@ namespace Core_BetterPenetration
         internal const string TamaTop = "cm_J_dan_f_top";
         internal const string InnerTarget = "cf_J_Kosi01";
         internal const string InnerHeadTarget = "cf_J_FaceBase";
+        internal const string BPDanEnd = "cm_J_dan119_00";
 
         internal static readonly List<string> DanBones = new List<string> { "cm_J_dan101_00", "cm_J_dan102_00", "cm_J_dan103_00", "cm_J_dan104_00", "cm_J_dan105_00", "cm_J_dan106_00", "cm_J_dan107_00", "cm_J_dan108_00", "cm_J_dan109_00" };
         internal static readonly List<string> TamaBones = new List<string> { "cm_J_dan_Pivot_f_top", "cm_J_dan_Pivot_f_L", "cm_J_dan_Pivot_f_R"};
@@ -75,6 +77,7 @@ namespace Core_BetterPenetration
         internal const string MiddleFinger = "cf_j_middle03_R";
         internal const string RingFinger = "cf_j_ring03_R";
         internal const string BPBone = "cf_J_Vagina";
+        internal const string BPDanEnd = "cm_J_dan119_00";
 
         internal static readonly List<string> DanBones = new List<string> { "cm_J_dan101_00", "cm_J_dan102_00", "cm_J_dan103_00", "cm_J_dan104_00", "cm_J_dan105_00", "cm_J_dan106_00", "cm_J_dan107_00", "cm_J_dan108_00", "cm_J_dan109_00" };
         internal static readonly List<string> TamaBones = new List<string> { "cm_J_dan_Pivot_f_L", "cm_J_dan_Pivot_f_R" };
@@ -90,7 +93,6 @@ namespace Core_BetterPenetration
         internal static readonly List<string> backCollisionList = new List<string> { LookTargets.AnaTarget, "a_n_waist_b", "a_n_back" };
         internal static readonly List<string> animationAdjustmentList = new List<string> { "ais_f_00", "ais_f_01", "ais_f_12", "ais_f_19", "ais_f_20" };
     }
-
 #endif
 
 #if KK_STUDIO
@@ -105,6 +107,7 @@ namespace Core_BetterPenetration
         internal const string TamaTop = "cm_J_dan_f_top";
         internal const string InnerTarget = "cf_j_waist01";
         internal const string InnerHeadTarget = "cf_J_FaceBase";
+        internal const string BPDanEnd = "cm_J_dan119_00";
 
         internal static readonly List<string> DanBones = new List<string> { "cm_J_dan101_00", "cm_J_dan102_00", "cm_J_dan103_00", "cm_J_dan104_00", "cm_J_dan105_00", "cm_J_dan106_00", "cm_J_dan107_00", "cm_J_dan108_00", "cm_J_dan109_00" };
         internal static readonly List<string> TamaBones = new List<string> { "cm_J_dan_Pivot_f_L", "cm_J_dan_Pivot_f_R" };
@@ -115,8 +118,6 @@ namespace Core_BetterPenetration
                                                                                  "cf_hit_bust00", "cf_hit_bust02_L", "cf_hit_bust02_R",
                                                                                  "cf_hit_neck", "cf_hit_head", 
                                                                                  "cf_hit_arm_L", "cf_hit_arm_R", "cf_hit_shoulder_L", "cf_hit_shoulder_R" };
-
     }
 #endif
-
 }

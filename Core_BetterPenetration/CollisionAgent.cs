@@ -19,7 +19,7 @@ namespace Core_BetterPenetration
         internal Transform m_bpKokanTarget;
         internal Transform m_innerTarget;
         internal Transform m_innerHeadTarget;
-        private Transform m_kokanBone;
+        internal Transform m_kokanBone;
         internal List<DynamicBone> m_kokanDynamicBones = new List<DynamicBone>();
 
         internal bool adjustFAnimation = false;
@@ -29,7 +29,7 @@ namespace Core_BetterPenetration
             Initialize(character, options);
         }
 
-        private void Initialize(ChaControl character, CollisionOptions options)
+        internal void Initialize(ChaControl character, CollisionOptions options)
         {
             m_collisionOptions = options;
 

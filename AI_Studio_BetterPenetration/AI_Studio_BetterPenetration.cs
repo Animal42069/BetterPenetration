@@ -11,8 +11,6 @@ using System.Linq;
 using System.Reflection;
 using AIChara;
 using Core_BetterPenetration;
-using System.Collections.Generic;
-using System.Reflection.Emit;
 
 namespace AI_Studio_BetterPenetration
 {
@@ -25,16 +23,14 @@ namespace AI_Studio_BetterPenetration
     {
         internal const string GUID = "com.animal42069.studiobetterpenetration";
         internal const string PluginName = "AI Studio Better Penetration";
-        internal const string VERSION = "2.1.0.0";
+        internal const string VERSION = "2.2.1.0";
         internal const string BEHAVIOR = "BetterPenetrationController";
         internal const string StudioCategoryName = "Better Penetration";
         internal static Harmony harmony;
         internal static BaseUnityPlugin nodeConstraintPlugin;
-        internal static BetterPenetrationController[] bpControllers;
-        internal static bool[] controllerEnableState;
 		internal static bool reloadConstraints = false;
-        internal static bool reloadNodeConstraints = false;
         internal static int updateCount = 0;
+        internal static int resetDelay = 0;
 
         internal void Main()
         {
@@ -51,20 +47,18 @@ namespace AI_Studio_BetterPenetration
             if (nestedType == null)
                 return;
 
-            MethodInfo methodInfo = AccessTools.Method(nestedType, "ReloadCharacterPenis", null, null);
+            MethodInfo methodInfo = AccessTools.Method(nestedType, "ReloadCharacterBody", null, null);
             if (methodInfo == null)
                 return;
 
-            harmony.Patch(methodInfo, prefix: new HarmonyMethod(GetType(), "BeforeDanCharacterReload"),
-                                      postfix: new HarmonyMethod(GetType(), "AfterDanCharacterReload"));
-            Debug.Log("Studio_BetterPenetration: patched UncensorSelector::ReloadCharacterPenis correctly");
+            harmony.Patch(methodInfo, prefix: new HarmonyMethod(GetType(), "BeforeCharacterReload"));
+            Debug.Log("Studio_BetterPenetration: patched UncensorSelector::ReloadCharacterBody correctly");
 
             methodInfo = AccessTools.Method(nestedType, "ReloadCharacterBalls", null, null);
             if (methodInfo == null)
                 return;
 
-            harmony.Patch(methodInfo, prefix: new HarmonyMethod(GetType(), "BeforeTamaCharacterReload"),
-                                      postfix: new HarmonyMethod(GetType(), "AfterTamaCharacterReload"));
+            harmony.Patch(methodInfo, postfix: new HarmonyMethod(GetType(), "AfterTamaCharacterReload"));
             Debug.Log("Studio_BetterPenetration: patched UncensorSelectorController::ReloadCharacterBalls correctly");
 
             Chainloader.PluginInfos.TryGetValue("com.joan6694.illusionplugins.nodesconstraints", out pluginInfo);
@@ -96,17 +90,6 @@ namespace AI_Studio_BetterPenetration
 
             harmony.Patch(methodInfo, postfix: new HarmonyMethod(GetType(), nameof(AfterApplyConstraints)));
             Debug.Log("Studio_BetterPenetration: patched NodeConstraints::ApplyConstraints correctly");
-
-            methodInfo = AccessTools.Method(nodeConstraintType.GetNestedType("Constraint", BindingFlags.NonPublic | BindingFlags.Instance), "Destroy", null, null);
-            if (methodInfo == null)
-            {
-                Debug.Log("methodInfo null");
-
-                return;
-            }
-
-            harmony.Patch(methodInfo, prefix: new HarmonyMethod(GetType(), nameof(BeforeDestroyConstraint)));
-            Debug.Log("Studio_BetterPenetration: patched NodeConstraints::Destroy correctly");
 
             RegisterStudioControllerBasic();
         }
@@ -216,69 +199,24 @@ namespace AI_Studio_BetterPenetration
             }
         }
 
-        internal static void BeforeDanCharacterReload()
-        {
-            bpControllers = FindObjectsOfType<BetterPenetrationController>();
-            if (bpControllers == null)
-                return;
-
-            controllerEnableState = new bool[bpControllers.Length];
-
-            for (var controller = 0; controller < bpControllers.Length; controller++)
-            { 
-                if (bpControllers[controller] == null)
-                    continue;
-
-                controllerEnableState[controller] = bpControllers[controller].enabled;
-                bpControllers[controller].ClearDanAgent();
-                bpControllers[controller].enabled = false;
-            }
-        }
-
-        internal static void AfterDanCharacterReload()
-        {
-            if (bpControllers == null)
-                return;
-
-            for (var controller = 0; controller < bpControllers.Length; controller++)
-            {
-                if (bpControllers[controller] == null)
-                    continue;
-
-                bpControllers[controller].enabled = controllerEnableState[controller];
-                bpControllers[controller].InitializeDanAgent();
-                bpControllers[controller].AddDanConstraints(nodeConstraintPlugin);
-            }
-        }
-
-        internal static void BeforeTamaCharacterReload()
+        internal static void BeforeCharacterReload()
         {
             var bpControllers = FindObjectsOfType<BetterPenetrationController>();
             if (bpControllers == null)
                 return;
 
             foreach (var controller in bpControllers)
-            {
+            { 
                 if (controller == null)
                     continue;
 
-                controller.ClearTama();
+                controller.ClearDanAgent();
             }
         }
 
         internal static void AfterTamaCharacterReload()
         {
-            var bpControllers = FindObjectsOfType<BetterPenetrationController>();
-            if (bpControllers == null)
-                return;
-
-            foreach (var controller in bpControllers)
-            {
-                if (controller == null)
-                    continue;
-
-                controller.InitializeTama();
-            }
+            reloadConstraints = true;
         }
 
         internal static void AfterAddConstraint(bool enabled, Transform parentTransform, Transform childTransform,
@@ -307,34 +245,22 @@ namespace AI_Studio_BetterPenetration
             controller.SetCollisionAgent(targetChaControl, parentTransform.name == BoneNames.BPKokanTarget);
         }
 
-        internal static void BeforeDestroyConstraint(Transform ___childTransform)
-        {
-            if (___childTransform == null || ___childTransform.name != BoneNames.BPDanEntryTarget && ___childTransform.name != BoneNames.BPDanEndTarget)
-                return;
-
-            var controller = ___childTransform.GetComponentInParent<BetterPenetrationController>();
-            if (controller == null)
-                return;
-
-            controller.RemoveConstraintParams(___childTransform.name == BoneNames.BPDanEntryTarget);
-        }
-
         internal static void AfterApplyConstraints()
         {
             if (!reloadConstraints)
                 return;
 
-            ReinitializeControllers();
+            resetDelay = 60;
             reloadConstraints = false;
         }
 
         internal static void AfterApplyNodesConstraints()
         {
-            if (!reloadNodeConstraints)
+            if (!reloadConstraints)
                 return;
 
-            ReinitializeControllers();
-            reloadNodeConstraints = false;
+            resetDelay = 60;
+            reloadConstraints = false;
         }
 
         internal static void ReinitializeControllers()
@@ -358,11 +284,21 @@ namespace AI_Studio_BetterPenetration
 
         internal void Update()
         {
-            if (nodeConstraintPlugin == null || bpControllers == null || ++updateCount < 60)
+            if (nodeConstraintPlugin == null)
+                return;
+
+            if (resetDelay > 0 && --resetDelay <= 0)
+                ReinitializeControllers();
+
+            if (++updateCount < 60)
                 return;
 
             updateCount = 0;
-            
+
+            var bpControllers = FindObjectsOfType<BetterPenetrationController>();
+            if (bpControllers == null)
+                return;
+
             foreach (var controller in bpControllers)
             {
                 if (controller == null)

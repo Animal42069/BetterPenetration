@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace Core_BetterPenetration
@@ -8,10 +7,12 @@ namespace Core_BetterPenetration
     {
         internal Transform danTop;
         internal List<DanPoint> danPoints;
+        internal Transform danEnd;
 
-        public DanPoints(List<Transform> danTransforms, Transform top)
+        public DanPoints(List<Transform> danTransforms, Transform top, Transform end = null)
         {
             danTop = top;
+            danEnd = end;
             danPoints = new List<DanPoint>();
 
             foreach (var transform in danTransforms)
@@ -32,6 +33,9 @@ namespace Core_BetterPenetration
             }
 
             danPoints[danPoints.Count - 1].transform.SetPositionAndRotation(newDanPositions[danPoints.Count - 1], danQuaternion);
+
+            if (danEnd != null)
+                danEnd.transform.SetPositionAndRotation(newDanPositions[danPoints.Count - 1], danQuaternion);
 
             if (aimTop)
                 AimDanTop();

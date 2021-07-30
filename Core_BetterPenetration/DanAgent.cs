@@ -11,35 +11,35 @@ namespace Core_BetterPenetration
     {
         internal ChaControl m_danCharacter;
         internal DanPoints m_danPoints;
-        private DanOptions m_danOptions;
-		private List<DynamicBoneCollider> m_danColliders;
-        private List<float> m_danColliderRadius;
-        private List<float> m_danColliderLength;
-        private List<DynamicBone> m_tamaBones;
-        private bool m_danPointsFound = false;
-        private bool m_bpDanPointsFound = false;
-        private bool m_bpColliderBonesFound = false;
-        private bool m_bpTamaFound = false;
-        private int tamaSelfColliders;
+        internal DanOptions m_danOptions;
+		internal List<DynamicBoneCollider> m_danColliders;
+        internal List<float> m_danColliderRadius;
+        internal List<float> m_danColliderLength;
+        internal List<DynamicBone> m_tamaBones;
+        internal bool m_danPointsFound = false;
+        internal bool m_bpDanPointsFound = false;
+        internal bool m_bpColliderBonesFound = false;
+        internal bool m_bpTamaFound = false;
+        internal int tamaSelfColliders;
 
 #if !HS2_STUDIO && !AI_STUDIO && !KK_STUDIO
-        private Transform m_referenceTarget;
-        private DynamicBoneCollider m_indexCollider;
-        private DynamicBoneCollider m_middleCollider;
-        private DynamicBoneCollider m_ringCollider;       
-        private bool m_danPenetration = false;
+        internal Transform m_referenceTarget;
+        internal DynamicBoneCollider m_indexCollider;
+        internal DynamicBoneCollider m_middleCollider;
+        internal DynamicBoneCollider m_ringCollider;       
+        internal bool m_danPenetration = false;
 #endif
 
 #if HS2 || AI || HS2_STUDIO || AI_STUDIO
-        private const float DefaultDanLength = 1.898f;
-        private const float DefaultColliderVertical = -0.03f;
-        private const float DefaultColliderLength = 0.15f;
-        private const float DefaultColliderRadius = 0.18f;
+        internal const float DefaultDanLength = 1.898f;
+        internal const float DefaultColliderVertical = -0.03f;
+        internal const float DefaultColliderLength = 0.15f;
+        internal const float DefaultColliderRadius = 0.18f;
 #elif KK || KK_STUDIO
-        private const float DefaultDanLength = 0.1898f;
-        private const float DefaultColliderVertical = 0.0f;
-        private const float DefaultColliderLength = 0.008f;
-        private const float DefaultColliderRadius = 0.024f;
+        internal const float DefaultDanLength = 0.1898f;
+        internal const float DefaultColliderVertical = 0.0f;
+        internal const float DefaultColliderLength = 0.008f;
+        internal const float DefaultColliderRadius = 0.024f;
 #endif
 
         internal float m_baseDanLength = DefaultDanLength;
@@ -49,7 +49,7 @@ namespace Core_BetterPenetration
             Initialize(character, options);
         }
 
-        private void Initialize(ChaControl character, DanOptions options)
+        internal void Initialize(ChaControl character, DanOptions options)
         {
             ClearDanAgent();
 
@@ -68,7 +68,7 @@ namespace Core_BetterPenetration
             Debug.Log($"BP Dan Found { m_bpDanPointsFound}; BP Tama Found {m_bpTamaFound}");
         }
 
-        private void InitializeDan()
+        internal void InitializeDan()
         {
             List<Transform> danTransforms = new List<Transform>();
             foreach (var boneName in BoneNames.DanBones)
@@ -89,7 +89,9 @@ namespace Core_BetterPenetration
             if (danTransforms.Count == 9)
                 m_bpColliderBonesFound = true;
 
-            m_danPoints = new DanPoints(danTransforms, tamaTop);
+            Transform danEnd = m_danCharacter.GetComponentsInChildren<Transform>().FirstOrDefault(x => x.name != null && x.name.Contains(BoneNames.BPDanEnd));
+
+            m_danPoints = new DanPoints(danTransforms, tamaTop, danEnd);
             m_danPointsFound = true;
             //           m_baseDanLength = DefaultDanLength * m_danPoints.GetDanLossyScale();
             m_baseDanLength = Vector3.Distance(danTransforms[0].position, danTransforms[1].position) * (danTransforms.Count - 1);
@@ -165,7 +167,7 @@ namespace Core_BetterPenetration
             }
         }
 
-        private DynamicBoneCollider InitializeCollider(Transform parent, float radius, float length, Vector3 centerOffset,
+        internal DynamicBoneCollider InitializeCollider(Transform parent, float radius, float length, Vector3 centerOffset,
             DynamicBoneCollider.Direction direction = DynamicBoneCollider.Direction.X,
             DynamicBoneCollider.Bound bound = DynamicBoneCollider.Bound.Outside)
         {
@@ -236,7 +238,7 @@ namespace Core_BetterPenetration
             m_danPoints.GetDanLossyScale();
         }
 
-        private float GetSquishedDanLength(float danDistanceToTarget)
+        internal float GetSquishedDanLength(float danDistanceToTarget)
         {
             float danLength = m_baseDanLength;
             float innerSquishDistance = m_baseDanLength - m_baseDanLength * m_danOptions.squishThreshold - danDistanceToTarget;
@@ -247,7 +249,7 @@ namespace Core_BetterPenetration
             return danLength;
         }
 
-        private float GetSquishedDanGirth(float danDistanceToTarget)
+        internal float GetSquishedDanGirth(float danDistanceToTarget)
         {
             float girthScaleFactor = 1;
             float innerSquishDistance = m_baseDanLength - m_baseDanLength * m_danOptions.squishThreshold - danDistanceToTarget;
@@ -258,7 +260,7 @@ namespace Core_BetterPenetration
             return girthScaleFactor;
         }
 
-        private float GetMaxDanLength(float danLength, Vector3 lookTarget, Vector3 limitPoint, float danDistanceToTarget)
+        internal float GetMaxDanLength(float danLength, Vector3 lookTarget, Vector3 limitPoint, float danDistanceToTarget)
         {
             float maxDanLength = danLength;
             float targetDistanceToLimit = Vector3.Distance(lookTarget, limitPoint);
@@ -269,7 +271,7 @@ namespace Core_BetterPenetration
             return maxDanLength;
         }
 
-        private List<Vector3> AdjustDanPointsToTargets(Vector3 danLookTarget, Vector3 danEndTarget, float danLength, float danDistanceToTarget)
+        internal List<Vector3> AdjustDanPointsToTargets(Vector3 danLookTarget, Vector3 danEndTarget, float danLength, float danDistanceToTarget)
         {
             List<Vector3> adjustedDanPoints = new List<Vector3>();
             foreach (var point in m_danPoints.danPoints)
@@ -522,7 +524,7 @@ namespace Core_BetterPenetration
             m_danPoints.AimDanPoints(adjustedDanPoints, m_danOptions.rotateTamaWithShaft);
         }
 
-        private Vector3 ConstrainDan(Vector3 danStart, Vector3 danTargetVector, Vector3 danEndTarget, Vector3 innerLimit, float danLength, float danDistanceToTarget, CollisionAgent targetAgent)
+        internal Vector3 ConstrainDan(Vector3 danStart, Vector3 danTargetVector, Vector3 danEndTarget, Vector3 innerLimit, float danLength, float danDistanceToTarget, CollisionAgent targetAgent)
         {
             if (m_danPenetration)
             {
@@ -549,7 +551,7 @@ namespace Core_BetterPenetration
             return danEndTarget;
         }
 
-        private Vector3 ConstrainDanToBody(CollisionAgent target, Vector3 dan101_pos, Vector3 danVector, float squishedDanLength, bool anaTarget)
+        internal Vector3 ConstrainDanToBody(CollisionAgent target, Vector3 dan101_pos, Vector3 danVector, float squishedDanLength, bool anaTarget)
         {
             Vector3 adjustedDan109 = dan101_pos + danVector * squishedDanLength;
             bool constrainPointFound = false;
@@ -559,7 +561,7 @@ namespace Core_BetterPenetration
             return adjustedDan109;
         }
 
-        private Vector3 ConstrainDanToCollisionPoints(Vector3 danStart, Vector3 danEnd, float targetLength, ref bool constrainPointFound, List<CollisionPoint> collisionPoints, float clippingDepth, bool frontSide, bool anaTarget)
+        internal Vector3 ConstrainDanToCollisionPoints(Vector3 danStart, Vector3 danEnd, float targetLength, ref bool constrainPointFound, List<CollisionPoint> collisionPoints, float clippingDepth, bool frontSide, bool anaTarget)
         {
             Vector3 adjustedDanEnd = danEnd;
             if (constrainPointFound)
@@ -614,17 +616,17 @@ namespace Core_BetterPenetration
             return adjustedDanEnd;
         }
 
-        private Vector3 ConstrainDanToHead(Vector3 dan101_pos, Vector3 danVector, float squishedDanLength)
+        internal Vector3 ConstrainDanToHead(Vector3 dan101_pos, Vector3 danVector, float squishedDanLength)
         {
             return (dan101_pos + danVector * squishedDanLength);
         }
 
-        private Vector3 ConstrainDanToPull(Vector3 dan101_pos, Vector3 danVector, float squishedDanLength)
+        internal Vector3 ConstrainDanToPull(Vector3 dan101_pos, Vector3 danVector, float squishedDanLength)
         {
             return (dan101_pos + danVector * squishedDanLength);
         }
 
-        private void ResetDanAdjustment()
+        internal void ResetDanAdjustment()
         {
             m_danPoints.ResetDanPoints();
     //        ScaleDanColliders(m_baseDanLength);
@@ -690,7 +692,7 @@ namespace Core_BetterPenetration
                 m_referenceTarget = firstTarget.m_bpKokanTarget;
         }
 
-        private void AddDanColliders(CollisionAgent target)
+        internal void AddDanColliders(CollisionAgent target)
         {
             foreach (var danCollider in m_danColliders)
             {
@@ -702,7 +704,7 @@ namespace Core_BetterPenetration
             }
         }
 
-        private void RemoveDanColliders(CollisionAgent target)
+        internal void RemoveDanColliders(CollisionAgent target)
         {
             foreach (var danCollider in m_danColliders)
             {
@@ -714,7 +716,7 @@ namespace Core_BetterPenetration
             }
         }
 	
-        private void AddFingerColliders(CollisionAgent target)
+        internal void AddFingerColliders(CollisionAgent target)
         {
             foreach (DynamicBone dynamicBone in target.m_kokanDynamicBones)
             {
@@ -729,7 +731,7 @@ namespace Core_BetterPenetration
             }
         }
 
-        private void RemoveFingerColliders(CollisionAgent target)
+        internal void RemoveFingerColliders(CollisionAgent target)
         {
             foreach (DynamicBone dynamicBone in target.m_kokanDynamicBones)
             {
@@ -744,7 +746,7 @@ namespace Core_BetterPenetration
             }
         }
 
-        private void ClearTarget()
+        internal void ClearTarget()
         {
             m_referenceTarget = null;
             m_danPenetration = false;

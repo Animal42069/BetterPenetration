@@ -6,12 +6,12 @@ namespace Core_BetterPenetration
     // Creates a Plane defined by two non-parallel lines
     class TwistedPlane
     {
-        private Vector3 firstOrigin;
-        private Vector3 firstVector;
-        private Vector3 secondOrigin;
-        private Vector3 secondVector;
-        private Vector3 forwardVector;
-        private Vector3 twistVector;
+        internal Vector3 firstOrigin;
+        internal Vector3 firstVector;
+        internal Vector3 secondOrigin;
+        internal Vector3 secondVector;
+        internal Vector3 forwardVector;
+        internal Vector3 twistVector;
 
         public TwistedPlane(Vector3 firstOrig, Vector3 firstVec, Vector3 secondOrig, Vector3 secondVec)
         {
@@ -23,7 +23,7 @@ namespace Core_BetterPenetration
             twistVector = secondVec - firstVec;
         }
 
-        private bool FindIntersectValues(Vector3 lineVector, Vector3 offsetVector, Vector3 FVxLV, Vector3 TWxLV, Vector3 OFxLV, Vector3 LVxFW, double u, out double v, out double t)
+        internal bool FindIntersectValues(Vector3 lineVector, Vector3 offsetVector, Vector3 FVxLV, Vector3 TWxLV, Vector3 OFxLV, Vector3 LVxFW, double u, out double v, out double t)
         {
             double Cu = 0;
             v = 0;
@@ -76,7 +76,7 @@ namespace Core_BetterPenetration
         }
 
         // return true if they interstect
-        private bool IntersectLineOnTwistedPlane(Vector3 lineStart, Vector3 lineEnd, bool bExtendPlaneBeyondFirstVector, bool bExtendPlaneBeyoneSecondVector, out Vector3 intersectionPoint, out Vector3 intersectForwardVector, out float distanceToSecondVector)
+        internal bool IntersectLineOnTwistedPlane(Vector3 lineStart, Vector3 lineEnd, bool bExtendPlaneBeyondFirstVector, bool bExtendPlaneBeyoneSecondVector, out Vector3 intersectionPoint, out Vector3 intersectForwardVector, out float distanceToSecondVector)
         {
             distanceToSecondVector = 0;
             intersectForwardVector = forwardVector;

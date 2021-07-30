@@ -8,6 +8,7 @@ using BepInEx;
 using System.Reflection;
 using HarmonyLib;
 using System.Collections;
+using System;
 
 #if AI_STUDIO || HS2_STUDIO
 using AIChara;
@@ -17,15 +18,15 @@ namespace Core_BetterPenetration
 {
     public class BetterPenetrationController : CharaCustomFunctionController
     {
-        private DanAgent danAgent;
-        private DanOptions danOptions;
+        internal DanAgent danAgent;
+        internal DanOptions danOptions;
         public ChaControl collisionAgent;
+        public string danEntryParentName;
+        public string danEndParentName;
         public Transform danEntryChild;
-        public Transform danEntryParent;
         public Transform danEndChild;
-        public Transform danEndParent;
         public bool danTargetsValid = false;
-        private bool cardReloaded = false;
+        internal bool cardReloaded = false;
         internal object[] danEntryConstraint;
         internal object[] danEndConstraint;
 
@@ -51,6 +52,8 @@ namespace Core_BetterPenetration
         }
         protected override void OnReload(GameMode currentGameMode, bool maintainState)
         {
+            danTargetsValid = false;
+
             PluginData data = GetExtendedData();
 
             float lengthSquish = DefaultLengthSquish;
@@ -115,7 +118,7 @@ namespace Core_BetterPenetration
 
         internal void CheckAutoTarget(BaseUnityPlugin plugin)
         {
-            if (danEntryChild == null || danEndChild == null || danOptions.danAutoTarget == DanOptions.AutoTarget.Off)
+            if (danOptions.danAutoTarget == DanOptions.AutoTarget.Off || !danTargetsValid)
                 return;
 
             string targetTransform = BoneNames.BPKokanTarget;
@@ -129,7 +132,7 @@ namespace Core_BetterPenetration
                 return;
 
             Transform autoTarget = null;
-            float currentTargetDistance = danAgent.m_baseDanLength;
+            float currentTargetDistance = danAgent.m_baseDanLength * 2.0f;
 
             foreach (var potentialTarget in potentialTargets)
             {
@@ -160,8 +163,9 @@ namespace Core_BetterPenetration
             RemoveDanConstraints(plugin);
             RemoveCollisionAgent();
 
-            SetCollisionAgent(collisionAgent, autoTarget.name == BoneNames.BPKokanTarget);
-            danEntryParent = autoTarget;
+            Transform danEntryParent = autoTarget;
+            danEntryParentName = autoTarget.name;
+            SetCollisionAgent(collisionAgent, danEntryParentName == BoneNames.BPKokanTarget);
 
 #if AI_STUDIO || HS2_STUDIO
             Vector3 headOffset = new Vector3(0f, -0.05f, 0.02f);
@@ -174,20 +178,23 @@ namespace Core_BetterPenetration
                 danEntryParent, 
                 danEntryChild, 
                 true, 
-                (danEntryParent.name == BoneNames.HeadTarget)? headOffset: Vector3.zero, 
+                (danEntryParentName == BoneNames.HeadTarget)? headOffset: Vector3.zero, 
                 false,
                 Quaternion.identity,
                 false, 
                 Vector3.zero, 
                 $"{danAgent.m_danCharacter.fileParam.fullname}'s Penis First Target" };
 
-            if (danEntryParent.name == BoneNames.HeadTarget)
-                danEndParent = collisionAgent.GetComponentsInChildren<Transform>().Where(x => x.name.Equals(BoneNames.InnerHeadTarget)).FirstOrDefault();
+            Transform danEndParent;
+            if (danEntryParentName == BoneNames.HeadTarget)
+                danEndParent= collisionAgent.GetComponentsInChildren<Transform>().Where(x => x.name.Equals(BoneNames.InnerHeadTarget)).FirstOrDefault();
             else
                 danEndParent = collisionAgent.GetComponentsInChildren<Transform>().Where(x => x.name.Equals(BoneNames.InnerTarget)).FirstOrDefault();
 
+            danEndParentName = danEndParent.name;
+
             danEndConstraint = new object[] { 
-                true, 
+                true,
                 danEndParent, 
                 danEndChild, 
                 true, 
@@ -212,6 +219,8 @@ namespace Core_BetterPenetration
         public void ClearDanAgent()
         {
             danTargetsValid = false;
+            danEntryChild = null;
+            danEndChild = null;
 
             if (danAgent == null)
                 return;
@@ -224,8 +233,8 @@ namespace Core_BetterPenetration
         {
             ClearDanAgent();
 
-            danEntryChild = ChaControl.GetComponentsInChildren<Transform>().FirstOrDefault(x => x.name != null && x.name.Equals("k_f_dan_entry"));
-            danEndChild = ChaControl.GetComponentsInChildren<Transform>().FirstOrDefault(x => x.name != null && x.name.Equals("k_f_dan_end"));
+            danEntryChild = ChaControl.GetComponentsInChildren<Transform>().FirstOrDefault(x => x.name != null && x.name.Equals(BoneNames.BPDanEntryTarget));
+            danEndChild = ChaControl.GetComponentsInChildren<Transform>().FirstOrDefault(x => x.name != null && x.name.Equals(BoneNames.BPDanEndTarget));
 
             if (danEntryChild == null || danEndChild == null)
                 return;
@@ -235,6 +244,8 @@ namespace Core_BetterPenetration
 
             danAgent = new DanAgent(ChaControl, danOptions);
             danTargetsValid = true;
+
+            InitializeTama();
         }
 
         public void ClearTama()
@@ -291,32 +302,28 @@ namespace Core_BetterPenetration
         public void SaveConstraintParams(bool isEntry, object[] constraintParams)
         {
             if (isEntry)
-                danEntryConstraint = constraintParams;
-            else
-                danEndConstraint = constraintParams;
-        }
-
-        public void RemoveConstraintParams(bool isEntry)
-        {
-            if (!isEntry)
             {
-                danEndConstraint = null;
-                return;
+                danEntryConstraint = constraintParams;
+                danEntryParentName = constraintParams.GetValue(1) as string;
             }
-
-            danEntryConstraint = null;
-            RemoveCollisionAgent();
+            else
+            {
+                danEndConstraint = constraintParams;
+                danEndParentName = constraintParams.GetValue(1) as string;
+            }
         }
 
         public void AddDanConstraints(BaseUnityPlugin plugin, Transform danEntryParent = null, Transform danEndParent = null)
         {
-            if (danEntryChild == null || danEndChild == null || collisionAgent == null)
+            if (!danTargetsValid || collisionAgent == null)
                 return;
 
-            if (danEntryConstraint != null && danEntryConstraint.GetValue(1) != null)
+            if (danEntryConstraint != null)
             {
                 var parentTransform = danEntryParent;
-                if (parentTransform == null)
+                if (parentTransform == null && !danEntryParentName.IsNullOrEmpty())
+                    parentTransform = collisionAgent.GetComponentsInChildren<Transform>().Where(x => x.name == danEntryParentName).FirstOrDefault();
+                if (parentTransform == null && danEntryConstraint.GetValue(1) != null)
                     parentTransform = collisionAgent.GetComponentsInChildren<Transform>().Where(x => x.name == danEntryConstraint.GetValue(1) as string).FirstOrDefault();
 
                 if (parentTransform != null)
@@ -327,10 +334,12 @@ namespace Core_BetterPenetration
                 }
             }
 
-            if (danEndConstraint != null && danEndConstraint.GetValue(1) != null)
+            if (danEndConstraint != null)
             {
                 var parentTransform = danEndParent;
-                if (parentTransform == null)
+                if (parentTransform == null && !danEndParentName.IsNullOrEmpty())
+                    parentTransform = collisionAgent.GetComponentsInChildren<Transform>().Where(x => x.name == danEndParentName).FirstOrDefault();
+                if (parentTransform == null && danEndConstraint.GetValue(1) != null)
                     parentTransform = collisionAgent.GetComponentsInChildren<Transform>().Where(x => x.name == danEndConstraint.GetValue(1) as string).FirstOrDefault();
 
                 if (parentTransform != null)
@@ -346,6 +355,9 @@ namespace Core_BetterPenetration
         {
             if (danEntryChild == null || danEndChild == null || collisionAgent == null)
                 return;
+
+            danEntryParentName = null;
+            danEndParentName = null;
 
             var pluginTraverse = Traverse.Create(plugin);
             if (pluginTraverse == null)

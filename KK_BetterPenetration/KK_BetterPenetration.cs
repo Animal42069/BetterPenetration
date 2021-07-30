@@ -22,48 +22,48 @@ namespace KK_BetterPenetration
     {
         public static KK_BetterPenetration instance;
 
-        public const string VERSION = "4.1.0.0";
-        private const int MaleLimit = 2;
-        private const int FemaleLimit = 2;
+        public const string VERSION = "4.2.0.0";
+        internal const int MaleLimit = 2;
+        internal const int FemaleLimit = 2;
 
-        private static readonly List<float> frontOffsets = new List<float> { -0.04f, 0.04f, 0.06f };
-        private static readonly List<float> backOffsets = new List<float> { -0.04f, 0.02f, 0f };
-        private static readonly List<bool> frontPointsInward = new List<bool> { false, false, false, };
-        private static readonly List<bool> backPointsInward = new List<bool> { false, true, true };
+        internal static readonly List<float> frontOffsets = new List<float> { -0.04f, 0.04f, 0.06f };
+        internal static readonly List<float> backOffsets = new List<float> { -0.04f, 0.02f, 0f };
+        internal static readonly List<bool> frontPointsInward = new List<bool> { false, false, false, };
+        internal static readonly List<bool> backPointsInward = new List<bool> { false, true, true };
 
-        private static readonly ConfigEntry<float>[] _danColliderLengthScale = new ConfigEntry<float>[MaleLimit];
-        private static readonly ConfigEntry<float>[] _danColliderRadiusScale = new ConfigEntry<float>[MaleLimit];
-        private static readonly ConfigEntry<float>[] _danLengthSquishFactor = new ConfigEntry<float>[MaleLimit];
-        private static readonly ConfigEntry<float>[] _danGirthSquishFactor = new ConfigEntry<float>[MaleLimit];
-        private static readonly ConfigEntry<float>[] _danSquishThreshold = new ConfigEntry<float>[MaleLimit];
-        private static readonly ConfigEntry<bool>[] _danSquishOralGirth = new ConfigEntry<bool>[MaleLimit];
-        private static readonly ConfigEntry<bool>[] _simplifyPenetration = new ConfigEntry<bool>[MaleLimit];
-        private static readonly ConfigEntry<bool>[] _simplifyOral = new ConfigEntry<bool>[MaleLimit];
-        private static readonly ConfigEntry<bool>[] _rotateTamaWithShaft = new ConfigEntry<bool>[MaleLimit];
+        internal static readonly ConfigEntry<float>[] _danColliderLengthScale = new ConfigEntry<float>[MaleLimit];
+        internal static readonly ConfigEntry<float>[] _danColliderRadiusScale = new ConfigEntry<float>[MaleLimit];
+        internal static readonly ConfigEntry<float>[] _danLengthSquishFactor = new ConfigEntry<float>[MaleLimit];
+        internal static readonly ConfigEntry<float>[] _danGirthSquishFactor = new ConfigEntry<float>[MaleLimit];
+        internal static readonly ConfigEntry<float>[] _danSquishThreshold = new ConfigEntry<float>[MaleLimit];
+        internal static readonly ConfigEntry<bool>[] _danSquishOralGirth = new ConfigEntry<bool>[MaleLimit];
+        internal static readonly ConfigEntry<bool>[] _simplifyPenetration = new ConfigEntry<bool>[MaleLimit];
+        internal static readonly ConfigEntry<bool>[] _simplifyOral = new ConfigEntry<bool>[MaleLimit];
+        internal static readonly ConfigEntry<bool>[] _rotateTamaWithShaft = new ConfigEntry<bool>[MaleLimit];
 
-        private static ConfigEntry<float> _clippingDepth;
-        private static ConfigEntry<Vector3> _kokanOffset;
-        private static ConfigEntry<Vector3> _innerKokanOffset;
-        private static ConfigEntry<Vector3> _mouthOffset;
-        private static ConfigEntry<Vector3> _innerMouthOffset;
-        private static readonly ConfigEntry<float>[] _frontCollisionOffset = new ConfigEntry<float>[frontOffsets.Count];
-        private static readonly ConfigEntry<float>[] _backCollisionOffset = new ConfigEntry<float>[backOffsets.Count];
+        internal static ConfigEntry<float> _clippingDepth;
+        internal static ConfigEntry<Vector3> _kokanOffset;
+        internal static ConfigEntry<Vector3> _innerKokanOffset;
+        internal static ConfigEntry<Vector3> _mouthOffset;
+        internal static ConfigEntry<Vector3> _innerMouthOffset;
+        internal static readonly ConfigEntry<float>[] _frontCollisionOffset = new ConfigEntry<float>[frontOffsets.Count];
+        internal static readonly ConfigEntry<float>[] _backCollisionOffset = new ConfigEntry<float>[backOffsets.Count];
 
-        private static Harmony harmony;
+        internal static Harmony harmony;
 		
         //In VR, type "VRHScene" is used instead of "HSceneProc". Use type "BaseLoader" as the type for "hSceneProc" since it's inherited by both "HSceneProc" and "VRHScene".
-        private static BaseLoader hSceneProc;
-        private static Traverse hSceneProcTraverse;
-        private static bool hSceneStarted = false;
-        private static bool inHScene = false;
-        private static readonly bool loadingCharacter = false;
-        private static bool twoDans = false;
-        private static Type _uncensorSelectorType;
-        private static bool resetParticlesStep1 = false;
-        private static bool resetParticlesStep2 = false;
-        private static int resetParticlesCount = 0;
+        internal static BaseLoader hSceneProc;
+        internal static Traverse hSceneProcTraverse;
+        internal static bool hSceneStarted = false;
+        internal static bool inHScene = false;
+        internal static readonly bool loadingCharacter = false;
+        internal static bool twoDans = false;
+        internal static Type _uncensorSelectorType;
+        internal static bool resetParticlesStep1 = false;
+        internal static bool resetParticlesStep2 = false;
+        internal static int resetParticlesCount = 0;
 
-        private void Awake()
+        internal void Awake()
         {
             instance = this;
 
@@ -97,13 +97,13 @@ namespace KK_BetterPenetration
             for (int offset = 0; offset < backOffsets.Count; offset++)
                 (_backCollisionOffset[offset] = Config.Bind("Female Options", "Clipping Offset: Back Collision " + offset, backOffsets[offset], "Individual offset on colision point, to improve clipping")).SettingChanged += (s, e) =>
                 { UpdateCollisionOptions(); };
-            (_kokanOffset = Config.Bind("Female Options", "Target Offset: Vagina Target", new Vector3(0, 0, 0), "Offset of the vagina target")).SettingChanged += (s, e) =>
+            (_kokanOffset = Config.Bind("Female Options", "Target Offset: Vagina Target", Vector3.zero, "Offset of the vagina target")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_innerKokanOffset = Config.Bind("Female Options", "Target Offset: Inner Vagina Target", new Vector3(0, 0, 0), "Offset of the simplified inner vagina target")).SettingChanged += (s, e) =>
+            (_innerKokanOffset = Config.Bind("Female Options", "Target Offset: Inner Vagina Target", Vector3.zero, "Offset of the simplified inner vagina target")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_mouthOffset = Config.Bind("Female Options", "Target Offset: Mouth Target", new Vector3(0, 0, 0), "Offset of the mouth target")).SettingChanged += (s, e) =>
+            (_mouthOffset = Config.Bind("Female Options", "Target Offset: Mouth Target", Vector3.zero, "Offset of the mouth target")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_innerMouthOffset = Config.Bind("Female Options", "Target Offset: Inner Mouth Target", new Vector3(0, 0, 0), "Offset of the simplified inner mouth target")).SettingChanged += (s, e) =>
+            (_innerMouthOffset = Config.Bind("Female Options", "Target Offset: Inner Mouth Target", Vector3.zero, "Offset of the simplified inner mouth target")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
 
             harmony = new Harmony("KK_BetterPenetration");
@@ -136,13 +136,13 @@ namespace KK_BetterPenetration
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "LoadCharaFbxDataAsync")]
-        private static void ChaControl_LoadCharaFbxDataAsync(ChaControl __instance)
+        internal static void ChaControl_LoadCharaFbxDataAsync(ChaControl __instance)
         {
             CoreGame.RemoveCollidersFromCoordinate(__instance);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(HSceneProc), "Start")]
-        private static void HScene_PostStart(BaseLoader __instance)
+        internal static void HScene_PostStart(BaseLoader __instance)
         {
             hSceneProc = __instance;
             hSceneProcTraverse = Traverse.Create(__instance);
@@ -171,7 +171,7 @@ namespace KK_BetterPenetration
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(HSceneProc), "Update")]
-        private static void HScene_PostUpdate()
+        internal static void HScene_PostUpdate()
         {
             if (!hSceneStarted || inHScene || hSceneProc == null || !hSceneProc.enabled || hSceneProcTraverse == null)
                 return;
@@ -207,7 +207,7 @@ namespace KK_BetterPenetration
         }
 
         [HarmonyPrefix, HarmonyPatch(typeof(HSceneProc), "ChangeAnimator")]
-        private static void HSceneProc_PreChangeAnimator(HSceneProc.AnimationListInfo _nextAinmInfo)
+        internal static void HSceneProc_PreChangeAnimator(HSceneProc.AnimationListInfo _nextAinmInfo)
         {
             if (!inHScene || _nextAinmInfo == null || _nextAinmInfo.pathFemaleBase.file == null)
                 return;
@@ -216,7 +216,7 @@ namespace KK_BetterPenetration
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(HSceneProc), "ChangeAnimator")]
-        private static void HSceneProc_PostChangeAnimator()
+        internal static void HSceneProc_PostChangeAnimator()
         {
             if (!inHScene)
                 return;
@@ -225,13 +225,13 @@ namespace KK_BetterPenetration
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "setPlay")]
-        private static void ChaControl_PostSetPlay()
+        internal static void ChaControl_PostSetPlay()
         {
             resetParticlesStep1 = true;
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(Lookat_dan), "SetInfo")]
-        private static void H_Lookat_dan_PostSetInfo(Lookat_dan __instance, ChaControl ___male)
+        internal static void H_Lookat_dan_PostSetInfo(Lookat_dan __instance, ChaControl ___male)
         {
             if (!inHScene || loadingCharacter || __instance.strPlayMotion == null || ___male == null)
                 return;
@@ -288,7 +288,7 @@ namespace KK_BetterPenetration
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(Lookat_dan), "Release")]
-        private static void H_Lookat_dan_PostRelease(Lookat_dan __instance, ChaControl ___male)
+        internal static void H_Lookat_dan_PostRelease(Lookat_dan __instance, ChaControl ___male)
         {
             if (!inHScene || loadingCharacter || __instance.strPlayMotion == null || ___male == null)
                 return;
@@ -302,7 +302,7 @@ namespace KK_BetterPenetration
             CoreGame.LookAtDanRelease(maleNum, __instance.numFemale, twoDans);
         }
 
-        private static void UpdateDanColliders()
+        internal static void UpdateDanColliders()
         {
             if (!inHScene)
                 return;
@@ -311,7 +311,7 @@ namespace KK_BetterPenetration
                 CoreGame.UpdateDanCollider(index, _danColliderRadiusScale[index].Value, _danColliderLengthScale[index].Value);
         }
 
-        private static void UpdateDanOptions()
+        internal static void UpdateDanOptions()
         {
             if (!inHScene)
                 return;
@@ -322,7 +322,7 @@ namespace KK_BetterPenetration
                     _simplifyPenetration[index].Value, _simplifyOral[index].Value, _rotateTamaWithShaft[index].Value);
         }
 
-        private static void UpdateCollisionOptions()
+        internal static void UpdateCollisionOptions()
         {
             if (!inHScene)
                 return;
@@ -332,7 +332,7 @@ namespace KK_BetterPenetration
                 CoreGame.UpdateCollisionOptions(index, collisionOptions[index]);
         }
 
-        private static List<DanOptions> PopulateDanOptionsList()
+        internal static List<DanOptions> PopulateDanOptionsList()
         {
             List<DanOptions> danOptions = new List<DanOptions>();
 
@@ -346,7 +346,7 @@ namespace KK_BetterPenetration
             return danOptions;
         }
 
-        private static List<CollisionOptions> PopulateCollisionOptionsList()
+        internal static List<CollisionOptions> PopulateCollisionOptionsList()
         {
             List<CollisionOptions> collisionOptions = new List<CollisionOptions>();
 
@@ -367,7 +367,7 @@ namespace KK_BetterPenetration
             return collisionOptions;
         }
 
-        private static void UncensorSelector_ReloadCharacterBody_Postfix(object __instance)
+        internal static void UncensorSelector_ReloadCharacterBody_Postfix(object __instance)
         {
             ChaControl chaControl = (ChaControl)__instance.GetPrivateProperty("ChaControl");
             if (chaControl == null)

@@ -11,9 +11,9 @@ namespace Core_BetterPenetration
 {
     class CoreGame
     {
-        private static List<DanAgent> danAgents;
-        private static List<CollisionAgent> collisionAgents;
-        private static List<bool> danHasNewTarget;
+        internal static List<DanAgent> danAgents;
+        internal static List<CollisionAgent> collisionAgents;
+        internal static List<bool> danHasNewTarget;
 
         public static void InitializeAgents(List<ChaControl> danCharacterList, List<ChaControl> collisionCharacterList, List<DanOptions> danOptions, List<CollisionOptions> collisionOptions)
         {
@@ -47,7 +47,7 @@ namespace Core_BetterPenetration
                 agent.ClearDanAgent();
         }
 
-        private static void ClearCollisionAgents()
+        internal static void ClearCollisionAgents()
         {
             if (collisionAgents == null)
                 return;

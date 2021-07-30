@@ -6,11 +6,11 @@ namespace Core_BetterPenetration
 {
     static class Tools
     {
-        private struct MemberKey
+        internal struct MemberKey
         {
             public readonly Type type;
             public readonly string name;
-            private readonly int _hashCode;
+            internal readonly int _hashCode;
 
             public MemberKey(Type inType, string inName)
             {
@@ -25,7 +25,7 @@ namespace Core_BetterPenetration
             }
         }
 
-        private static readonly Dictionary<MemberKey, PropertyInfo> _propertyCache = new Dictionary<MemberKey, PropertyInfo>();
+        internal static readonly Dictionary<MemberKey, PropertyInfo> _propertyCache = new Dictionary<MemberKey, PropertyInfo>();
 
         internal static object GetPrivateProperty(this object self, string name)
         {
