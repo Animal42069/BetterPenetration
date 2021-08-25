@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-#if HS2 || AI || HS2_STUDIO || AI_STUDIO
+#if HS2 || AI
 using AIChara;
 #endif
 
@@ -22,7 +22,7 @@ namespace Core_BetterPenetration
         internal bool m_bpTamaFound = false;
         internal int tamaSelfColliders;
 
-#if !HS2_STUDIO && !AI_STUDIO && !KK_STUDIO
+#if !STUDIO
         internal Transform m_referenceTarget;
         internal DynamicBoneCollider m_indexCollider;
         internal DynamicBoneCollider m_middleCollider;
@@ -30,12 +30,12 @@ namespace Core_BetterPenetration
         internal bool m_danPenetration = false;
 #endif
 
-#if HS2 || AI || HS2_STUDIO || AI_STUDIO
+#if HS2 || AI
         internal const float DefaultDanLength = 1.898f;
         internal const float DefaultColliderVertical = -0.03f;
         internal const float DefaultColliderLength = 0.15f;
         internal const float DefaultColliderRadius = 0.18f;
-#elif KK || KK_STUDIO
+#elif KK
         internal const float DefaultDanLength = 0.1898f;
         internal const float DefaultColliderVertical = 0.0f;
         internal const float DefaultColliderLength = 0.008f;
@@ -43,6 +43,7 @@ namespace Core_BetterPenetration
 #endif
 
         internal float m_baseDanLength = DefaultDanLength;
+        internal float lastDanDistance;
 
         public DanAgent(ChaControl character, DanOptions options)
         {
@@ -62,10 +63,10 @@ namespace Core_BetterPenetration
             InitializeDan();
             InitializeTama();
 
-#if !HS2_STUDIO && !AI_STUDIO && !KK_STUDIO
+#if !STUDIO
             UpdateFingerColliders(m_danOptions.fingerRadius, m_danOptions.fingerLength);
 #endif
-            Debug.Log($"BP Dan Found { m_bpDanPointsFound}; BP Tama Found {m_bpTamaFound}");
+            UnityEngine.Debug.Log($"BP Dan Found { m_bpDanPointsFound}; BP Tama Found {m_bpTamaFound}");
         }
 
         internal void InitializeDan()
@@ -73,12 +74,12 @@ namespace Core_BetterPenetration
             List<Transform> danTransforms = new List<Transform>();
             foreach (var boneName in BoneNames.DanBones)
             {
-                Transform danBone = m_danCharacter.GetComponentsInChildren<Transform>().FirstOrDefault(x => x.name != null && x.name.Contains(boneName));
+                Transform danBone = Tools.GetTransformOfChaControl(m_danCharacter, boneName);
                 if (danBone != null)
                     danTransforms.Add(danBone);
             }
 
-            Transform tamaTop = m_danCharacter.GetComponentsInChildren<Transform>().FirstOrDefault(x => x.name != null && x.name.Contains(BoneNames.TamaTop));
+            Transform tamaTop = Tools.GetTransformOfChaControl(m_danCharacter, BoneNames.TamaTop);
 
             if (tamaTop == null || danTransforms.Count < 2)
                 return;
@@ -89,16 +90,16 @@ namespace Core_BetterPenetration
             if (danTransforms.Count == 9)
                 m_bpColliderBonesFound = true;
 
-            Transform danEnd = m_danCharacter.GetComponentsInChildren<Transform>().FirstOrDefault(x => x.name != null && x.name.Contains(BoneNames.BPDanEnd));
+            Transform danEnd = Tools.GetTransformOfChaControl(m_danCharacter, BoneNames.BPDanEnd);
 
             m_danPoints = new DanPoints(danTransforms, tamaTop, danEnd);
             m_danPointsFound = true;
-            //           m_baseDanLength = DefaultDanLength * m_danPoints.GetDanLossyScale();
             m_baseDanLength = Vector3.Distance(danTransforms[0].position, danTransforms[1].position) * (danTransforms.Count - 1);
+            lastDanDistance = m_baseDanLength;
 
             if (m_bpColliderBonesFound)
             {
-                m_danColliders = m_danCharacter.GetComponentsInChildren<DynamicBoneCollider>().Where(x => x.name != null && x.name.Contains("cm_J_dan")).ToList();
+                m_danColliders = Tools.GetCollidersOfChaControl(m_danCharacter, BoneNames.BPDanBone);
 
                 m_danColliderRadius = new List<float>();
                 m_danColliderLength = new List<float>();
@@ -129,7 +130,7 @@ namespace Core_BetterPenetration
 
             foreach (var tamaBoneName in BoneNames.TamaBones)
             {
-                var tamaBone = m_danCharacter.GetComponentsInChildren<DynamicBone>().FirstOrDefault(x => x.name != null && x.name.Contains(tamaBoneName));
+                var tamaBone = Tools.GetDynamicBoneOfChaControl(m_danCharacter, tamaBoneName);
 
                 if (tamaBone == null)
                     return;
@@ -215,12 +216,14 @@ namespace Core_BetterPenetration
             m_danOptions.squishThreshold = squishThreshold;
         }
 
-        internal void SetDanTarget(Vector3 enterTarget, Vector3 endTarget)
+#if STUDIO
+        internal void SetDanTarget(Vector3 enterTarget, Vector3 endTarget, CollisionAgent targetAgent, bool isKokan, bool isOral)
         {
             if (!m_danPointsFound)
                 return;
 
             Vector3 danStartPosition = m_danPoints.GetDanStartPosition();
+            Vector3 danTargetVector = Vector3.Normalize(enterTarget - danStartPosition);
 
             float danDistanceToTarget = Vector3.Distance(danStartPosition, enterTarget);
             float adjustedDanLength = GetSquishedDanLength(danDistanceToTarget);
@@ -230,15 +233,14 @@ namespace Core_BetterPenetration
             adjustedDanLength = GetMaxDanLength(adjustedDanLength, enterTarget, endTarget, danDistanceToTarget);
 
             List<Vector3> adjustedDanPoints = AdjustDanPointsToTargets(enterTarget, endTarget, adjustedDanLength, danDistanceToTarget);
-#if !HS2_STUDIO && !AI_STUDIO && !KK_STUDIO
-            m_danPoints.AimDanPoints(adjustedDanPoints, m_danOptions.rotateTamaWithShaft);
-#else
+
             m_danPoints.AimDanPoints(adjustedDanPoints, true);
-#endif
+            AdjustPullBones(targetAgent, danTargetVector, danDistanceToTarget, isKokan, isOral, true);
+
             m_danPoints.GetDanLossyScale();
         }
-
-        internal float GetSquishedDanLength(float danDistanceToTarget)
+#endif
+    internal float GetSquishedDanLength(float danDistanceToTarget)
         {
             float danLength = m_baseDanLength;
             float innerSquishDistance = m_baseDanLength - m_baseDanLength * m_danOptions.squishThreshold - danDistanceToTarget;
@@ -322,7 +324,10 @@ namespace Core_BetterPenetration
             {
                 foreach (DynamicBone dynamicBone in target.GetComponentsInChildren<DynamicBone>())
                 {
-                    if (danCollider != null && dynamicBone.name.Contains(BoneNames.BPBone) && !dynamicBone.m_Colliders.Contains(danCollider))
+                    if (danCollider != null && 
+                        dynamicBone.name.Contains(BoneNames.BPBone) && 
+                        !dynamicBone.m_Colliders.Contains(danCollider) && 
+                        target == dynamicBone.GetComponentInParent<ChaControl>())
                         dynamicBone.m_Colliders.Add(danCollider);
                 }
             }
@@ -334,7 +339,9 @@ namespace Core_BetterPenetration
             {
                 foreach (DynamicBone dynamicBone in target.GetComponentsInChildren<DynamicBone>())
                 {
-                    if (danCollider != null && dynamicBone.name.Contains(BoneNames.BPBone))
+                    if (danCollider != null && 
+                        dynamicBone.name.Contains(BoneNames.BPBone) &&
+                        target == dynamicBone.GetComponentInParent<ChaControl>())
                         dynamicBone.m_Colliders.Remove(danCollider);
                 }
             }
@@ -349,7 +356,8 @@ namespace Core_BetterPenetration
             {
                 if (dynamicBoneCollider == null || 
                     (midSectionOnly && !BoneNames.MidSectionColliders.Contains(dynamicBoneCollider.name)) || 
-                    !BoneNames.BodyColliders.Contains(dynamicBoneCollider.name))
+                    !BoneNames.BodyColliders.Contains(dynamicBoneCollider.name) ||
+                    target != dynamicBoneCollider.GetComponentInParent<ChaControl>())
                     continue;
 
                 foreach (var tamaBone in m_tamaBones)
@@ -377,7 +385,29 @@ namespace Core_BetterPenetration
             }
         }
 
-#if !HS2_STUDIO && !AI_STUDIO && !KK_STUDIO
+        internal void AdjustPullBones(CollisionAgent targetAgent, Vector3 danDirection, float danDistanceToTarget, bool isVaginal, bool isOral, bool twoDans)
+        {
+            return;
+
+            float distanceChange = lastDanDistance - danDistanceToTarget;
+
+            if (isVaginal)
+                targetAgent.PullKokanBones(distanceChange, danDirection);
+            else if (!twoDans)
+                targetAgent.ReturnKokanBones();
+
+            if (isOral)
+                targetAgent.PullOralBone(distanceChange, danDirection);
+            else if (!twoDans)
+                targetAgent.ReturnOralBones();
+
+            if (isVaginal || isOral)
+                lastDanDistance = danDistanceToTarget;
+            else
+                lastDanDistance = m_baseDanLength;
+        }
+
+#if !STUDIO
         internal void UpdateDanOptions(float danLengthSquish, float danGirthSquish, float squishThreshold, bool squishOralGirth, bool useFingerColliders, bool simplifyPenetration, bool simplifyOral, bool rotateTamaWithShaft)
         {
             m_danOptions.danLengthSquish = danLengthSquish;
@@ -395,9 +425,9 @@ namespace Core_BetterPenetration
             if (!m_danPointsFound)
                 return;
 
-            Transform index = m_danCharacter.GetComponentsInChildren<Transform>().FirstOrDefault(x => x.name != null && x.name.Contains(BoneNames.IndexFinger));
-            Transform middle = m_danCharacter.GetComponentsInChildren<Transform>().FirstOrDefault(x => x.name != null && x.name.Contains(BoneNames.MiddleFinger));
-            Transform ring = m_danCharacter.GetComponentsInChildren<Transform>().FirstOrDefault(x => x.name != null && x.name.Contains(BoneNames.RingFinger));
+            Transform index = Tools.GetTransformOfChaControl(m_danCharacter, BoneNames.IndexFinger);
+            Transform middle = Tools.GetTransformOfChaControl(m_danCharacter, BoneNames.MiddleFinger);
+            Transform ring = Tools.GetTransformOfChaControl(m_danCharacter, BoneNames.RingFinger);
 
             m_indexCollider = InitializeCollider(index, fingerRadius, fingerLength, Vector3.zero);
             m_middleCollider = InitializeCollider(middle, fingerRadius, fingerLength, Vector3.zero);
@@ -407,24 +437,24 @@ namespace Core_BetterPenetration
             m_danOptions.fingerLength = fingerLength;
         }
 
-        internal void SetDanTarget(CollisionAgent targetAgent)
+        internal void SetDanTarget(CollisionAgent targetAgent, bool twoDans)
         {
             if (!m_danPointsFound || !targetAgent.m_collisionPointsFound)
                 return;
 
             if (m_referenceTarget == null)
-                AdjustDanToTargetNull();
+                AdjustDanToTargetNull(targetAgent, twoDans);
             else if (m_referenceTarget.name == LookTargets.KokanTarget || m_referenceTarget.name == LookTargets.BPKokanTarget)
-                AdjustDanToTargetKokan(targetAgent);
+                AdjustDanToTargetKokan(targetAgent, twoDans);
             else if (m_referenceTarget.name == LookTargets.AnaTarget)
-                AdjustDanToTargetAna(targetAgent);
+                AdjustDanToTargetAna(targetAgent, twoDans);
             else if (m_referenceTarget.name == LookTargets.HeadTarget)
-                AdjustDanToTargetHead(targetAgent);
+                AdjustDanToTargetHead(targetAgent, twoDans);
             else
-                AdjustDanToTargetNull();
+                AdjustDanToTargetNull(targetAgent, twoDans);
         }
 
-        internal void AdjustDanToTargetNull()
+        internal void AdjustDanToTargetNull(CollisionAgent targetAgent, bool twoDans)
         {
             Vector3 danStartPosition = m_danPoints.GetDanStartPosition();
             Vector3 danTarget = m_danPoints.GetDanEndPosition();
@@ -434,16 +464,16 @@ namespace Core_BetterPenetration
 
             List<Vector3> adjustedDanPoints = AdjustDanPointsToTargets(danTarget, danEndTarget, m_baseDanLength, danDistanceToTarget);
             m_danPoints.AimDanPoints(adjustedDanPoints, m_danOptions.rotateTamaWithShaft);
+
+            AdjustPullBones(targetAgent, danTargetVector, danDistanceToTarget, false, false, twoDans);
         }
 
-        internal void AdjustDanToTargetKokan(CollisionAgent targetAgent)
+        internal void AdjustDanToTargetKokan(CollisionAgent targetAgent, bool twoDans)
         {
             Vector3 danStartPosition = m_danPoints.GetDanStartPosition();
             Vector3 danTarget = m_referenceTarget.position;
 
-            danTarget += targetAgent.m_collisionOptions.kokanOffset.x * m_referenceTarget.right +
-                         targetAgent.m_collisionOptions.kokanOffset.y * m_referenceTarget.up +
-                         targetAgent.m_collisionOptions.kokanOffset.z * m_referenceTarget.forward;
+            danTarget += targetAgent.m_collisionOptions.kokanOffset * m_referenceTarget.up;
 
             if (targetAgent.m_collisionOptions.kokan_adjust && targetAgent.adjustFAnimation)
                 danTarget += m_referenceTarget.forward * targetAgent.m_collisionOptions.kokan_adjust_position_z;
@@ -457,25 +487,22 @@ namespace Core_BetterPenetration
 
             m_danPoints.SquishDanGirth(girthScaleFactor);
 
-            Vector3 innerLimit = targetAgent.m_innerTarget.position +
-                                 targetAgent.m_collisionOptions.innerKokanOffset.x * m_referenceTarget.right +
-                                 targetAgent.m_collisionOptions.innerKokanOffset.y * m_referenceTarget.up +
-                                 targetAgent.m_collisionOptions.innerKokanOffset.z * m_referenceTarget.forward;
+            Vector3 innerLimit = targetAgent.m_innerTarget.position + targetAgent.m_collisionOptions.innerKokanOffset * m_referenceTarget.up;
 
             danEndTarget = ConstrainDan(danStartPosition, danTargetVector, danEndTarget, innerLimit, adjustedDanLength, danDistanceToTarget, targetAgent);
 
             List<Vector3> adjustedDanPoints = AdjustDanPointsToTargets(danTarget, danEndTarget, adjustedDanLength, danDistanceToTarget);
             m_danPoints.AimDanPoints(adjustedDanPoints, m_danOptions.rotateTamaWithShaft);
+
+            AdjustPullBones(targetAgent, danTargetVector, danDistanceToTarget, true, false, twoDans);
         }
 
-        internal void AdjustDanToTargetHead(CollisionAgent targetAgent)
+        internal void AdjustDanToTargetHead(CollisionAgent targetAgent, bool twoDans)
         {
             Vector3 danStartPosition = m_danPoints.GetDanStartPosition();
             Vector3 danTarget = m_referenceTarget.position;
 
-            danTarget += targetAgent.m_collisionOptions.mouthOffset.x * m_referenceTarget.right +
-                         targetAgent.m_collisionOptions.mouthOffset.y * m_referenceTarget.up +
-                         targetAgent.m_collisionOptions.mouthOffset.z * m_referenceTarget.forward;
+            danTarget += targetAgent.m_collisionOptions.mouthOffset * m_referenceTarget.up;
 
             Vector3 danTargetVector = Vector3.Normalize(danTarget - danStartPosition);
             Vector3 danEndTarget = danStartPosition + danTargetVector * m_baseDanLength;
@@ -487,19 +514,18 @@ namespace Core_BetterPenetration
             if (m_danOptions.squishOralGirth)
                 m_danPoints.SquishDanGirth(girthScaleFactor);
 
-            Vector3 innerLimit = targetAgent.m_innerHeadTarget.position +
-                                 targetAgent.m_collisionOptions.innerMouthOffset.x * m_referenceTarget.right +
-                                 targetAgent.m_collisionOptions.innerMouthOffset.y * m_referenceTarget.up +
-                                 targetAgent.m_collisionOptions.innerMouthOffset.z * m_referenceTarget.forward;
+            Vector3 innerLimit = targetAgent.m_innerHeadTarget.position + targetAgent.m_collisionOptions.innerMouthOffset * m_referenceTarget.up;
 
             adjustedDanLength = GetMaxDanLength(adjustedDanLength, danTarget, innerLimit, danDistanceToTarget);
             danEndTarget = ConstrainDan(danStartPosition, danTargetVector, danEndTarget, innerLimit, adjustedDanLength, danDistanceToTarget, targetAgent);
 
             List<Vector3> adjustedDanPoints = AdjustDanPointsToTargets(danTarget, danEndTarget, adjustedDanLength, danDistanceToTarget);
             m_danPoints.AimDanPoints(adjustedDanPoints, m_danOptions.rotateTamaWithShaft);
+
+            AdjustPullBones(targetAgent, danTargetVector, danDistanceToTarget, false, true, twoDans);
         }
 
-        internal void AdjustDanToTargetAna(CollisionAgent targetAgent)
+        internal void AdjustDanToTargetAna(CollisionAgent targetAgent, bool twoDans)
         {
             Vector3 danStartPosition = m_danPoints.GetDanStartPosition();
             Vector3 danTarget = m_referenceTarget.position;
@@ -513,15 +539,14 @@ namespace Core_BetterPenetration
             if (m_danOptions.squishOralGirth)
                 m_danPoints.SquishDanGirth(girthScaleFactor);
 
-            Vector3 innerLimit = targetAgent.m_innerTarget.position +
-                                 targetAgent.m_collisionOptions.innerKokanOffset.x * m_referenceTarget.right +
-                                 targetAgent.m_collisionOptions.innerKokanOffset.y * m_referenceTarget.up +
-                                 targetAgent.m_collisionOptions.innerKokanOffset.z * m_referenceTarget.forward;
+            Vector3 innerLimit = targetAgent.m_innerTarget.position + targetAgent.m_collisionOptions.innerKokanOffset * m_referenceTarget.up;
 
             danEndTarget = ConstrainDan(danStartPosition, danTargetVector, danEndTarget, innerLimit, adjustedDanLength, danDistanceToTarget, targetAgent);
 
             List<Vector3> adjustedDanPoints = AdjustDanPointsToTargets(danTarget, danEndTarget, adjustedDanLength, danDistanceToTarget);
             m_danPoints.AimDanPoints(adjustedDanPoints, m_danOptions.rotateTamaWithShaft);
+
+            AdjustPullBones(targetAgent, danTargetVector, danDistanceToTarget, false, false, twoDans);
         }
 
         internal Vector3 ConstrainDan(Vector3 danStart, Vector3 danTargetVector, Vector3 danEndTarget, Vector3 innerLimit, float danLength, float danDistanceToTarget, CollisionAgent targetAgent)
@@ -779,7 +804,7 @@ namespace Core_BetterPenetration
 
             ClearTama();
 
-#if !HS2_STUDIO && !AI_STUDIO && !KK_STUDIO
+#if !STUDIO
 
             ClearTarget();
 

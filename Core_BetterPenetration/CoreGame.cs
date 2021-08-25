@@ -1,4 +1,4 @@
-﻿#if !HS2_STUDIO && !AI_STUDIO && !KK_STUDIO
+﻿#if !STUDIO
 using System.Collections.Generic;
 using UnityEngine;
 using System;
@@ -70,7 +70,7 @@ namespace Core_BetterPenetration
             }
         }
 
-        public static void LookAtDanUpdate(Transform lookAtTransform, string currentMotion, bool topStick, bool changingAnimation, int maleNum, int femaleNum)
+        public static void LookAtDanUpdate(Transform lookAtTransform, string currentMotion, bool topStick, bool changingAnimation, int maleNum, int femaleNum, bool twoDans)
         {
             if (maleNum >= danAgents.Count || femaleNum >= collisionAgents.Count)
                 return;
@@ -96,7 +96,7 @@ namespace Core_BetterPenetration
                 danHasNewTarget[maleNum] = false;
             }
 
-            danAgents[maleNum].SetDanTarget(collisionAgents[femaleNum]);
+            danAgents[maleNum].SetDanTarget(collisionAgents[femaleNum], twoDans);
         }
 
         public static void LookAtDanSetup(Transform lookAtTransform, string currentMotion, bool topStick, int maleNum, int femaleNum, bool twoDans)
@@ -235,7 +235,8 @@ namespace Core_BetterPenetration
             {
                 if (dynamicBone == null || 
                     dynamicBone.m_Colliders == null || 
-                    (dynamicBone.name != null && (dynamicBone.name.Contains("Vagina") || dynamicBone.name.Contains("cm_J_dan"))))
+                    (dynamicBone.name != null && (dynamicBone.name.Contains("Vagina") || dynamicBone.name.Contains("cm_J_dan"))) ||
+                    character != dynamicBone.GetComponentInParent<ChaControl>())
                     continue;
 
                 for (int collider = 0; collider < dynamicBone.m_Colliders.Count; collider++)
@@ -291,8 +292,12 @@ namespace Core_BetterPenetration
 
             foreach (var dynamicBone in dynamicBones)
             {
-                if (dynamicBone == null || dynamicBone.m_Root == null || dynamicBone.name == null || !dynamicBone.name.Contains(BoneNames.BPBone))
-                        continue;
+                if (dynamicBone == null || 
+                    dynamicBone.m_Root == null || 
+                    dynamicBone.name == null || 
+                    !dynamicBone.name.Contains(BoneNames.BPBone) || 
+                    character != dynamicBone.GetComponentInParent<ChaControl>())
+                    continue;
 
                 dynamicBone.SetWeight(weight);
             }

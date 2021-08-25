@@ -46,35 +46,38 @@ namespace Core_BetterPenetration
             danTop.transform.rotation = danPoints[0].transform.rotation;
         }
 
-#if !AI_STUDIO && !HS2_STUDIO && !KK_STUDIO
+#if !STUDIO
         internal void SquishDanGirth(float girthScaleFactor)
         {
-            float halfGirthScaleFactor = (1 - (1 - 1 / girthScaleFactor) / 2);
-            float inverseGirthScaleFactor = 1 / girthScaleFactor;
+            float points = danPoints.Count - 1;
+            if (points <= 0)
+                return;
+
+            float inverseScaleFactor = (girthScaleFactor - (girthScaleFactor - 1) / points) / girthScaleFactor;
 
             for (int point = 0; point < danPoints.Count; point++)
             {
                 if (point == 0)
                     danPoints[point].ScaleDanGirth(girthScaleFactor);
-                else if (point <= danPoints.Count / 3)
-                    danPoints[point].ScaleDanGirth(1.0f);
-                else if (point <= danPoints.Count * 2 / 3)
-                    danPoints[point].ScaleDanGirth(halfGirthScaleFactor);
                 else
-                    danPoints[point].ScaleDanGirth(inverseGirthScaleFactor);
+                    danPoints[point].ScaleDanGirth(inverseScaleFactor);
             }
         }
 #else
         internal void SquishDanGirth(float girthScaleFactor)
         {
-            float halfGirthScaleFactor = (1 + (girthScaleFactor - 1) / 2);
+            float points = danPoints.Count - 2;
+            if (points <= 0)
+                return;
 
-            for (int point = 1; point < danPoints.Count * 2 / 3; point++)
+            float inverseScaleFactor = (girthScaleFactor - (girthScaleFactor - 1) / points) / girthScaleFactor;
+
+            for (int point = 1; point < danPoints.Count; point++)
             {
-                if (point <= danPoints.Count / 3)
+                if (point == 1)
                     danPoints[point].ScaleDanGirth(girthScaleFactor);
                 else
-                    danPoints[point].ScaleDanGirth(halfGirthScaleFactor);
+                    danPoints[point].ScaleDanGirth(inverseScaleFactor);
             }
         }
 #endif

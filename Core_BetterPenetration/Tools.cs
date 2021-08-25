@@ -1,6 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
+using UnityEngine;
+using System.Linq;
+#if AI || HS2
+using AIChara;
+#endif
 
 namespace Core_BetterPenetration
 {
@@ -36,6 +41,69 @@ namespace Core_BetterPenetration
                 _propertyCache.Add(key, info);
             }
             return info.GetValue(self, null);
+        }
+
+        public static Transform GetTransformOfChaControl(ChaControl chaControl, string transformName)
+        {
+            Transform transform = null;
+            if (chaControl == null)
+                return transform;
+
+            var transforms = chaControl.GetComponentsInChildren<Transform>().Where(x => x.name != null && x.name.Equals(transformName));
+            if (transforms.Count() == 0)
+                return transform;
+
+            for (int transformIndex = transforms.Count() - 1; transformIndex >= 0; transformIndex--)
+            {
+                transform = transforms.ElementAt(transformIndex);
+                if (transform == null || chaControl != transform.GetComponentInParent<ChaControl>())
+                    continue;
+
+                return transform;
+            }
+
+            return transform;
+        }
+
+        public static DynamicBone GetDynamicBoneOfChaControl(ChaControl chaControl, string dynamicBoneName)
+        {
+            DynamicBone dynamicBone = null;
+            if (chaControl == null)
+                return dynamicBone;
+
+            var dynamicBones = chaControl.GetComponentsInChildren<DynamicBone>().Where(x => x.name != null && x.name.Equals(dynamicBoneName));
+            if (dynamicBones.Count() == 0)
+                return dynamicBone;
+
+            for (int boneIndex = dynamicBones.Count() - 1; boneIndex >= 0; boneIndex--)
+            {
+                dynamicBone = dynamicBones.ElementAt(boneIndex);
+                if (dynamicBone != null && chaControl == dynamicBone.GetComponentInParent<ChaControl>())
+                    return dynamicBone;
+            }
+
+            return dynamicBone;
+        }
+
+        public static List<DynamicBoneCollider> GetCollidersOfChaControl(ChaControl chaControl, string colliderName)
+        {
+            List<DynamicBoneCollider> colliderList = new List<DynamicBoneCollider>();
+            if (chaControl == null)
+                return colliderList;
+
+            var colliders = chaControl.GetComponentsInChildren<DynamicBoneCollider>().Where(x => x.name != null && x.name.Contains(colliderName));
+            if (colliders.Count() == 0)
+                return colliderList;
+
+            foreach (var collider in colliders)
+            {
+                if (chaControl != collider.GetComponentInParent<ChaControl>())
+                    continue;
+
+                colliderList.Add(collider);
+            }
+
+            return colliderList;
         }
     }
 }

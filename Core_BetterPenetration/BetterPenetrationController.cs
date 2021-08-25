@@ -1,4 +1,4 @@
-﻿#if AI_STUDIO || HS2_STUDIO || KK_STUDIO
+﻿#if STUDIO
 using KKAPI;
 using KKAPI.Chara;
 using UnityEngine;
@@ -10,7 +10,7 @@ using HarmonyLib;
 using System.Collections;
 using System;
 
-#if AI_STUDIO || HS2_STUDIO
+#if AI || HS2
 using AIChara;
 #endif
 
@@ -20,12 +20,16 @@ namespace Core_BetterPenetration
     {
         internal DanAgent danAgent;
         internal DanOptions danOptions;
-        public ChaControl collisionAgent;
+        internal CollisionAgent collisionAgent;
+        internal CollisionOptions collisionOptions;
+        internal ControllerOptions controllerOptions;
         public string danEntryParentName;
         public string danEndParentName;
         public Transform danEntryChild;
         public Transform danEndChild;
         public bool danTargetsValid = false;
+        internal bool isOral = false;
+        internal bool isKokan = false;
         internal bool cardReloaded = false;
         internal object[] danEntryConstraint;
         internal object[] danEndConstraint;
@@ -35,7 +39,12 @@ namespace Core_BetterPenetration
         public const float DefaultSquishThreshold = 0.2f;
         public const float DefaultColliderLengthScale = 1f;
         public const float DefaultColliderRadiusScale = 1f;
-        internal const DanOptions.AutoTarget DefaultDanAutoTarget = DanOptions.AutoTarget.Off;
+        public const bool DefaultPushPUll = false;
+        public const float DefaultMaxPush = 0.05f;
+        public const float DefaultMaxPull = 0.05f;
+        public const float DefaultPullRate = 18.0f;
+        public const float DefaultReturnRate = 0.3f;
+        internal const ControllerOptions.AutoTarget DefaultDanAutoTarget = ControllerOptions.AutoTarget.Off;
 
         protected override void OnCardBeingSaved(GameMode currentGameMode)
         {
@@ -46,7 +55,12 @@ namespace Core_BetterPenetration
             data.data.Add("SquishThreshold", danOptions.squishThreshold);
             data.data.Add("ColliderRadiusScale", danOptions.danRadiusScale);
             data.data.Add("ColliderLengthScale", danOptions.danLengthScale);
-            data.data.Add("DanAutoTarget", danOptions.danAutoTarget);
+            data.data.Add("DanAutoTarget", controllerOptions.danAutoTarget);
+            data.data.Add("EnablePushPull", collisionOptions.enableKokanPush);
+            data.data.Add("MaxPush", collisionOptions.maxKokanPush);
+            data.data.Add("MaxPull", collisionOptions.maxKokanPull);
+            data.data.Add("PullRate", collisionOptions.kokanPullRate);
+            data.data.Add("ReturnRate", collisionOptions.kokanReturnRate);
 
             SetExtendedData(data);
         }
@@ -61,7 +75,13 @@ namespace Core_BetterPenetration
             float squishThreshold = DefaultSquishThreshold;
             float colliderRadiusScale = DefaultColliderRadiusScale;
             float colliderLengthScale = DefaultColliderLengthScale;
-            DanOptions.AutoTarget autoTarget = DefaultDanAutoTarget;
+            ControllerOptions.AutoTarget autoTarget = DefaultDanAutoTarget;
+            bool enablePushPull = DefaultPushPUll;
+            float maxPush = DefaultMaxPush;
+            float maxPull = DefaultMaxPull;
+            float pullRate = DefaultPullRate;
+            float returnRate = DefaultReturnRate;
+
 
             if (data != null)
             {
@@ -84,11 +104,27 @@ namespace Core_BetterPenetration
                     colliderLengthScale = (float)ColliderLengthScale;
 
                 if (data.data.TryGetValue("DanAutoTarget", out var DanAutoTarget))
-                    autoTarget = (DanOptions.AutoTarget)DanAutoTarget;
+                    autoTarget = (ControllerOptions.AutoTarget)DanAutoTarget;
 
+                if (data.data.TryGetValue("EnablePushPull", out var EnablePushPull))
+                    enablePushPull = (bool)EnablePushPull;
+
+                if (data.data.TryGetValue("MaxPush", out var MaxPush))
+                    maxPush = (float)MaxPush;
+
+                if (data.data.TryGetValue("MaxPull", out var MaxPull))
+                    maxPull = (float)MaxPull;
+
+                if (data.data.TryGetValue("PullRate", out var PullRate))
+                    pullRate = (float)PullRate;
+
+                if (data.data.TryGetValue("ReturnRate", out var ReturnRate))
+                    returnRate = (float)ReturnRate;
             }
 
-            danOptions = new DanOptions(colliderRadiusScale, colliderLengthScale, lengthSquish, girthSquish, squishThreshold, autoTarget);
+            danOptions = new DanOptions(colliderRadiusScale, colliderLengthScale, lengthSquish, girthSquish, squishThreshold);
+            collisionOptions = new CollisionOptions(enablePushPull, maxPush, maxPull, pullRate, returnRate);
+            controllerOptions = new ControllerOptions(autoTarget);
             cardReloaded = true;
 
             base.OnReload(currentGameMode, maintainState);
@@ -118,13 +154,13 @@ namespace Core_BetterPenetration
 
         internal void CheckAutoTarget(BaseUnityPlugin plugin)
         {
-            if (danOptions.danAutoTarget == DanOptions.AutoTarget.Off || !danTargetsValid)
+            if (controllerOptions.danAutoTarget == ControllerOptions.AutoTarget.Off || !danTargetsValid)
                 return;
 
             string targetTransform = BoneNames.BPKokanTarget;
-            if (danOptions.danAutoTarget == DanOptions.AutoTarget.Oral)
+            if (controllerOptions.danAutoTarget == ControllerOptions.AutoTarget.Oral)
                 targetTransform = BoneNames.HeadTarget;
-            else if (danOptions.danAutoTarget == DanOptions.AutoTarget.Anal)
+            else if (controllerOptions.danAutoTarget == ControllerOptions.AutoTarget.Anal)
                 targetTransform = BoneNames.AnaTarget;
 
             var potentialTargets = FindObjectsOfType<Transform>().Where(x => x.name.Equals(targetTransform));
@@ -155,7 +191,7 @@ namespace Core_BetterPenetration
 
             if (danEntryConstraint != null && danEntryConstraint.GetValue(1) != null && 
                 danEntryConstraint.GetValue(1).ToString() == autoTarget.name &&
-                collisionAgent == this.collisionAgent)
+                collisionAgent == this.collisionAgent?.m_collisionCharacter)
             {
                 return;
             }
@@ -165,9 +201,12 @@ namespace Core_BetterPenetration
 
             Transform danEntryParent = autoTarget;
             danEntryParentName = autoTarget.name;
-            SetCollisionAgent(collisionAgent, danEntryParentName == BoneNames.BPKokanTarget);
+            isKokan = danEntryParentName.Contains("Vagina");
+            isOral = danEntryParentName.Contains("Mouth");
 
-#if AI_STUDIO || HS2_STUDIO
+            SetCollisionAgent(collisionAgent, isKokan);
+
+#if AI || HS2
             Vector3 headOffset = new Vector3(0f, -0.05f, 0.02f);
 #else
             Vector3 headOffset = new Vector3(0f, -0.01f, 0f);
@@ -187,9 +226,9 @@ namespace Core_BetterPenetration
 
             Transform danEndParent;
             if (danEntryParentName == BoneNames.HeadTarget)
-                danEndParent= collisionAgent.GetComponentsInChildren<Transform>().Where(x => x.name.Equals(BoneNames.InnerHeadTarget)).FirstOrDefault();
+                danEndParent = Tools.GetTransformOfChaControl(collisionAgent, BoneNames.InnerHeadTarget);
             else
-                danEndParent = collisionAgent.GetComponentsInChildren<Transform>().Where(x => x.name.Equals(BoneNames.InnerTarget)).FirstOrDefault();
+                danEndParent = Tools.GetTransformOfChaControl(collisionAgent, BoneNames.InnerTarget);
 
             danEndParentName = danEndParent.name;
 
@@ -213,7 +252,7 @@ namespace Core_BetterPenetration
             if (!danTargetsValid || danEntryChild == null || danEndChild == null)
                 return;
 
-            danAgent.SetDanTarget(danEntryChild.position, danEndChild.position);
+            danAgent.SetDanTarget(danEntryChild.position, danEndChild.position, collisionAgent, isKokan, isOral);
         }
 
         public void ClearDanAgent()
@@ -233,14 +272,20 @@ namespace Core_BetterPenetration
         {
             ClearDanAgent();
 
-            danEntryChild = ChaControl.GetComponentsInChildren<Transform>().FirstOrDefault(x => x.name != null && x.name.Equals(BoneNames.BPDanEntryTarget));
-            danEndChild = ChaControl.GetComponentsInChildren<Transform>().FirstOrDefault(x => x.name != null && x.name.Equals(BoneNames.BPDanEndTarget));
+            danEntryChild = Tools.GetTransformOfChaControl(ChaControl, BoneNames.BPDanEntryTarget);
+            danEndChild = Tools.GetTransformOfChaControl(ChaControl, BoneNames.BPDanEndTarget);
 
             if (danEntryChild == null || danEndChild == null)
                 return;
 
+            if (controllerOptions == null)
+                controllerOptions = new ControllerOptions(DefaultDanAutoTarget);
+
             if (danOptions == null)
-                danOptions = new DanOptions(DefaultColliderRadiusScale, DefaultColliderLengthScale, DefaultLengthSquish, DefaultGirthSquish, DefaultSquishThreshold, DefaultDanAutoTarget);
+                danOptions = new DanOptions(DefaultColliderRadiusScale, DefaultColliderLengthScale, DefaultLengthSquish, DefaultGirthSquish, DefaultSquishThreshold);
+
+            if (collisionOptions == null)
+                collisionOptions = new CollisionOptions(DefaultPushPUll, DefaultMaxPush, DefaultMaxPull, DefaultPullRate, DefaultReturnRate);
 
             danAgent = new DanAgent(ChaControl, danOptions);
             danTargetsValid = true;
@@ -263,37 +308,37 @@ namespace Core_BetterPenetration
 
             danAgent.InitializeTama();
 
-            if (collisionAgent == null)
+            if (collisionAgent == null || collisionAgent.m_collisionCharacter == null)
                 return;
 
-            danAgent.AddTamaColliders(collisionAgent);
+            danAgent.AddTamaColliders(collisionAgent.m_collisionCharacter);
         }
 
         public void SetCollisionAgent(ChaControl target, bool kokanTarget)
         {
-            if (danAgent == null || danOptions == null || !danTargetsValid)
+            if (danAgent == null || controllerOptions == null || !danTargetsValid)
                 return;
 
-            if (collisionAgent != null)
+            if (collisionAgent != null && collisionAgent.m_collisionCharacter != null)
             {
-                danAgent.RemoveDanColliders(collisionAgent);
+                danAgent.RemoveDanColliders(collisionAgent.m_collisionCharacter);
                 danAgent.RemoveTamaColliders();
             }
 
-            collisionAgent = target;
+            collisionAgent = new CollisionAgent(target, collisionOptions);
 
             if (kokanTarget)
-                danAgent.AddDanColliders(collisionAgent);
+                danAgent.AddDanColliders(collisionAgent.m_collisionCharacter);
 
-            danAgent.AddTamaColliders(collisionAgent, false);
+            danAgent.AddTamaColliders(collisionAgent.m_collisionCharacter, false);
         }
         
         public void RemoveCollisionAgent()
         {
-            if (danAgent == null || danOptions == null || !danTargetsValid || collisionAgent == null)
+            if (danAgent == null || controllerOptions == null || !danTargetsValid || collisionAgent == null || collisionAgent.m_collisionCharacter == null)
                 return;
 
-            danAgent.RemoveDanColliders(collisionAgent);
+            danAgent.RemoveDanColliders(collisionAgent.m_collisionCharacter);
             danAgent.RemoveTamaColliders();
 
             collisionAgent = null;
@@ -305,6 +350,9 @@ namespace Core_BetterPenetration
             {
                 danEntryConstraint = constraintParams;
                 danEntryParentName = constraintParams.GetValue(1) as string;
+
+                isKokan = danEntryParentName.Contains("Vagina");
+                isOral = danEntryParentName.Contains("Mouth");
             }
             else
             {
@@ -315,16 +363,16 @@ namespace Core_BetterPenetration
 
         public void AddDanConstraints(BaseUnityPlugin plugin, Transform danEntryParent = null, Transform danEndParent = null)
         {
-            if (!danTargetsValid || collisionAgent == null)
+            if (!danTargetsValid || collisionAgent == null || collisionAgent.m_collisionCharacter == null)
                 return;
 
             if (danEntryConstraint != null)
             {
                 var parentTransform = danEntryParent;
                 if (parentTransform == null && !danEntryParentName.IsNullOrEmpty())
-                    parentTransform = collisionAgent.GetComponentsInChildren<Transform>().Where(x => x.name == danEntryParentName).FirstOrDefault();
+                    parentTransform = Tools.GetTransformOfChaControl(collisionAgent.m_collisionCharacter, danEntryParentName);
                 if (parentTransform == null && danEntryConstraint.GetValue(1) != null)
-                    parentTransform = collisionAgent.GetComponentsInChildren<Transform>().Where(x => x.name == danEntryConstraint.GetValue(1) as string).FirstOrDefault();
+                    parentTransform = Tools.GetTransformOfChaControl(collisionAgent.m_collisionCharacter, danEntryConstraint.GetValue(1) as string);
 
                 if (parentTransform != null)
                 {
@@ -338,9 +386,9 @@ namespace Core_BetterPenetration
             {
                 var parentTransform = danEndParent;
                 if (parentTransform == null && !danEndParentName.IsNullOrEmpty())
-                    parentTransform = collisionAgent.GetComponentsInChildren<Transform>().Where(x => x.name == danEndParentName).FirstOrDefault();
+                    parentTransform = Tools.GetTransformOfChaControl(collisionAgent.m_collisionCharacter, danEndParentName);
                 if (parentTransform == null && danEndConstraint.GetValue(1) != null)
-                    parentTransform = collisionAgent.GetComponentsInChildren<Transform>().Where(x => x.name == danEndConstraint.GetValue(1) as string).FirstOrDefault();
+                    parentTransform = Tools.GetTransformOfChaControl(collisionAgent.m_collisionCharacter, danEndConstraint.GetValue(1) as string);
 
                 if (parentTransform != null)
                 {
@@ -358,6 +406,8 @@ namespace Core_BetterPenetration
 
             danEntryParentName = null;
             danEndParentName = null;
+            isKokan = false;
+            isOral = false;
 
             var pluginTraverse = Traverse.Create(plugin);
             if (pluginTraverse == null)
@@ -389,7 +439,7 @@ namespace Core_BetterPenetration
         {
             get
             {
-                if (danAgent == null || danOptions == null || !danTargetsValid)
+                if (danAgent == null || controllerOptions == null || !danTargetsValid)
                     return false;
 
                 return enabled;
@@ -407,7 +457,7 @@ namespace Core_BetterPenetration
         {
             get
             {
-                if (danAgent == null || danOptions == null || !danTargetsValid)
+                if (danAgent == null || controllerOptions == null || !danTargetsValid)
                     return DefaultLengthSquish;
 
                 return danOptions.danLengthSquish;
@@ -426,7 +476,7 @@ namespace Core_BetterPenetration
         {
             get
             {
-                if (danAgent == null || danOptions == null || !danTargetsValid)
+                if (danAgent == null || controllerOptions == null || !danTargetsValid)
                     return DefaultGirthSquish;
 
                 return danOptions.danGirthSquish;
@@ -445,7 +495,7 @@ namespace Core_BetterPenetration
         {
             get
             {
-                if (danAgent == null || danOptions == null || !danTargetsValid)
+                if (danAgent == null || controllerOptions == null || !danTargetsValid)
                     return DefaultSquishThreshold;
 
                 return danOptions.squishThreshold;
@@ -464,7 +514,7 @@ namespace Core_BetterPenetration
         {
             get
             {
-                if (danAgent == null || danOptions == null || !danTargetsValid)
+                if (danAgent == null || controllerOptions == null || !danTargetsValid)
                     return DefaultColliderRadiusScale;
 
                 return danOptions.danRadiusScale;
@@ -483,7 +533,7 @@ namespace Core_BetterPenetration
         {
             get
             {
-                if (danAgent == null || danOptions == null || !danTargetsValid)
+                if (danAgent == null || controllerOptions == null || !danTargetsValid)
                     return DefaultColliderLengthScale;
 
                 return danOptions.danLengthScale;
@@ -502,17 +552,112 @@ namespace Core_BetterPenetration
         {
             get
             {
-                if (danAgent == null || danOptions == null || !danTargetsValid)
+                if (danAgent == null || controllerOptions == null || !danTargetsValid)
                     return (int)DefaultDanAutoTarget;
 
-                return (int)danOptions.danAutoTarget;
+                return (int)controllerOptions.danAutoTarget;
             }
             set
             {
                 if (danAgent == null || !danTargetsValid)
                     return;
 
-                danOptions.danAutoTarget = (DanOptions.AutoTarget)value;
+                controllerOptions.danAutoTarget = (ControllerOptions.AutoTarget)value;
+            }
+        }
+
+        public bool EnablePushPull
+        {
+            get
+            {
+                if (danAgent == null || controllerOptions == null || !danTargetsValid)
+                    return DefaultPushPUll;
+
+                return collisionOptions.enableKokanPush;
+            }
+            set
+            {
+                if (danAgent == null || !danTargetsValid)
+                    return;
+
+                collisionOptions.enableKokanPush = value;
+                collisionOptions.enableOralPush = value;
+            }
+        }
+
+        public float MaxPull
+        {
+            get
+            {
+                if (danAgent == null || controllerOptions == null || !danTargetsValid)
+                    return DefaultMaxPull;
+
+                return collisionOptions.maxKokanPull;
+            }
+            set
+            {
+                if (danAgent == null || !danTargetsValid)
+                    return;
+
+                collisionOptions.maxKokanPull = value;
+                collisionOptions.maxOralPull = value;
+            }
+        }
+
+        public float MaxPush
+        {
+            get
+            {
+                if (danAgent == null || controllerOptions == null || !danTargetsValid)
+                    return DefaultMaxPush;
+
+                return collisionOptions.maxKokanPush;
+            }
+            set
+            {
+                if (danAgent == null || !danTargetsValid)
+                    return;
+
+                collisionOptions.maxKokanPush = value;
+                collisionOptions.maxOralPush = value;
+            }
+        }
+
+        public float PullRate
+        {
+            get
+            {
+                if (danAgent == null || controllerOptions == null || !danTargetsValid)
+                    return DefaultPullRate;
+
+                return collisionOptions.kokanPullRate;
+            }
+            set
+            {
+                if (danAgent == null || !danTargetsValid)
+                    return;
+
+                collisionOptions.kokanPullRate = value;
+                collisionOptions.oralPullRate = value;
+            }
+        }
+
+        public float ReturnRate
+        {
+            get
+            {
+                if (danAgent == null || controllerOptions == null || !danTargetsValid)
+                    return DefaultReturnRate;
+
+                return collisionOptions.kokanReturnRate;
+            }
+            set
+            {
+                if (danAgent == null || !danTargetsValid)
+                    return;
+
+                collisionOptions.kokanReturnRate = value;
+                collisionOptions.oralReturnRate = value;
             }
         }
     }

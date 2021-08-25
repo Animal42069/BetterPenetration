@@ -19,7 +19,7 @@ namespace HS2_BetterPenetration
     [BepInProcess("HoneySelect2VR")]
     public class HS2_BetterPenetration : BaseUnityPlugin
     {
-        internal const string VERSION = "4.2.1.0";
+        internal const string VERSION = "4.3.0.0";
         internal const int MaleLimit = 2;
         internal const int FemaleLimit = 2;
 
@@ -42,14 +42,27 @@ namespace HS2_BetterPenetration
         internal static readonly ConfigEntry<bool>[] _rotateTamaWithShaft = new ConfigEntry<bool>[MaleLimit];
 
         internal static ConfigEntry<float> _clippingDepth;
-        internal static ConfigEntry<Vector3> _kokanOffset;
-        internal static ConfigEntry<Vector3> _innerKokanOffset;
-        internal static ConfigEntry<Vector3> _mouthOffset;
-        internal static ConfigEntry<Vector3> _innerMouthOffset;
+        internal static ConfigEntry<float> _kokanOffset;
+        internal static ConfigEntry<float> _innerKokanOffset;
+        internal static ConfigEntry<float> _mouthOffset;
+        internal static ConfigEntry<float> _innerMouthOffset;
         internal static ConfigEntry<bool> _useKokanFix;
         internal static ConfigEntry<float> _kokanFixPositionY;
         internal static ConfigEntry<float> _kokanFixPositionZ;
         internal static ConfigEntry<float> _kokanFixRotationX;
+#if false
+        internal static ConfigEntry<bool> _enableKokanPushPull;
+        internal static ConfigEntry<bool> _useDanAngle;
+        internal static ConfigEntry<float> _maxKokanPush;
+        internal static ConfigEntry<float> _maxKokanPull;
+        internal static ConfigEntry<float> _kokanPullRate;
+        internal static ConfigEntry<float> _kokanReturnRate;
+        internal static ConfigEntry<bool> _enableOralPushPull;
+        internal static ConfigEntry<float> _maxOralPush;
+        internal static ConfigEntry<float> _maxOralPull;
+        internal static ConfigEntry<float> _oralPullRate;
+        internal static ConfigEntry<float> _oralReturnRate;
+#endif
         internal static readonly ConfigEntry<float>[] _frontCollisionOffset = new ConfigEntry<float>[frontOffsets.Count];
         internal static readonly ConfigEntry<float>[] _backCollisionOffset = new ConfigEntry<float>[backOffsets.Count];
 
@@ -99,13 +112,13 @@ namespace HS2_BetterPenetration
             for (int offset = 0; offset < backOffsets.Count; offset++)
                 (_backCollisionOffset[offset] = Config.Bind("Female Options", "Clipping Offset: Back Collision " + offset, backOffsets[offset], "Individual offset on colision point, to improve clipping")).SettingChanged += (s, e) =>
                 { UpdateCollisionOptions(); };
-            (_kokanOffset = Config.Bind("Female Options", "Target Offset: Vagina Target", Vector3.zero, "Offset of the vagina target")).SettingChanged += (s, e) =>
+            (_kokanOffset = Config.Bind("Female Options", "Target Offset: Vagina Target", 0.0f, "Offset of the vagina target")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_innerKokanOffset = Config.Bind("Female Options", "Target Offset: Inner Vagina Target", Vector3.zero, "Offset of the simplified inner vagina target")).SettingChanged += (s, e) =>
+            (_innerKokanOffset = Config.Bind("Female Options", "Target Offset: Inner Vagina Target", 0.0f, "Offset of the simplified inner vagina target")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_mouthOffset = Config.Bind("Female Options", "Target Offset: Mouth Target", new Vector3(0, 0.025f, 0), "Offset of the mouth target")).SettingChanged += (s, e) =>
+            (_mouthOffset = Config.Bind("Female Options", "Target Offset: Mouth Target", 0.025f, "Offset of the mouth target")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_innerMouthOffset = Config.Bind("Female Options", "Target Offset: Inner Mouth Target", Vector3.zero, "Offset of the simplified inner mouth target")).SettingChanged += (s, e) =>
+            (_innerMouthOffset = Config.Bind("Female Options", "Target Offset: Inner Mouth Target", 0.0f, "Offset of the simplified inner mouth target")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
             (_useKokanFix = Config.Bind("Female Options", "Joint Adjustment: Missionary Correction", false, "NOTE: There is an Illusion bug that causes the vagina to appear sunken in certain missionary positions.  It is best to use Advanced Bonemod and adjust your female character's cf_J_Kokan Offset Y to 0.001.  If you don't do that, enabling this option will attempt to fix the problem by guessing where the bone should be")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
@@ -114,6 +127,30 @@ namespace HS2_BetterPenetration
             (_kokanFixPositionZ = Config.Bind("Female Options", "Joint Adjustment: Missionary Position Z", 0.0625f, "Amount to adjust the Vagina bone position Z for certain Missionary positions to correct its appearance")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
             (_kokanFixRotationX = Config.Bind("Female Options", "Joint Adjustment: Missionary Rotation X", 10.0f, "Amount to adjust the Vagina bone rotation X for certain Missionary positions to correct its appearance")).SettingChanged += (s, e) =>
+#if false 
+            { UpdateCollisionOptions(); };
+            (_enableKokanPushPull = Config.Bind("Female Options", "Vaginal Push/Pull: Enable", true, "Enable vaginal push/pull during penetration")).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+            (_useDanAngle = Config.Bind("Female Options", "Vaginal Push/Pull: Use Dan Angle", true, "Enable vaginal push/pull during penetration")).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+            (_maxKokanPush = Config.Bind("Female Options", "Vaginal Push/Pull: Max Push", 0.08f, "Maximum amount to push the vagina inwards during penetration")).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+            (_maxKokanPull = Config.Bind("Female Options", "Vaginal Push/Pull: Max Pull", 0.08f, "Maximum amount to pull the vagina outwards during penetration")).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+            (_kokanPullRate = Config.Bind("Female Options", "Vaginal Push/Pull: Push/Pull Rate", 24.0f, "How quickly to push or pull the vagina during penetration")).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+            (_kokanReturnRate = Config.Bind("Female Options", "Vaginal Push/Pull: Return Rate", 0.3f, "How quickly the vagina returns to its original shape when there is no penetration")).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+            (_enableOralPushPull = Config.Bind("Female Options", "Oral Push/Pull: Enable", true, "Enable mouth push/pull during penetration")).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+            (_maxOralPush = Config.Bind("Female Options", "Oral Push/Pull: Max Push", 0.02f, "Maximum amount to push the mouth inwards during penetration")).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+            (_maxOralPull = Config.Bind("Female Options", "Oral Push/Pull: Max Pull", 0.1f, "Maximum amount to pull the mouth outwards during penetration")).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+            (_oralPullRate = Config.Bind("Female Options", "Oral Push/Pull: Push/Pull Rate", 18.0f, "How quickly to push or pull the mouth during penetration")).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+            (_oralReturnRate = Config.Bind("Female Options", "Oral Push/Pull: Return Rate", 0.3f, "How quickly the mouth returns to its original shape when there is no penetration")).SettingChanged += (s, e) =>
+#endif 
             { UpdateCollisionOptions(); };
 
             harmony = new Harmony("HS2_BetterPenetration");
@@ -156,7 +193,7 @@ namespace HS2_BetterPenetration
             CoreGame.InitializeAgents(maleList, femaleList, danOptions, collisionOptions);
             inHScene = true;
         }
-		
+
         [HarmonyPrefix, HarmonyPatch(typeof(HScene), "ChangeAnimation")]
         internal static void HScene_PreChangeAnimation(HScene.AnimationListInfo _info)
         {
@@ -217,7 +254,7 @@ namespace HS2_BetterPenetration
                 maleNum = 1;
             }
 
-            CoreGame.LookAtDanUpdate(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, hScene.NowChangeAnim, maleNum, __instance.numFemale);
+            CoreGame.LookAtDanUpdate(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, hScene.NowChangeAnim, maleNum, __instance.numFemale, twoDans);
         }
 		
         internal static void UpdateDanColliders()
@@ -288,8 +325,18 @@ namespace HS2_BetterPenetration
 
             for (int femaleNum = 0; femaleNum < FemaleLimit; femaleNum++)
             {
+#if false			
                 collisionOptions.Add(new CollisionOptions(_kokanOffset.Value, _innerKokanOffset.Value, _mouthOffset.Value, _innerMouthOffset.Value, _useKokanFix.Value,
-                    _kokanFixPositionZ.Value, _kokanFixPositionY.Value, _kokanFixRotationX.Value, _clippingDepth.Value, frontInfo, backInfo));
+                    _kokanFixPositionZ.Value, _kokanFixPositionY.Value, _kokanFixRotationX.Value, _clippingDepth.Value, frontInfo, backInfo, 
+                    _enableKokanPushPull.Value, _useDanAngle.Value, _maxKokanPush.Value, _maxKokanPull.Value, _kokanPullRate.Value, _kokanReturnRate.Value,
+                    _enableOralPushPull.Value, _maxOralPush.Value, _maxOralPull.Value, _oralPullRate.Value, _oralReturnRate.Value));
+#else
+                collisionOptions.Add(new CollisionOptions(_kokanOffset.Value, _innerKokanOffset.Value, _mouthOffset.Value, _innerMouthOffset.Value, _useKokanFix.Value,
+                    _kokanFixPositionZ.Value, _kokanFixPositionY.Value, _kokanFixRotationX.Value, _clippingDepth.Value, frontInfo, backInfo, 
+                    false, false, 0, 0, 0, 0,
+                    false, 0, 0, 0, 0));
+
+#endif
             }
 
             return collisionOptions;
@@ -373,10 +420,13 @@ namespace HS2_BetterPenetration
 
         internal static void SceneManager_sceneLoaded(Scene scene, LoadSceneMode lsm)
         {
-            if (UnityEngine.Application.productName == "HoneySelect2VR") {
+            if (UnityEngine.Application.productName == "HoneySelect2VR")
+            {
                 if (scene.name == "Init" || scene.name == "VRTitle" || scene.name == "VRLogo" || scene.name == "VRSelect") // for the official HoneySelect2VR, the LoadSceneMode can be Multiple, and the scene name is equal to the map name, not "HScene"
                     return;
-            } else {
+            }
+            else
+            {
                 if (lsm != LoadSceneMode.Single || patched || scene.name != "HScene")
                     return;
             }
@@ -385,26 +435,26 @@ namespace HS2_BetterPenetration
             patched = true;
 
             Chainloader.PluginInfos.TryGetValue("com.deathweasel.bepinex.uncensorselector", out PluginInfo pluginInfo);
-            if (pluginInfo != null && pluginInfo.Instance != null)
-            {
-                Type nestedType = pluginInfo.Instance.GetType().GetNestedType("UncensorSelectorController", AccessTools.all);
-                if (nestedType != null)
-                {
-                    MethodInfo methodInfo = AccessTools.Method(nestedType, "ReloadCharacterBody", null, null);
-                    if (methodInfo != null)
-                    {
-                        harmony.Patch(methodInfo, new HarmonyMethod(typeof(HS2_BetterPenetration), "BeforeCharacterReload"), new HarmonyMethod(typeof(HS2_BetterPenetration), "AfterCharacterReload"), null, null);
-                        Debug.Log("HS2_BetterPenetration: patched UncensorSelector::ReloadCharacterBody correctly");
-                    }
+            if (pluginInfo == null || pluginInfo.Instance == null)
+                return;
 
-                    methodInfo = AccessTools.Method(nestedType, "ReloadCharacterPenis", null, null);
-                    if (methodInfo != null)
-                    {
-                        harmony.Patch(methodInfo, new HarmonyMethod(typeof(HS2_BetterPenetration), "BeforeDanCharacterReload"), new HarmonyMethod(typeof(HS2_BetterPenetration), "AfterDanCharacterReload"), null, null);
-                        Debug.Log("HS2_BetterPenetration: patched UncensorSelector::ReloadCharacterPenis patched");
-                    }
-                }
-            }
+            Type nestedType = pluginInfo.Instance.GetType().GetNestedType("UncensorSelectorController", AccessTools.all);
+            if (nestedType == null)
+                return;
+
+            MethodInfo methodInfo = AccessTools.Method(nestedType, "ReloadCharacterBody", null, null);
+            if (methodInfo == null)
+                return;
+
+            harmony.Patch(methodInfo, prefix: new HarmonyMethod(typeof(HS2_BetterPenetration), "BeforeCharacterReload"), postfix: new HarmonyMethod(typeof(HS2_BetterPenetration), "AfterCharacterReload"));
+            UnityEngine.Debug.Log("HS2_BetterPenetration: patched UncensorSelector::ReloadCharacterBody correctly");
+
+            methodInfo = AccessTools.Method(nestedType, "ReloadCharacterPenis", null, null);
+            if (methodInfo == null)
+                return;
+
+            harmony.Patch(methodInfo, prefix: new HarmonyMethod(typeof(HS2_BetterPenetration), "BeforeDanCharacterReload"), postfix: new HarmonyMethod(typeof(HS2_BetterPenetration), "AfterDanCharacterReload"));
+            UnityEngine.Debug.Log("HS2_BetterPenetration: patched UncensorSelector::ReloadCharacterPenis patched");
         }
 
         internal static void SceneManager_sceneUnloaded(Scene scene)

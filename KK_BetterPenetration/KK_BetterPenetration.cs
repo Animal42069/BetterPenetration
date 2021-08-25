@@ -22,7 +22,7 @@ namespace KK_BetterPenetration
     {
         public static KK_BetterPenetration instance;
 
-        public const string VERSION = "4.2.0.0";
+        public const string VERSION = "4.3.0.0";
         internal const int MaleLimit = 2;
         internal const int FemaleLimit = 2;
 
@@ -42,10 +42,17 @@ namespace KK_BetterPenetration
         internal static readonly ConfigEntry<bool>[] _rotateTamaWithShaft = new ConfigEntry<bool>[MaleLimit];
 
         internal static ConfigEntry<float> _clippingDepth;
-        internal static ConfigEntry<Vector3> _kokanOffset;
-        internal static ConfigEntry<Vector3> _innerKokanOffset;
-        internal static ConfigEntry<Vector3> _mouthOffset;
-        internal static ConfigEntry<Vector3> _innerMouthOffset;
+        internal static ConfigEntry<float> _kokanOffset;
+        internal static ConfigEntry<float> _innerKokanOffset;
+        internal static ConfigEntry<float> _mouthOffset;
+        internal static ConfigEntry<float> _innerMouthOffset;
+#if false
+        internal static ConfigEntry<bool> _enableOralPushPull;
+        internal static ConfigEntry<float> _maxOralPush;
+        internal static ConfigEntry<float> _maxOralPull;
+        internal static ConfigEntry<float> _oralPullRate;
+        internal static ConfigEntry<float> _oralReturnRate;
+#endif		
         internal static readonly ConfigEntry<float>[] _frontCollisionOffset = new ConfigEntry<float>[frontOffsets.Count];
         internal static readonly ConfigEntry<float>[] _backCollisionOffset = new ConfigEntry<float>[backOffsets.Count];
 
@@ -97,13 +104,25 @@ namespace KK_BetterPenetration
             for (int offset = 0; offset < backOffsets.Count; offset++)
                 (_backCollisionOffset[offset] = Config.Bind("Female Options", "Clipping Offset: Back Collision " + offset, backOffsets[offset], "Individual offset on colision point, to improve clipping")).SettingChanged += (s, e) =>
                 { UpdateCollisionOptions(); };
-            (_kokanOffset = Config.Bind("Female Options", "Target Offset: Vagina Target", Vector3.zero, "Offset of the vagina target")).SettingChanged += (s, e) =>
+            (_kokanOffset = Config.Bind("Female Options", "Target Offset: Vagina Target", 0.0f, "Offset of the vagina target")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_innerKokanOffset = Config.Bind("Female Options", "Target Offset: Inner Vagina Target", Vector3.zero, "Offset of the simplified inner vagina target")).SettingChanged += (s, e) =>
+            (_innerKokanOffset = Config.Bind("Female Options", "Target Offset: Inner Vagina Target", 0.0f, "Offset of the simplified inner vagina target")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_mouthOffset = Config.Bind("Female Options", "Target Offset: Mouth Target", Vector3.zero, "Offset of the mouth target")).SettingChanged += (s, e) =>
+            (_mouthOffset = Config.Bind("Female Options", "Target Offset: Mouth Target", 0.0f, "Offset of the mouth target")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_innerMouthOffset = Config.Bind("Female Options", "Target Offset: Inner Mouth Target", Vector3.zero, "Offset of the simplified inner mouth target")).SettingChanged += (s, e) =>
+            (_innerMouthOffset = Config.Bind("Female Options", "Target Offset: Inner Mouth Target", 0.0f, "Offset of the simplified inner mouth target")).SettingChanged += (s, e) =>
+#if false
+            { UpdateCollisionOptions(); };
+            (_enableOralPushPull = Config.Bind("Female Options", "Oral Push/Pull: Enable", true, "Enable mouth push/pull during penetration")).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+            (_maxOralPush = Config.Bind("Female Options", "Oral Push/Pull: Max Push", 0.02f, "Maximum amount to push the mouth inwards during penetration")).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+            (_maxOralPull = Config.Bind("Female Options", "Oral Push/Pull: Max Pull", 0.1f, "Maximum amount to pull the mouth outwards during penetration")).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+            (_oralPullRate = Config.Bind("Female Options", "Oral Push/Pull: Push/Pull Rate", 24.0f, "How quickly to push or pull the mouth during penetration")).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+            (_oralReturnRate = Config.Bind("Female Options", "Oral Push/Pull: Return Rate", 0.3f, "How quickly the mouth returns to its original shape when there is no penetration")).SettingChanged += (s, e) =>
+#endif
             { UpdateCollisionOptions(); };
 
             harmony = new Harmony("KK_BetterPenetration");
@@ -132,7 +151,7 @@ namespace KK_BetterPenetration
                 return;
             
             harmony.Patch(uncensorSelectorReloadCharacterBody, postfix: new HarmonyMethod(GetType(), nameof(UncensorSelector_ReloadCharacterBody_Postfix), new[] { typeof(object) }));
-            Debug.Log("KK_BetterPenetration: UncensorSelector patched ReloadCharacterBody correctly");
+            UnityEngine.Debug.Log("KK_BetterPenetration: UncensorSelector patched ReloadCharacterBody correctly");
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "LoadCharaFbxDataAsync")]
@@ -275,7 +294,7 @@ namespace KK_BetterPenetration
                 maleNum = 1;
             }
 
-            CoreGame.LookAtDanUpdate(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, false, maleNum, __instance.numFemale);
+            CoreGame.LookAtDanUpdate(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, false, maleNum, __instance.numFemale, twoDans);
 
             var lstFemale = hSceneProcTraverse.Field("lstFemale").GetValue<List<ChaControl>>();
             if (lstFemale == null || lstFemale.Count == 0)
@@ -360,8 +379,17 @@ namespace KK_BetterPenetration
 
             for (int femaleNum = 0; femaleNum < FemaleLimit; femaleNum++)
             {
+#if false
                 collisionOptions.Add(new CollisionOptions(_kokanOffset.Value, _innerKokanOffset.Value, _mouthOffset.Value, _innerMouthOffset.Value,
-                    false, 0, 0, 0, _clippingDepth.Value, frontInfo, backInfo));
+                    false, 0, 0, 0, _clippingDepth.Value, frontInfo, backInfo,
+                    false, false, 0, 0, 0, 0.3f,
+                    _enableOralPushPull.Value, _maxOralPush.Value, _maxOralPull.Value, _oralPullRate.Value, _oralReturnRate.Value));
+#else
+                collisionOptions.Add(new CollisionOptions(_kokanOffset.Value, _innerKokanOffset.Value, _mouthOffset.Value, _innerMouthOffset.Value,
+                    false, 0, 0, 0, _clippingDepth.Value, frontInfo, backInfo,
+                    false, false, 0, 0, 0, 0.3f,
+                    false, 0, 0, 0, 0));
+#endif
             }
 
             return collisionOptions;

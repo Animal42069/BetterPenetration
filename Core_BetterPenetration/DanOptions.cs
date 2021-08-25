@@ -7,7 +7,7 @@
         public float squishThreshold;
         public float danRadiusScale;
         public float danLengthScale;
-#if !AI_STUDIO && !HS2_STUDIO && !KK_STUDIO
+
         public float fingerRadius;
         public float fingerLength;
         public bool useFingerColliders;
@@ -34,26 +34,22 @@
             this.danRadiusScale = danRadiusScale;
             this.danLengthScale = danLengthScale;
         }
-#else
-        internal enum AutoTarget
-        {
-            Off,
-            Vaginal,
-            Anal,
-            Oral
-        }
 
-        internal AutoTarget danAutoTarget;
-
-        public DanOptions(float danRadiusScale, float danLengthScale, float danLengthSquish, float danGirthSquish, float squishThreshold, AutoTarget danAutoTarget)
+        public DanOptions(float danRadiusScale, float danLengthScale,
+            float danLengthSquish, float danGirthSquish, float squishThreshold)
         {
             this.danLengthSquish = danLengthSquish;
             this.danGirthSquish = danGirthSquish;
             this.squishThreshold = squishThreshold;
             this.danRadiusScale = danRadiusScale;
             this.danLengthScale = danLengthScale;
-            this.danAutoTarget = danAutoTarget;
+            fingerRadius = 0;
+            fingerLength = 0;
+            useFingerColliders = false;
+            simplifyPenetration = true;
+            simplifyOral = true;
+            squishOralGirth = true;
+            rotateTamaWithShaft = true;
         }
-#endif
     }
 }

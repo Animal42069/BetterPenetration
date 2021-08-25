@@ -15,6 +15,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)CollisionOptions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CollisionPoint.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CollisionPoints.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ControllerOptions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CoreGame.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)DanAgent.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)DanOptions.cs" />

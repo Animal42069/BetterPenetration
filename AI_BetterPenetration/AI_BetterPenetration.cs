@@ -15,7 +15,7 @@ namespace AI_BetterPenetration
     [BepInProcess("AI-Syoujyo")]
     public class AI_BetterPenetration : BaseUnityPlugin
     {
-        internal const string VERSION = "4.2.1.0";
+        internal const string VERSION = "4.3.0.0";
         internal const int MaleLimit = 1;
         internal const int FemaleLimit = 2;
 
@@ -38,14 +38,27 @@ namespace AI_BetterPenetration
         internal static ConfigEntry<bool> _rotateTamaWithShaft;
 
         internal static ConfigEntry<float> _clippingDepth;
-        internal static ConfigEntry<Vector3> _kokanOffset;
-        internal static ConfigEntry<Vector3> _innerKokanOffset;
-        internal static ConfigEntry<Vector3> _mouthOffset;
-        internal static ConfigEntry<Vector3> _innerMouthOffset;
+        internal static ConfigEntry<float> _kokanOffset;
+        internal static ConfigEntry<float> _innerKokanOffset;
+        internal static ConfigEntry<float> _mouthOffset;
+        internal static ConfigEntry<float> _innerMouthOffset;
         internal static ConfigEntry<bool> _useKokanFix;
         internal static ConfigEntry<float> _kokanFixPositionY;
         internal static ConfigEntry<float> _kokanFixPositionZ;
         internal static ConfigEntry<float> _kokanFixRotationX;
+#if false
+        internal static ConfigEntry<bool> _enableKokanPushPull;
+        internal static ConfigEntry<bool> _useDanAngle;
+        internal static ConfigEntry<float> _maxKokanPush;
+        internal static ConfigEntry<float> _maxKokanPull;
+        internal static ConfigEntry<float> _kokanPullRate;
+        internal static ConfigEntry<float> _kokanReturnRate;
+        internal static ConfigEntry<bool> _enableOralPushPull;
+        internal static ConfigEntry<float> _maxOralPush;
+        internal static ConfigEntry<float> _maxOralPull;
+        internal static ConfigEntry<float> _oralPullRate;
+        internal static ConfigEntry<float> _oralReturnRate;
+#endif
         internal static readonly ConfigEntry<float>[] _frontCollisionOffset = new ConfigEntry<float>[frontOffsets.Count];
         internal static readonly ConfigEntry<float>[] _backCollisionOffset = new ConfigEntry<float>[backOffsets.Count];
 
@@ -91,13 +104,13 @@ namespace AI_BetterPenetration
             for (int offset = 0; offset < backOffsets.Count; offset++)
                 (_backCollisionOffset[offset] = Config.Bind("Female Options", "Clipping Offset: Back Collision " + offset, backOffsets[offset], "Individual offset on colision point, to improve clipping")).SettingChanged += (s, e) =>
                 { UpdateCollisionOptions(); };
-            (_kokanOffset = Config.Bind("Female Options", "Target Offset: Vagina Target", Vector3.zero, "Offset of the vagina target")).SettingChanged += (s, e) =>
+            (_kokanOffset = Config.Bind("Female Options", "Target Offset: Vagina Target", 0.0f, "Offset of the vagina target")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_innerKokanOffset = Config.Bind("Female Options", "Target Offset: Inner Vagina Target", Vector3.zero, "Offset of the simplified inner vagina target")).SettingChanged += (s, e) =>
+            (_innerKokanOffset = Config.Bind("Female Options", "Target Offset: Inner Vagina Target", 0.0f, "Offset of the simplified inner vagina target")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_mouthOffset = Config.Bind("Female Options", "Target Offset: Mouth Target", new Vector3(0, 0.025f, 0), "Offset of the mouth target")).SettingChanged += (s, e) =>
+            (_mouthOffset = Config.Bind("Female Options", "Target Offset: Mouth Target", 0.025f, "Offset of the mouth target")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_innerMouthOffset = Config.Bind("Female Options", "Target Offset: Inner Mouth Target", Vector3.zero, "Offset of the simplified inner mouth target")).SettingChanged += (s, e) =>
+            (_innerMouthOffset = Config.Bind("Female Options", "Target Offset: Inner Mouth Target", 0.0f, "Offset of the simplified inner mouth target")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
             (_useKokanFix = Config.Bind("Female Options", "Joint Adjustment: Missionary Correction", false, "NOTE: There is an Illusion bug that causes the vagina to appear sunken in certain missionary positions.  It is best to use Advanced Bonemod and adjust your female character's cf_J_Kokan Offset Y to 0.001.  If you don't do that, enabling this option will attempt to fix the problem by guessing where the bone should be")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
@@ -107,10 +120,32 @@ namespace AI_BetterPenetration
             { UpdateCollisionOptions(); };
             (_kokanFixRotationX = Config.Bind("Female Options", "Joint Adjustment: Missionary Rotation X", 10.0f, "Amount to adjust the Vagina bone rotation X for certain Missionary positions to correct its appearance")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-			
-			harmony = new Harmony("AI_BetterPenetration");
+#if false
+            (_enableKokanPushPull = Config.Bind("Female Options", "Vaginal Push/Pull: Enable", true, "Enable vaginal push/pull during penetration")).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+            (_useDanAngle = Config.Bind("Female Options", "Vaginal Push/Pull: Use Dan Angle", true, "Enable vaginal push/pull during penetration")).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+            (_maxKokanPush = Config.Bind("Female Options", "Vaginal Push/Pull: Max Push", 0.08f, "Maximum amount to push the vagina inwards during penetration")).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+            (_maxKokanPull = Config.Bind("Female Options", "Vaginal Push/Pull: Max Pull", 0.08f, "Maximum amount to pull the vagina outwards during penetration")).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+            (_kokanPullRate = Config.Bind("Female Options", "Vaginal Push/Pull: Push/Pull Rate", 24.0f, "How quickly to push or pull the vagina during penetration")).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+            (_kokanReturnRate = Config.Bind("Female Options", "Vaginal Push/Pull: Return Rate", 0.3f, "How quickly the vagina returns to its original shape when there is no penetration")).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+            (_enableOralPushPull = Config.Bind("Female Options", "Oral Push/Pull: Enable", true, "Enable mouth push/pull during penetration")).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+            (_maxOralPush = Config.Bind("Female Options", "Oral Push/Pull: Max Push", 0.02f, "Maximum amount to push the mouth inwards during penetration")).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+            (_maxOralPull = Config.Bind("Female Options", "Oral Push/Pull: Max Pull", 0.1f, "Maximum amount to pull the mouth outwards during penetration")).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+            (_oralPullRate = Config.Bind("Female Options", "Oral Push/Pull: Push/Pull Rate", 18.0f, "How quickly to push or pull the mouth during penetration")).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+            (_oralReturnRate = Config.Bind("Female Options", "Oral Push/Pull: Return Rate", 0.3f, "How quickly the mouth returns to its original shape when there is no penetration")).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+#endif
+            harmony = new Harmony("AI_BetterPenetration");
         }
-
 
         [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "LoadCharaFbxDataAsync")]
         internal static void ChaControl_LoadCharaFbxDataAsync(ChaControl __instance)
@@ -191,7 +226,7 @@ namespace AI_BetterPenetration
                 resetParticles = false;
             }
 
-            CoreGame.LookAtDanUpdate(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, hScene.NowChangeAnim, 0, 0);
+            CoreGame.LookAtDanUpdate(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, hScene.NowChangeAnim, 0, 0, false);
         }
 
         [HarmonyPrefix, HarmonyPatch(typeof(HScene), "EndProc")]
@@ -268,8 +303,18 @@ namespace AI_BetterPenetration
 
             for (int femaleNum = 0; femaleNum < FemaleLimit; femaleNum++)
             {
+#if false
                 collisionOptions.Add(new CollisionOptions(_kokanOffset.Value, _innerKokanOffset.Value, _mouthOffset.Value, _innerMouthOffset.Value, _useKokanFix.Value,
-                    _kokanFixPositionZ.Value, _kokanFixPositionY.Value, _kokanFixRotationX.Value, _clippingDepth.Value, frontInfo, backInfo));
+                    _kokanFixPositionZ.Value, _kokanFixPositionY.Value, _kokanFixRotationX.Value, _clippingDepth.Value, frontInfo, backInfo,
+                    _enableKokanPushPull.Value, _useDanAngle.Value, _maxKokanPush.Value, _maxKokanPull.Value, _kokanPullRate.Value, _kokanReturnRate.Value,
+                    _enableOralPushPull.Value, _maxOralPush.Value, _maxOralPull.Value, _oralPullRate.Value, _oralReturnRate.Value));
+#else
+                collisionOptions.Add(new CollisionOptions(_kokanOffset.Value, _innerKokanOffset.Value, _mouthOffset.Value, _innerMouthOffset.Value, _useKokanFix.Value,
+                    _kokanFixPositionZ.Value, _kokanFixPositionY.Value, _kokanFixRotationX.Value, _clippingDepth.Value, frontInfo, backInfo,
+                    false, false, 0, 0, 0, 0,
+                    false, 0, 0, 0, 0));
+
+#endif 
             }
 
             return collisionOptions;

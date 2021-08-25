@@ -23,7 +23,7 @@ namespace HS2_Studio_BetterPenetration
     {
         internal const string GUID = "com.animal42069.studiobetterpenetration";
         internal const string PluginName = "HS2 Studio Better Penetration";
-        internal const string VERSION = "2.2.1.0";
+        internal const string VERSION = "4.3.0.0";
         internal const string BEHAVIOR = "BetterPenetrationController";
         internal const string StudioCategoryName = "Better Penetration";
         internal static Harmony harmony;
@@ -52,14 +52,14 @@ namespace HS2_Studio_BetterPenetration
                 return;
 
             harmony.Patch(methodInfo, prefix: new HarmonyMethod(GetType(), "BeforeCharacterReload"));
-            Debug.Log("Studio_BetterPenetration: patched UncensorSelector::ReloadCharacterBody correctly");
+            UnityEngine.Debug.Log("Studio_BetterPenetration: patched UncensorSelector::ReloadCharacterBody correctly");
 
             methodInfo = AccessTools.Method(nestedType, "ReloadCharacterBalls", null, null);
             if (methodInfo == null)
                 return;
 
             harmony.Patch(methodInfo, postfix: new HarmonyMethod(GetType(), "AfterTamaCharacterReload"));
-            Debug.Log("Studio_BetterPenetration: patched UncensorSelectorController::ReloadCharacterBalls correctly");
+            UnityEngine.Debug.Log("Studio_BetterPenetration: patched UncensorSelectorController::ReloadCharacterBalls correctly");
 
             Chainloader.PluginInfos.TryGetValue("com.joan6694.illusionplugins.nodesconstraints", out pluginInfo);
             if (pluginInfo == null || pluginInfo.Instance == null)
@@ -75,21 +75,21 @@ namespace HS2_Studio_BetterPenetration
                 return;
 
             harmony.Patch(methodInfo, postfix: new HarmonyMethod(GetType(), nameof(AfterAddConstraint)));
-            Debug.Log("Studio_BetterPenetration: patched NodeConstraints::AddConstraint correctly");
+            UnityEngine.Debug.Log("Studio_BetterPenetration: patched NodeConstraints::AddConstraint correctly");
 
             methodInfo = AccessTools.Method(nodeConstraintType, "ApplyNodesConstraints", null, null);
             if (methodInfo == null)
                 return;
 
             harmony.Patch(methodInfo, postfix: new HarmonyMethod(GetType(), nameof(AfterApplyNodesConstraints)));
-            Debug.Log("Studio_BetterPenetration: patched NodeConstraints::ApplyNodesConstraints correctly");
+            UnityEngine.Debug.Log("Studio_BetterPenetration: patched NodeConstraints::ApplyNodesConstraints correctly");
 
             methodInfo = AccessTools.Method(nodeConstraintType, "ApplyConstraints", null, null);
             if (methodInfo == null)
                 return;
 
             harmony.Patch(methodInfo, postfix: new HarmonyMethod(GetType(), nameof(AfterApplyConstraints)));
-            Debug.Log("Studio_BetterPenetration: patched NodeConstraints::ApplyConstraints correctly");
+            UnityEngine.Debug.Log("Studio_BetterPenetration: patched NodeConstraints::ApplyConstraints correctly");
 
             RegisterStudioControllerBasic();
         }
@@ -172,6 +172,47 @@ namespace HS2_Studio_BetterPenetration
                     controller.DanAutoTarget = value;
             });
             StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(autoTargeter);
+#if false
+            var enablePushPull = new CurrentStateCategorySwitch("Push/Pull Target", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().EnablePushPull);
+            enablePushPull.Value.Subscribe(value =>
+            {
+                foreach (var controller in StudioAPI.GetSelectedControllers<BetterPenetrationController>())
+                    controller.EnablePushPull = value;
+            });
+            StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(enablePushPull);
+
+            var maxPush = new CurrentStateCategorySlider("Max Push", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().MaxPush, 0f, 2f);
+            maxPush.Value.Subscribe(value =>
+            {
+                foreach (var controller in StudioAPI.GetSelectedControllers<BetterPenetrationController>())
+                    controller.MaxPush = value;
+            });
+            StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(maxPush);
+
+            var maxPull = new CurrentStateCategorySlider("Max Pull", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().MaxPull, 0f, 2f);
+            maxPull.Value.Subscribe(value =>
+            {
+                foreach (var controller in StudioAPI.GetSelectedControllers<BetterPenetrationController>())
+                    controller.MaxPull = value;
+            });
+            StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(maxPull);
+
+            var pullRate = new CurrentStateCategorySlider("Pull Rate", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().PullRate, 0f, 50f);
+            pullRate.Value.Subscribe(value =>
+            {
+                foreach (var controller in StudioAPI.GetSelectedControllers<BetterPenetrationController>())
+                    controller.PullRate = value;
+            });
+            StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(pullRate);
+
+            var returnRate = new CurrentStateCategorySlider("Return Rate", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().ReturnRate, 0f, 2f);
+            returnRate.Value.Subscribe(value =>
+            {
+                foreach (var controller in StudioAPI.GetSelectedControllers<BetterPenetrationController>())
+                    controller.ReturnRate = value;
+            });
+            StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(returnRate);
+#endif
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "LoadCharaFbxDataAsync")]
@@ -186,7 +227,8 @@ namespace HS2_Studio_BetterPenetration
             {
                 if (dynamicBone == null ||
                     dynamicBone.m_Colliders == null ||
-                    (dynamicBone.name != null && (dynamicBone.name.Contains("Vagina") || dynamicBone.name.Contains("cm_J_dan"))))
+                    (dynamicBone.name != null && (dynamicBone.name.Contains("Vagina") || dynamicBone.name.Contains("cm_J_dan"))) ||
+                    __instance != dynamicBone.GetComponentInParent<ChaControl>())
                     continue;
 
                 for (int collider = 0; collider < dynamicBone.m_Colliders.Count; collider++)
