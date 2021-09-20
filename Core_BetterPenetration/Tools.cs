@@ -105,5 +105,48 @@ namespace Core_BetterPenetration
 
             return colliderList;
         }
+
+        internal static DynamicBoneCollider InitializeCollider(Transform parent, float radius, float length, Vector3 centerOffset,
+                                                               DynamicBoneCollider.Direction direction = DynamicBoneCollider.Direction.X,
+                                                               DynamicBoneCollider.Bound bound = DynamicBoneCollider.Bound.Outside)
+        {
+            if (parent == null)
+                return null;
+
+            DynamicBoneCollider collider = parent.GetComponent<DynamicBoneCollider>();
+
+            if (collider == null)
+                collider = parent.gameObject.AddComponent(typeof(DynamicBoneCollider)) as DynamicBoneCollider;
+
+            collider.m_Direction = direction;
+            collider.m_Center = centerOffset;
+            collider.m_Bound = bound;
+            collider.m_Radius = radius;
+            collider.m_Height = length;
+
+            return collider;
+        }
+
+        internal static float ComputeRadiusScale(Transform transform, DynamicBoneCollider.Direction direction)
+        {
+            if (direction == DynamicBoneCollider.Direction.X)
+                return (transform.lossyScale.y + transform.lossyScale.z) / 2;
+
+            if (direction == DynamicBoneCollider.Direction.Y)
+                return (transform.lossyScale.x + transform.lossyScale.z) / 2;
+
+            return (transform.lossyScale.x + transform.lossyScale.y) / 2;
+        }
+
+        internal static float ComputeHeightScale(Transform transform, DynamicBoneCollider.Direction direction)
+        {
+            if (direction == DynamicBoneCollider.Direction.X)
+                return transform.lossyScale.x;
+
+            if (direction == DynamicBoneCollider.Direction.Y)
+                return transform.lossyScale.y;
+
+            return transform.lossyScale.z;
+        }
     }
 }

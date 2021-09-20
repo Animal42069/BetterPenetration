@@ -12,7 +12,7 @@ namespace KK_BetterPenetration
 {
     [BepInPlugin("animal42069.KKbetterpenetration", "KK Better Penetration", VERSION)]
     [BepInDependency("com.deathweasel.bepinex.uncensorselector", "3.11.1")]
-    [BepInDependency("com.rclcircuit.bepinex.modboneimplantor", "1.0")]
+    [BepInDependency("com.rclcircuit.bepinex.modboneimplantor", "1.1.1")]
     [BepInProcess("Koikatu")]
     [BepInProcess("KoikatuVR")]
     [BepInProcess("Koikatsu Party")]
@@ -22,7 +22,7 @@ namespace KK_BetterPenetration
     {
         public static KK_BetterPenetration instance;
 
-        public const string VERSION = "4.3.0.0";
+        internal const string VERSION = "4.4.0.0";
         internal const int MaleLimit = 2;
         internal const int FemaleLimit = 2;
 
@@ -46,13 +46,12 @@ namespace KK_BetterPenetration
         internal static ConfigEntry<float> _innerKokanOffset;
         internal static ConfigEntry<float> _mouthOffset;
         internal static ConfigEntry<float> _innerMouthOffset;
-#if false
         internal static ConfigEntry<bool> _enableOralPushPull;
         internal static ConfigEntry<float> _maxOralPush;
         internal static ConfigEntry<float> _maxOralPull;
         internal static ConfigEntry<float> _oralPullRate;
         internal static ConfigEntry<float> _oralReturnRate;
-#endif		
+        
         internal static readonly ConfigEntry<float>[] _frontCollisionOffset = new ConfigEntry<float>[frontOffsets.Count];
         internal static readonly ConfigEntry<float>[] _backCollisionOffset = new ConfigEntry<float>[backOffsets.Count];
 
@@ -63,12 +62,11 @@ namespace KK_BetterPenetration
         internal static Traverse hSceneProcTraverse;
         internal static bool hSceneStarted = false;
         internal static bool inHScene = false;
-        internal static readonly bool loadingCharacter = false;
-        internal static bool twoDans = false;
+        internal static bool loadingCharacter = false;
         internal static Type _uncensorSelectorType;
-        internal static bool resetParticlesStep1 = false;
-        internal static bool resetParticlesStep2 = false;
-        internal static int resetParticlesCount = 0;
+        internal static bool changeAnimationStep1 = false;
+        internal static bool changeAnimationStep2 = false;
+        internal static int changeAnimationCount = 0;
 
         internal void Awake()
         {
@@ -111,18 +109,16 @@ namespace KK_BetterPenetration
             (_mouthOffset = Config.Bind("Female Options", "Target Offset: Mouth Target", 0.0f, "Offset of the mouth target")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
             (_innerMouthOffset = Config.Bind("Female Options", "Target Offset: Inner Mouth Target", 0.0f, "Offset of the simplified inner mouth target")).SettingChanged += (s, e) =>
-#if false
             { UpdateCollisionOptions(); };
             (_enableOralPushPull = Config.Bind("Female Options", "Oral Push/Pull: Enable", true, "Enable mouth push/pull during penetration")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_maxOralPush = Config.Bind("Female Options", "Oral Push/Pull: Max Push", 0.02f, "Maximum amount to push the mouth inwards during penetration")).SettingChanged += (s, e) =>
+            (_maxOralPush = Config.Bind("Female Options", "Oral Push/Pull: Max Push", 0.002f, "Maximum amount to push the mouth inwards during penetration")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_maxOralPull = Config.Bind("Female Options", "Oral Push/Pull: Max Pull", 0.1f, "Maximum amount to pull the mouth outwards during penetration")).SettingChanged += (s, e) =>
+            (_maxOralPull = Config.Bind("Female Options", "Oral Push/Pull: Max Pull", 0.006f, "Maximum amount to pull the mouth outwards during penetration")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_oralPullRate = Config.Bind("Female Options", "Oral Push/Pull: Push/Pull Rate", 24.0f, "How quickly to push or pull the mouth during penetration")).SettingChanged += (s, e) =>
+            (_oralPullRate = Config.Bind("Female Options", "Oral Push/Pull: Push/Pull Rate", 18f, "How quickly to push or pull the mouth during penetration")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_oralReturnRate = Config.Bind("Female Options", "Oral Push/Pull: Return Rate", 0.3f, "How quickly the mouth returns to its original shape when there is no penetration")).SettingChanged += (s, e) =>
-#endif
+            (_oralReturnRate = Config.Bind("Female Options", "Oral Push/Pull: Return Rate", 0.03f, "How quickly the mouth returns to its original shape when there is no penetration")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
 
             harmony = new Harmony("KK_BetterPenetration");
@@ -240,61 +236,66 @@ namespace KK_BetterPenetration
             if (!inHScene)
                 return;
 
-            resetParticlesStep1 = true;
+            changeAnimationStep1 = true;
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "setPlay")]
         internal static void ChaControl_PostSetPlay()
         {
-            resetParticlesStep1 = true;
+            changeAnimationStep1 = true;
         }
 
-        [HarmonyPostfix, HarmonyPatch(typeof(Lookat_dan), "SetInfo")]
-        internal static void H_Lookat_dan_PostSetInfo(Lookat_dan __instance, ChaControl ___male)
+        [HarmonyPostfix, HarmonyPatch(typeof(Lookat_dan), "Release")]
+        internal static void H_Lookat_dan_PostRelease(Lookat_dan __instance)
         {
-            if (!inHScene || loadingCharacter || __instance.strPlayMotion == null || ___male == null)
+            if (!inHScene || loadingCharacter || __instance.strPlayMotion == null || __instance.male == null)
                 return;
 
             int maleNum = 0;
-            if (___male != null && ___male.chaID != 0)
+            if (__instance.male.chaID != 0)
                 maleNum = 1;
 
-            twoDans = false;
+            CoreGame.LookAtDanRelease(maleNum, __instance.numFemale, false);
+        }
+		
+        [HarmonyPostfix, HarmonyPatch(typeof(Lookat_dan), "SetInfo")]
+        internal static void H_Lookat_dan_PostSetInfo(Lookat_dan __instance)
+        {
+            if (!inHScene || loadingCharacter || __instance.strPlayMotion == null)
+                return;
 
-            CoreGame.LookAtDanSetup(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, maleNum, __instance.numFemale, twoDans);
+            int maleNum = 0;
+            if (__instance.male != null && __instance.male.chaID != 0)
+                maleNum = 1;
+
+            CoreGame.LookAtDanSetup(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, maleNum, __instance.numFemale, false, true);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(Lookat_dan), "LateUpdate")]
-        public static void Lookat_dan_PostLateUpdate(Lookat_dan __instance, ChaControl ___male)
+        internal static void Lookat_dan_PostLateUpdate(Lookat_dan __instance)
         {
-            if (!inHScene || loadingCharacter || __instance.strPlayMotion == null || ___male == null)
+            if (!inHScene || loadingCharacter || __instance.strPlayMotion == null || __instance.male == null)
                 return;
 
-            if (resetParticlesStep1)
+            if (changeAnimationStep1)
             {
                 CoreGame.ResetParticles();
                 CoreGame.EnableParticles(false);
-                resetParticlesStep1 = false;
-                resetParticlesStep2 = true;
-                resetParticlesCount = 0;
+                changeAnimationStep1 = false;
+                changeAnimationStep2 = true;
+                changeAnimationCount = 0;
             }
 
-            if (resetParticlesStep2 && ++resetParticlesCount > 3)
+            if (changeAnimationStep2 && ++changeAnimationCount > 3)
             {
                 CoreGame.EnableParticles(true);
-                resetParticlesStep2 = false;
+                changeAnimationStep2 = false;
             }
 
-            int maleNum = 0;
+            if (__instance.male.chaID != 0)
+                return;
 
-            if (___male.chaID != 0)
-            {
-                if (!twoDans)
-                    return;
-                maleNum = 1;
-            }
-
-            CoreGame.LookAtDanUpdate(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, false, maleNum, __instance.numFemale, twoDans);
+            CoreGame.LookAtDanUpdate(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, false, 0, __instance.numFemale, false, true);
 
             var lstFemale = hSceneProcTraverse.Field("lstFemale").GetValue<List<ChaControl>>();
             if (lstFemale == null || lstFemale.Count == 0)
@@ -305,22 +306,7 @@ namespace KK_BetterPenetration
                 if (female != null)
                     femaleList.Add(female);
         }
-
-        [HarmonyPostfix, HarmonyPatch(typeof(Lookat_dan), "Release")]
-        internal static void H_Lookat_dan_PostRelease(Lookat_dan __instance, ChaControl ___male)
-        {
-            if (!inHScene || loadingCharacter || __instance.strPlayMotion == null || ___male == null)
-                return;
-
-            int maleNum = 0;
-            if (___male != null && ___male.chaID != 0)
-                maleNum = 1;
-
-            twoDans = false;
-
-            CoreGame.LookAtDanRelease(maleNum, __instance.numFemale, twoDans);
-        }
-
+		
         internal static void UpdateDanColliders()
         {
             if (!inHScene)
@@ -335,10 +321,10 @@ namespace KK_BetterPenetration
             if (!inHScene)
                 return;
 
-            for (int index = 0; index < MaleLimit; index++)
-                CoreGame.UpdateDanOptions(index, _danLengthSquishFactor[index].Value, _danGirthSquishFactor[index].Value,
-                    _danSquishThreshold[index].Value, _danSquishOralGirth[index].Value, false,
-                    _simplifyPenetration[index].Value, _simplifyOral[index].Value, _rotateTamaWithShaft[index].Value);
+            for (int maleNum = 0; maleNum < MaleLimit; maleNum++)
+                CoreGame.UpdateDanOptions(maleNum, _danLengthSquishFactor[maleNum].Value, _danGirthSquishFactor[maleNum].Value, 
+                    _danSquishThreshold[maleNum].Value, _danSquishOralGirth[maleNum].Value, 
+                    _simplifyPenetration[maleNum].Value, _simplifyOral[maleNum].Value, _rotateTamaWithShaft[maleNum].Value);
         }
 
         internal static void UpdateCollisionOptions()
@@ -359,7 +345,7 @@ namespace KK_BetterPenetration
             {
                 danOptions.Add(new DanOptions(_danColliderRadiusScale[maleNum].Value, _danColliderLengthScale[maleNum].Value,
                     _danLengthSquishFactor[maleNum].Value, _danGirthSquishFactor[maleNum].Value, _danSquishThreshold[maleNum].Value, _danSquishOralGirth[maleNum].Value,
-                    0, 0, false, _simplifyPenetration[maleNum].Value, _simplifyOral[maleNum].Value, _rotateTamaWithShaft[maleNum].Value));
+                    _simplifyPenetration[maleNum].Value, _simplifyOral[maleNum].Value, _rotateTamaWithShaft[maleNum].Value));
             }
 
             return danOptions;
@@ -379,17 +365,10 @@ namespace KK_BetterPenetration
 
             for (int femaleNum = 0; femaleNum < FemaleLimit; femaleNum++)
             {
-#if false
                 collisionOptions.Add(new CollisionOptions(_kokanOffset.Value, _innerKokanOffset.Value, _mouthOffset.Value, _innerMouthOffset.Value,
                     false, 0, 0, 0, _clippingDepth.Value, frontInfo, backInfo,
-                    false, false, 0, 0, 0, 0.3f,
+                    false, 0, 0, 0, 0,
                     _enableOralPushPull.Value, _maxOralPush.Value, _maxOralPull.Value, _oralPullRate.Value, _oralReturnRate.Value));
-#else
-                collisionOptions.Add(new CollisionOptions(_kokanOffset.Value, _innerKokanOffset.Value, _mouthOffset.Value, _innerMouthOffset.Value,
-                    false, 0, 0, 0, _clippingDepth.Value, frontInfo, backInfo,
-                    false, false, 0, 0, 0, 0.3f,
-                    false, 0, 0, 0, 0));
-#endif
             }
 
             return collisionOptions;

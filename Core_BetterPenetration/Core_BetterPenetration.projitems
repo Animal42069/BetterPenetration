@@ -21,9 +21,9 @@
     <Compile Include="$(MSBuildThisFileDirectory)DanOptions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)DanPoint.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)DanPoints.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ItemColliderInfo.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MathHelpers.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Tools.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TwistedPlane.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)UncensorDynamicBone.cs" />
   </ItemGroup>
 </Project>

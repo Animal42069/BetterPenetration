@@ -40,10 +40,18 @@ namespace Core_BetterPenetration
         public const float DefaultColliderLengthScale = 1f;
         public const float DefaultColliderRadiusScale = 1f;
         public const bool DefaultPushPUll = false;
-        public const float DefaultMaxPush = 0.05f;
-        public const float DefaultMaxPull = 0.05f;
+#if HS2 || AI
+        public const float DefaultMaxPush = 0.04f;
+        public const float DefaultMaxPull = 0.06f;
         public const float DefaultPullRate = 18.0f;
         public const float DefaultReturnRate = 0.3f;
+#else
+        public const float DefaultMaxPush = 0.002f;
+        public const float DefaultMaxPull = 0.006f;
+        public const float DefaultPullRate = 18.0f;
+        public const float DefaultReturnRate = 0.03f;
+#endif
+
         internal const ControllerOptions.AutoTarget DefaultDanAutoTarget = ControllerOptions.AutoTarget.Off;
 
         protected override void OnCardBeingSaved(GameMode currentGameMode)
@@ -56,7 +64,7 @@ namespace Core_BetterPenetration
             data.data.Add("ColliderRadiusScale", danOptions.danRadiusScale);
             data.data.Add("ColliderLengthScale", danOptions.danLengthScale);
             data.data.Add("DanAutoTarget", controllerOptions.danAutoTarget);
-            data.data.Add("EnablePushPull", collisionOptions.enableKokanPush);
+            data.data.Add("EnablePushPull", collisionOptions.enableOralPush);
             data.data.Add("MaxPush", collisionOptions.maxKokanPush);
             data.data.Add("MaxPull", collisionOptions.maxKokanPull);
             data.data.Add("PullRate", collisionOptions.kokanPullRate);
@@ -573,14 +581,16 @@ namespace Core_BetterPenetration
                 if (danAgent == null || controllerOptions == null || !danTargetsValid)
                     return DefaultPushPUll;
 
-                return collisionOptions.enableKokanPush;
+                return collisionOptions.enableOralPush;
             }
             set
             {
                 if (danAgent == null || !danTargetsValid)
                     return;
 
+#if HS2 || AI
                 collisionOptions.enableKokanPush = value;
+#endif
                 collisionOptions.enableOralPush = value;
             }
         }

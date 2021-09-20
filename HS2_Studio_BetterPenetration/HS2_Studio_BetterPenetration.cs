@@ -16,14 +16,14 @@ namespace HS2_Studio_BetterPenetration
 {
     [BepInPlugin(GUID, PluginName, VERSION)]
     [BepInDependency("com.deathweasel.bepinex.uncensorselector", "3.10")]
-    [BepInDependency("com.joan6694.illusionplugins.bonesframework", "1.4.3")]
+    [BepInDependency("com.rclcircuit.bepinex.modboneimplantor", "1.1.1")]
     [BepInDependency("com.joan6694.illusionplugins.nodesconstraints")]
     [BepInProcess("StudioNEOV2")]
     public class HS2_Studio_BetterPenetration : BaseUnityPlugin
     {
         internal const string GUID = "com.animal42069.studiobetterpenetration";
         internal const string PluginName = "HS2 Studio Better Penetration";
-        internal const string VERSION = "4.3.0.0";
+        internal const string VERSION = "4.4.0.0";
         internal const string BEHAVIOR = "BetterPenetrationController";
         internal const string StudioCategoryName = "Better Penetration";
         internal static Harmony harmony;
@@ -99,6 +99,14 @@ namespace HS2_Studio_BetterPenetration
             if (!StudioAPI.InsideStudio)
                 return;
 
+            var enablePushPull = new CurrentStateCategorySwitch("Push/Pull Target", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().EnablePushPull);
+            enablePushPull.Value.Subscribe(value =>
+            {
+                foreach (var controller in StudioAPI.GetSelectedControllers<BetterPenetrationController>())
+                    controller.EnablePushPull = value;
+            });
+            StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(enablePushPull);
+
             var bpEnable = new CurrentStateCategorySwitch("Enable BP Controller", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().enabled);
             bpEnable.Value.Subscribe(value =>
             {
@@ -172,16 +180,8 @@ namespace HS2_Studio_BetterPenetration
                     controller.DanAutoTarget = value;
             });
             StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(autoTargeter);
-#if false
-            var enablePushPull = new CurrentStateCategorySwitch("Push/Pull Target", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().EnablePushPull);
-            enablePushPull.Value.Subscribe(value =>
-            {
-                foreach (var controller in StudioAPI.GetSelectedControllers<BetterPenetrationController>())
-                    controller.EnablePushPull = value;
-            });
-            StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(enablePushPull);
 
-            var maxPush = new CurrentStateCategorySlider("Max Push", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().MaxPush, 0f, 2f);
+            var maxPush = new CurrentStateCategorySlider("Max Push", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().MaxPush, 0f, 0.2f);
             maxPush.Value.Subscribe(value =>
             {
                 foreach (var controller in StudioAPI.GetSelectedControllers<BetterPenetrationController>())
@@ -189,7 +189,7 @@ namespace HS2_Studio_BetterPenetration
             });
             StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(maxPush);
 
-            var maxPull = new CurrentStateCategorySlider("Max Pull", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().MaxPull, 0f, 2f);
+            var maxPull = new CurrentStateCategorySlider("Max Pull", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().MaxPull, 0f, 0.2f);
             maxPull.Value.Subscribe(value =>
             {
                 foreach (var controller in StudioAPI.GetSelectedControllers<BetterPenetrationController>())
@@ -205,14 +205,13 @@ namespace HS2_Studio_BetterPenetration
             });
             StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(pullRate);
 
-            var returnRate = new CurrentStateCategorySlider("Return Rate", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().ReturnRate, 0f, 2f);
+            var returnRate = new CurrentStateCategorySlider("Return Rate", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().ReturnRate, 0f, 1f);
             returnRate.Value.Subscribe(value =>
             {
                 foreach (var controller in StudioAPI.GetSelectedControllers<BetterPenetrationController>())
                     controller.ReturnRate = value;
             });
             StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(returnRate);
-#endif
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "LoadCharaFbxDataAsync")]

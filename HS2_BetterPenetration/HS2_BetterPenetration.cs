@@ -14,12 +14,12 @@ namespace HS2_BetterPenetration
 {
     [BepInPlugin("animal42069.HS2betterpenetration", "HS2 Better Penetration", VERSION)]
     [BepInDependency("com.deathweasel.bepinex.uncensorselector", "3.10")]
-    [BepInDependency("com.joan6694.illusionplugins.bonesframework", "1.4.3")]
+    [BepInDependency("com.rclcircuit.bepinex.modboneimplantor", "1.1.1")]
     [BepInProcess("HoneySelect2")]
     [BepInProcess("HoneySelect2VR")]
     public class HS2_BetterPenetration : BaseUnityPlugin
     {
-        internal const string VERSION = "4.3.0.0";
+        internal const string VERSION = "4.4.0.0";
         internal const int MaleLimit = 2;
         internal const int FemaleLimit = 2;
 
@@ -30,13 +30,10 @@ namespace HS2_BetterPenetration
         
         internal static readonly ConfigEntry<float>[] _danColliderLengthScale = new ConfigEntry<float>[MaleLimit];
         internal static readonly ConfigEntry<float>[] _danColliderRadiusScale = new ConfigEntry<float>[MaleLimit];
-        internal static readonly ConfigEntry<float>[] _fingerColliderLength = new ConfigEntry<float>[MaleLimit];
-        internal static readonly ConfigEntry<float>[] _fingerColliderRadius = new ConfigEntry<float>[MaleLimit];
         internal static readonly ConfigEntry<float>[] _danLengthSquishFactor = new ConfigEntry<float>[MaleLimit];
         internal static readonly ConfigEntry<float>[] _danGirthSquishFactor = new ConfigEntry<float>[MaleLimit];
         internal static readonly ConfigEntry<float>[] _danSquishThreshold = new ConfigEntry<float>[MaleLimit];
         internal static readonly ConfigEntry<bool>[] _danSquishOralGirth = new ConfigEntry<bool>[MaleLimit];
-        internal static readonly ConfigEntry<bool>[] _useFingerColliders = new ConfigEntry<bool>[MaleLimit];
         internal static readonly ConfigEntry<bool>[] _simplifyPenetration = new ConfigEntry<bool>[MaleLimit];
         internal static readonly ConfigEntry<bool>[] _simplifyOral = new ConfigEntry<bool>[MaleLimit];
         internal static readonly ConfigEntry<bool>[] _rotateTamaWithShaft = new ConfigEntry<bool>[MaleLimit];
@@ -50,9 +47,7 @@ namespace HS2_BetterPenetration
         internal static ConfigEntry<float> _kokanFixPositionY;
         internal static ConfigEntry<float> _kokanFixPositionZ;
         internal static ConfigEntry<float> _kokanFixRotationX;
-#if false
         internal static ConfigEntry<bool> _enableKokanPushPull;
-        internal static ConfigEntry<bool> _useDanAngle;
         internal static ConfigEntry<float> _maxKokanPush;
         internal static ConfigEntry<float> _maxKokanPull;
         internal static ConfigEntry<float> _kokanPullRate;
@@ -62,7 +57,6 @@ namespace HS2_BetterPenetration
         internal static ConfigEntry<float> _maxOralPull;
         internal static ConfigEntry<float> _oralPullRate;
         internal static ConfigEntry<float> _oralReturnRate;
-#endif
         internal static readonly ConfigEntry<float>[] _frontCollisionOffset = new ConfigEntry<float>[frontOffsets.Count];
         internal static readonly ConfigEntry<float>[] _backCollisionOffset = new ConfigEntry<float>[backOffsets.Count];
 
@@ -71,17 +65,14 @@ namespace HS2_BetterPenetration
         internal static bool patched = false;
         internal static bool inHScene = false;
         internal static bool loadingCharacter = false;
+		internal static bool isInScene;
         internal static bool twoDans;
-        internal static bool resetParticles = false;
+        internal static bool changeAnimation = false;
 
         internal void Awake()
         {
             for (int maleNum = 0; maleNum < MaleLimit; maleNum++)
             {
-                (_fingerColliderLength[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Finger Collider: Length", 0.18f, "Lenght of the finger colliders.")).SettingChanged += (s, e) =>
-                { UpdateFingerColliders(); };
-                (_fingerColliderRadius[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Finger Collider: Radius", 0.06f, "Radius of the finger colliders.")).SettingChanged += (s, e) =>
-                { UpdateFingerColliders(); };
                 (_danColliderLengthScale[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis Collider: Length Scale", 1.0f, new ConfigDescription("How much to scale collider length", new AcceptableValueRange<float>(0.5f, 1.5f)))).SettingChanged += (s, e) =>
                 { UpdateDanColliders(); };
                 (_danColliderRadiusScale[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis Collider: Radius Scale", 1.0f, new ConfigDescription("How much to scale collider radius", new AcceptableValueRange<float>(0.5f, 1.5f)))).SettingChanged += (s, e) =>
@@ -93,8 +84,6 @@ namespace HS2_BetterPenetration
                 (_danSquishThreshold[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis: Squish Threshold", 0.2f, new ConfigDescription("Allows the penis to begin squishing (shorten length increase girth) after this amount of the penis has penetrated.", new AcceptableValueRange<float>(0, 1)))).SettingChanged += (s, e) =>
                 { UpdateDanOptions(); };
                 (_danSquishOralGirth[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis: Squish Oral Girth", false, "Allows the penis to squish (increase girth) during oral.")).SettingChanged += (s, e) =>
-                { UpdateDanOptions(); };
-                (_useFingerColliders[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Finger Collider: Enable", true, "Use finger colliders")).SettingChanged += (s, e) =>
                 { UpdateDanOptions(); };
                 (_simplifyPenetration[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Simplify Penetration Calculation", false, "Simplifys penetration calclation by always having it target the same internal point.  Only valid for BP penis uncensors.")).SettingChanged += (s, e) =>
                 { UpdateDanOptions(); };
@@ -127,15 +116,12 @@ namespace HS2_BetterPenetration
             (_kokanFixPositionZ = Config.Bind("Female Options", "Joint Adjustment: Missionary Position Z", 0.0625f, "Amount to adjust the Vagina bone position Z for certain Missionary positions to correct its appearance")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
             (_kokanFixRotationX = Config.Bind("Female Options", "Joint Adjustment: Missionary Rotation X", 10.0f, "Amount to adjust the Vagina bone rotation X for certain Missionary positions to correct its appearance")).SettingChanged += (s, e) =>
-#if false 
             { UpdateCollisionOptions(); };
             (_enableKokanPushPull = Config.Bind("Female Options", "Vaginal Push/Pull: Enable", true, "Enable vaginal push/pull during penetration")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_useDanAngle = Config.Bind("Female Options", "Vaginal Push/Pull: Use Dan Angle", true, "Enable vaginal push/pull during penetration")).SettingChanged += (s, e) =>
-            { UpdateCollisionOptions(); };
             (_maxKokanPush = Config.Bind("Female Options", "Vaginal Push/Pull: Max Push", 0.08f, "Maximum amount to push the vagina inwards during penetration")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_maxKokanPull = Config.Bind("Female Options", "Vaginal Push/Pull: Max Pull", 0.08f, "Maximum amount to pull the vagina outwards during penetration")).SettingChanged += (s, e) =>
+            (_maxKokanPull = Config.Bind("Female Options", "Vaginal Push/Pull: Max Pull", 0.04f, "Maximum amount to pull the vagina outwards during penetration")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
             (_kokanPullRate = Config.Bind("Female Options", "Vaginal Push/Pull: Push/Pull Rate", 24.0f, "How quickly to push or pull the vagina during penetration")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
@@ -150,7 +136,6 @@ namespace HS2_BetterPenetration
             (_oralPullRate = Config.Bind("Female Options", "Oral Push/Pull: Push/Pull Rate", 18.0f, "How quickly to push or pull the mouth during penetration")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
             (_oralReturnRate = Config.Bind("Female Options", "Oral Push/Pull: Return Rate", 0.3f, "How quickly the mouth returns to its original shape when there is no penetration")).SettingChanged += (s, e) =>
-#endif 
             { UpdateCollisionOptions(); };
 
             harmony = new Harmony("HS2_BetterPenetration");
@@ -200,61 +185,79 @@ namespace HS2_BetterPenetration
             if (!inHScene || _info == null || _info.fileFemale == null)
                 return;
 
+            CoreGame.ClearItemColliders();
             CoreGame.OnChangeAnimation(_info.fileFemale);
-            resetParticles = true;
+            changeAnimation = true;
         }
 
         [HarmonyPrefix, HarmonyPatch(typeof(HScene), "SetMovePositionPoint")]
         internal static void HScene_SetMovePositionPoint()
         {
-            resetParticles = true;
+            changeAnimation = true;
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "setPlay")]
         internal static void ChaControl_PostSetPlay()
         {
-            resetParticles = true;
+            changeAnimation = true;
+        }
+
+        [HarmonyPostfix, HarmonyPatch(typeof(H_Lookat_dan), "Release")]
+        internal static void H_Lookat_dan_PostRelease(H_Lookat_dan __instance)
+        {
+            if (!inHScene || loadingCharacter || __instance.strPlayMotion == null || __instance.male == null)
+                return;
+
+            int maleNum = 0;
+            if (__instance.male.chaID != 99)
+                maleNum = 1;
+
+            CoreGame.LookAtDanRelease(maleNum, __instance.numFemale, twoDans);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(H_Lookat_dan), "setInfo")]
-        internal static void H_Lookat_dan_PostSetInfo(H_Lookat_dan __instance, System.Text.StringBuilder ___assetName, ChaControl ___male)
+        internal static void H_Lookat_dan_PostSetInfo(H_Lookat_dan __instance)
         {
             if (!inHScene || loadingCharacter || __instance.strPlayMotion == null)
                 return;
 
             int maleNum = 0;
-            if (___male != null && ___male.chaID != 99)
+            if (__instance.male != null && __instance.male.chaID != 99)
                 maleNum = 1;
 
             twoDans = false;
-            if (___assetName != null && ___assetName.Length != 0 && ___assetName.ToString().Contains("m2f"))
+			isInScene = __instance.assetName != null && __instance.assetName.Length != 0;
+            if (isInScene && __instance.assetName.ToString().Contains("m2f"))
                 twoDans = true;
 
-            CoreGame.LookAtDanSetup(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, maleNum, __instance.numFemale, twoDans);
+            CoreGame.LookAtDanSetup(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, maleNum, __instance.numFemale, twoDans, isInScene);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(H_Lookat_dan), "LateUpdate")]
         internal static void H_Lookat_dan_PostLateUpdate(H_Lookat_dan __instance, ChaControl ___male)
         {
-            if (!inHScene || loadingCharacter || __instance.strPlayMotion == null || ___male == null)
+            if (!inHScene || loadingCharacter || hScene == null || __instance.strPlayMotion == null || ___male == null)
                 return;
 
-            if (resetParticles && !hScene.NowChangeAnim)
-            {
-                CoreGame.ResetParticles();
-                resetParticles = false;
-            }
-
             int maleNum = 0;
-
-            if (___male.chaID != 99)
+            if (__instance.male.chaID != 99)
             {
                 if (!twoDans)
                     return;
                 maleNum = 1;
             }
 
-            CoreGame.LookAtDanUpdate(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, hScene.NowChangeAnim, maleNum, __instance.numFemale, twoDans);
+            if (changeAnimation && !hScene.NowChangeAnim && maleNum == 0)
+            {
+                CoreGame.ResetParticles();
+                CoreGame.SetupFingerColliders(hScene.ctrlFlag.nowAnimationInfo.fileFemale);
+                CoreGame.SetupItemColliders(hScene.ctrlFlag.nowAnimationInfo.fileFemale);
+                changeAnimation = false;
+            }
+
+            isInScene = __instance.assetName != null && __instance.assetName.Length != 0;
+
+            CoreGame.LookAtDanUpdate(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, hScene.NowChangeAnim, maleNum, __instance.numFemale, twoDans, isInScene);
         }
 		
         internal static void UpdateDanColliders()
@@ -266,24 +269,15 @@ namespace HS2_BetterPenetration
                 CoreGame.UpdateDanCollider(index, _danColliderRadiusScale[index].Value, _danColliderLengthScale[index].Value);
         }
 
-        internal static void UpdateFingerColliders()
-        {
-            if (!inHScene)
-                return;
-
-            for (int index = 0; index < MaleLimit; index++)
-                CoreGame.UpdateFingerColliders(index, _fingerColliderRadius[index].Value, _fingerColliderLength[index].Value);
-        }
-
         internal static void UpdateDanOptions()
         {
             if (!inHScene)
                 return;
 
-            for (int index = 0; index < MaleLimit; index++)
-                CoreGame.UpdateDanOptions(index, _danLengthSquishFactor[index].Value, _danGirthSquishFactor[index].Value, 
-                    _danSquishThreshold[index].Value, _danSquishOralGirth[index].Value, _useFingerColliders[index].Value, 
-                    _simplifyPenetration[index].Value, _simplifyOral[index].Value, _rotateTamaWithShaft[index].Value);
+            for (int maleNum = 0; maleNum < MaleLimit; maleNum++)
+                CoreGame.UpdateDanOptions(maleNum, _danLengthSquishFactor[maleNum].Value, _danGirthSquishFactor[maleNum].Value, 
+                    _danSquishThreshold[maleNum].Value, _danSquishOralGirth[maleNum].Value, 
+                    _simplifyPenetration[maleNum].Value, _simplifyOral[maleNum].Value, _rotateTamaWithShaft[maleNum].Value);
         }
 
         internal static void UpdateCollisionOptions()
@@ -304,7 +298,6 @@ namespace HS2_BetterPenetration
             {
                 danOptions.Add(new DanOptions(_danColliderRadiusScale[maleNum].Value, _danColliderLengthScale[maleNum].Value,
                     _danLengthSquishFactor[maleNum].Value, _danGirthSquishFactor[maleNum].Value, _danSquishThreshold[maleNum].Value, _danSquishOralGirth[maleNum].Value,
-                    _fingerColliderRadius[maleNum].Value, _fingerColliderLength[maleNum].Value, _useFingerColliders[maleNum].Value, 
                     _simplifyPenetration[maleNum].Value, _simplifyOral[maleNum].Value, _rotateTamaWithShaft[maleNum].Value));
             }
 
@@ -325,18 +318,10 @@ namespace HS2_BetterPenetration
 
             for (int femaleNum = 0; femaleNum < FemaleLimit; femaleNum++)
             {
-#if false			
                 collisionOptions.Add(new CollisionOptions(_kokanOffset.Value, _innerKokanOffset.Value, _mouthOffset.Value, _innerMouthOffset.Value, _useKokanFix.Value,
                     _kokanFixPositionZ.Value, _kokanFixPositionY.Value, _kokanFixRotationX.Value, _clippingDepth.Value, frontInfo, backInfo, 
-                    _enableKokanPushPull.Value, _useDanAngle.Value, _maxKokanPush.Value, _maxKokanPull.Value, _kokanPullRate.Value, _kokanReturnRate.Value,
+                    _enableKokanPushPull.Value, _maxKokanPush.Value, _maxKokanPull.Value, _kokanPullRate.Value, _kokanReturnRate.Value,
                     _enableOralPushPull.Value, _maxOralPush.Value, _maxOralPull.Value, _oralPullRate.Value, _oralReturnRate.Value));
-#else
-                collisionOptions.Add(new CollisionOptions(_kokanOffset.Value, _innerKokanOffset.Value, _mouthOffset.Value, _innerMouthOffset.Value, _useKokanFix.Value,
-                    _kokanFixPositionZ.Value, _kokanFixPositionY.Value, _kokanFixRotationX.Value, _clippingDepth.Value, frontInfo, backInfo, 
-                    false, false, 0, 0, 0, 0,
-                    false, 0, 0, 0, 0));
-
-#endif
             }
 
             return collisionOptions;

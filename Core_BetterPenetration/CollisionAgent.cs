@@ -21,6 +21,7 @@ namespace Core_BetterPenetration
         internal Transform m_kokanBone;
         internal Transform m_oralPullBone;
         internal List<DynamicBone> m_kokanDynamicBones = new List<DynamicBone>();
+        internal List<DynamicBoneCollider> m_fingerColliders = new List<DynamicBoneCollider>();
         internal List<Transform> m_kokanPullBones = new List<Transform>();
 
         internal float currentKokanPull = 0f;
@@ -113,6 +114,14 @@ namespace Core_BetterPenetration
             }
 
             m_oralPullBone = Tools.GetTransformOfChaControl(m_collisionCharacter, BoneNames.mouthPullBone);
+
+#if !STUDIO
+#if AI || HS2
+            InitializeFingerColliders(0.055f, 0.18f);
+#else
+            InitializeFingerColliders(0.0055f, 0.018f);
+#endif
+#endif
         }
 
         internal void CheckForAdjustment(string animationFile)
@@ -184,29 +193,14 @@ namespace Core_BetterPenetration
             if (currentKokanPull < -m_collisionOptions.maxKokanPull)
                 currentKokanPull = -m_collisionOptions.maxKokanPull;
 
-            if (m_collisionOptions.useDanAngle)
+            for (var kokanBone = 0; kokanBone < m_kokanPullBones.Count; kokanBone++)
             {
-                for (var kokanBone = 0; kokanBone < m_kokanPullBones.Count; kokanBone++)
-                {
-                    if (kokanBone < 2)
-                        m_kokanPullBones[kokanBone].localPosition = 0.4f * currentKokanPull * m_kokanPullBones[kokanBone].InverseTransformDirection(currentKokanDanDirection);
-                    else if (kokanBone < 4)
-                        m_kokanPullBones[kokanBone].localPosition = 0.7f * currentKokanPull * m_kokanPullBones[kokanBone].InverseTransformDirection(currentKokanDanDirection);
-                    else
-                        m_kokanPullBones[kokanBone].localPosition = currentKokanPull * m_kokanPullBones[kokanBone].InverseTransformDirection(currentKokanDanDirection);
-                }
-            }
-            else
-            {
-                for (var kokanBone = 0; kokanBone < m_kokanPullBones.Count; kokanBone++)
-                {
-                    if (kokanBone < 2)
-                        m_kokanPullBones[kokanBone].localPosition = 0.4f * currentKokanPull * Vector3.up;
-                    else if (kokanBone < 4)
-                        m_kokanPullBones[kokanBone].localPosition = 0.7f * currentKokanPull * Vector3.up;
-                    else
-                        m_kokanPullBones[kokanBone].localPosition = currentKokanPull * Vector3.up;
-                }
+                if (kokanBone < 2)
+                    m_kokanPullBones[kokanBone].localPosition = 0.4f * currentKokanPull * m_kokanPullBones[kokanBone].InverseTransformDirection(currentKokanDanDirection);
+                else if (kokanBone < 4)
+                    m_kokanPullBones[kokanBone].localPosition = 0.7f * currentKokanPull * m_kokanPullBones[kokanBone].InverseTransformDirection(currentKokanDanDirection);
+                else
+                    m_kokanPullBones[kokanBone].localPosition = currentKokanPull * m_kokanPullBones[kokanBone].InverseTransformDirection(currentKokanDanDirection);
             }
         }
 
@@ -266,6 +260,96 @@ namespace Core_BetterPenetration
 
             m_oralPullBone.localPosition = currentOralPull * m_oralPullBone.InverseTransformDirection(currentOralDanDirection);
         }
+
+        internal void InitializeFingerColliders(float fingerRadius, float fingerLength)
+        {
+            m_fingerColliders = new List<DynamicBoneCollider>();
+            foreach (var bone in BoneNames.FingerColliders)
+            {
+                var fingerTransform = Tools.GetTransformOfChaControl(m_collisionCharacter, bone);
+                if (fingerTransform == null)
+                    continue;
+
+                var fingerCollider = Tools.InitializeCollider(fingerTransform, fingerRadius * (fingerTransform.lossyScale.y + fingerTransform.lossyScale.z) / 2, fingerLength * fingerTransform.lossyScale.x, Vector3.zero);
+
+                m_fingerColliders.Add(fingerCollider);
+            }
+        }
+
+        internal void AddFingerColliders(CollisionAgent target)
+        {
+            if (m_fingerColliders == null || m_fingerColliders.Count == 0)
+                return;
+
+            foreach (DynamicBone dynamicBone in target.m_kokanDynamicBones)
+            {
+                foreach (var collider in m_fingerColliders)
+                {
+                    if (collider != null && !dynamicBone.m_Colliders.Contains(collider))
+                        dynamicBone.m_Colliders.Add(collider);
+                }
+            }
+        }
+
+        internal void RemoveFingerColliders(CollisionAgent target)
+        {
+            if (m_fingerColliders == null || m_fingerColliders.Count == 0)
+                return;
+
+            foreach (DynamicBone dynamicBone in target.m_kokanDynamicBones)
+            {
+                foreach (var collider in m_fingerColliders)
+                {
+                    if (collider != null)
+                        dynamicBone.m_Colliders.Remove(collider);
+                }
+            }
+        }
+
+        internal void AddColliders(List<DynamicBoneCollider> colliders)
+        {
+            if (colliders == null || colliders.Count == 0)
+                return;
+
+            foreach (DynamicBone dynamicBone in m_kokanDynamicBones)
+            {
+                foreach (var collider in colliders)
+                {
+                    if (collider != null && !dynamicBone.m_Colliders.Contains(collider))
+                        dynamicBone.m_Colliders.Add(collider);
+                }
+            }
+        }
+
+        internal void RemoveColliders(List<DynamicBoneCollider> colliders)
+        {
+            if (colliders == null || colliders.Count == 0)
+                return;
+
+            foreach (DynamicBone dynamicBone in m_kokanDynamicBones)
+            {
+                foreach (var collider in colliders)
+                {
+                    if (collider != null)
+                        dynamicBone.m_Colliders.Remove(collider);
+                }
+            }
+        }
+
+        internal void ClearKokanDynamicBones()
+        {
+            if (m_kokanDynamicBones == null || m_kokanDynamicBones.Count == 0)
+                return;
+
+            foreach (var kokanBone in m_kokanDynamicBones)
+            {
+                if (kokanBone == null)
+                    continue;
+
+                kokanBone.m_Colliders.Clear();
+            }
+        }
+
     }
 }
 //#endif

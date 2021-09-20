@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using UnityEngine;
 
 namespace Core_BetterPenetration
 {
@@ -15,8 +14,11 @@ namespace Core_BetterPenetration
         internal float kokan_adjust_position_y = 0;
         internal float kokan_adjust_rotation_x = 0;
         internal float clippingDepth = 0;
+#if HS2 || AI
         internal bool enableKokanPush = true;
-        internal bool useDanAngle = false;
+#else
+        internal bool enableKokanPush = false;
+#endif
         internal float maxKokanPush = 0.08f;
         internal float maxKokanPull = 0.04f;
         internal float kokanPullRate = 18.0f;
@@ -32,7 +34,7 @@ namespace Core_BetterPenetration
 
         public CollisionOptions(float kokanOffset, float innerKokanOffset, float mouthOffset, float innerMouthOffset, bool kokan_adjust,
         float kokan_adjust_position_z, float kokan_adjust_position_y, float kokan_adjust_rotation_x, float clippingDepth, List<CollisionPointInfo> frontInfo, List<CollisionPointInfo> backInfo,
-        bool enableKokanPush, bool useDanAngle, float maxKokanPush, float maxKokanPull, float kokanPullRate, float kokanReturnRate,
+        bool enableKokanPush, float maxKokanPush, float maxKokanPull, float kokanPullRate, float kokanReturnRate,
         bool enableOralPush, float maxOralPush, float maxOralPull, float oralPullRate, float oralReturnRate)
         {
             this.kokanOffset = kokanOffset;
@@ -45,9 +47,11 @@ namespace Core_BetterPenetration
             this.kokan_adjust_position_y = kokan_adjust_position_y;
             this.kokan_adjust_rotation_x = kokan_adjust_rotation_x;
             this.clippingDepth = clippingDepth;
-
+#if HS2 || AI
             this.enableKokanPush = enableKokanPush;
-            this.useDanAngle = useDanAngle;
+#else
+            this.enableKokanPush = false;
+#endif
             this.maxKokanPush = maxKokanPush;
             this.maxKokanPull = maxKokanPull;
             this.kokanPullRate = kokanPullRate;
@@ -76,8 +80,11 @@ namespace Core_BetterPenetration
             kokan_adjust_rotation_x = 0;
             clippingDepth = 0;
 
+#if HS2 || AI
             enableKokanPush = enablePush;
-            useDanAngle = true;
+#else
+            enableKokanPush = false;
+#endif
             maxKokanPush = maxPush;
             maxKokanPull = maxPull;
             kokanPullRate = pullRate;

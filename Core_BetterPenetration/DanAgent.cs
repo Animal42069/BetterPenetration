@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 #if HS2 || AI
@@ -24,9 +25,7 @@ namespace Core_BetterPenetration
 
 #if !STUDIO
         internal Transform m_referenceTarget;
-        internal DynamicBoneCollider m_indexCollider;
-        internal DynamicBoneCollider m_middleCollider;
-        internal DynamicBoneCollider m_ringCollider;       
+        internal List<DynamicBoneCollider> m_fingerColliders = new List<DynamicBoneCollider>();      
         internal bool m_danPenetration = false;
 #endif
 
@@ -64,7 +63,11 @@ namespace Core_BetterPenetration
             InitializeTama();
 
 #if !STUDIO
-            UpdateFingerColliders(m_danOptions.fingerRadius, m_danOptions.fingerLength);
+#if AI || HS2
+            InitializeFingerColliders(0.055f, 0.18f);
+#else
+            InitializeFingerColliders(0.0055f, 0.018f);
+#endif
 #endif
             UnityEngine.Debug.Log($"BP Dan Found { m_bpDanPointsFound}; BP Tama Found {m_bpTamaFound}");
         }
@@ -118,7 +121,7 @@ namespace Core_BetterPenetration
 
                 for (int danPoint = 1; danPoint < m_danPoints.danPoints.Count; danPoint++)
                 {
-                    m_danColliders.Add(InitializeCollider(m_danPoints.danPoints[danPoint - 1].transform, DefaultColliderRadius * m_danPoints.danPoints[danPoint].defaultLossyScale.x, ((baseSectionHalfLength + DefaultColliderLength) * 2),
+                    m_danColliders.Add(Tools.InitializeCollider(m_danPoints.danPoints[danPoint - 1].transform, DefaultColliderRadius * m_danPoints.danPoints[danPoint].defaultLossyScale.x, ((baseSectionHalfLength + DefaultColliderLength) * 2),
                         new Vector3(0, DefaultColliderVertical, baseSectionHalfLength), DynamicBoneCollider.Direction.Z));
                 }
             }
@@ -166,27 +169,6 @@ namespace Core_BetterPenetration
 
                 tamaBone.ResetParticlesPosition();
             }
-        }
-
-        internal DynamicBoneCollider InitializeCollider(Transform parent, float radius, float length, Vector3 centerOffset,
-            DynamicBoneCollider.Direction direction = DynamicBoneCollider.Direction.X,
-            DynamicBoneCollider.Bound bound = DynamicBoneCollider.Bound.Outside)
-        {
-            if (parent == null)
-                return null;
-
-            DynamicBoneCollider collider = parent.GetComponent<DynamicBoneCollider>();
-
-            if (collider == null)
-                collider = parent.gameObject.AddComponent(typeof(DynamicBoneCollider)) as DynamicBoneCollider;
-
-            collider.m_Direction = direction;
-            collider.m_Center = centerOffset;
-            collider.m_Bound = bound;
-            collider.m_Radius = radius;
-            collider.m_Height = length;
-
-            return collider;
         }
 
         internal void UpdateDanColliders(float radiusScale, float lengthScale)
@@ -387,7 +369,11 @@ namespace Core_BetterPenetration
 
         internal void AdjustPullBones(CollisionAgent targetAgent, Vector3 danDirection, float danDistanceToTarget, bool isVaginal, bool isOral, bool twoDans)
         {
-            return;
+            if (danDistanceToTarget >= m_baseDanLength)
+            {
+                isVaginal = false;
+                isOral = false;
+            }
 
             float distanceChange = lastDanDistance - danDistanceToTarget;
 
@@ -408,33 +394,30 @@ namespace Core_BetterPenetration
         }
 
 #if !STUDIO
-        internal void UpdateDanOptions(float danLengthSquish, float danGirthSquish, float squishThreshold, bool squishOralGirth, bool useFingerColliders, bool simplifyPenetration, bool simplifyOral, bool rotateTamaWithShaft)
+        internal void UpdateDanOptions(float danLengthSquish, float danGirthSquish, float squishThreshold, bool squishOralGirth, bool simplifyPenetration, bool simplifyOral, bool rotateTamaWithShaft)
         {
             m_danOptions.danLengthSquish = danLengthSquish;
             m_danOptions.danGirthSquish = danGirthSquish;
             m_danOptions.squishThreshold = squishThreshold;
             m_danOptions.squishOralGirth = squishOralGirth;
-            m_danOptions.useFingerColliders = useFingerColliders;
             m_danOptions.simplifyPenetration = simplifyPenetration;
             m_danOptions.simplifyOral = simplifyOral;
             m_danOptions.rotateTamaWithShaft = rotateTamaWithShaft;
         }
 
-        internal void UpdateFingerColliders(float fingerRadius, float fingerLength)
+        internal void InitializeFingerColliders(float fingerRadius, float fingerLength)
         {
-            if (!m_danPointsFound)
-                return;
+            m_fingerColliders = new List<DynamicBoneCollider>();
+            foreach (var bone in BoneNames.FingerColliders)
+            {
+                var fingerTransform = Tools.GetTransformOfChaControl(m_danCharacter, bone);
+                if (fingerTransform == null)
+                    continue;
 
-            Transform index = Tools.GetTransformOfChaControl(m_danCharacter, BoneNames.IndexFinger);
-            Transform middle = Tools.GetTransformOfChaControl(m_danCharacter, BoneNames.MiddleFinger);
-            Transform ring = Tools.GetTransformOfChaControl(m_danCharacter, BoneNames.RingFinger);
+                var fingerCollider = Tools.InitializeCollider(fingerTransform, fingerRadius * (fingerTransform.lossyScale.y + fingerTransform.lossyScale.z) / 2, fingerLength * fingerTransform.lossyScale.x, Vector3.zero);
 
-            m_indexCollider = InitializeCollider(index, fingerRadius, fingerLength, Vector3.zero);
-            m_middleCollider = InitializeCollider(middle, fingerRadius, fingerLength, Vector3.zero);
-            m_ringCollider = InitializeCollider(ring, fingerRadius, fingerLength, Vector3.zero);
-
-            m_danOptions.fingerRadius = fingerRadius;
-            m_danOptions.fingerLength = fingerLength;
+                m_fingerColliders.Add(fingerCollider);
+            }
         }
 
         internal void SetDanTarget(CollisionAgent targetAgent, bool twoDans)
@@ -443,7 +426,7 @@ namespace Core_BetterPenetration
                 return;
 
             if (m_referenceTarget == null)
-                AdjustDanToTargetNull(targetAgent, twoDans);
+                AdjustDanToTargetNull(targetAgent);
             else if (m_referenceTarget.name == LookTargets.KokanTarget || m_referenceTarget.name == LookTargets.BPKokanTarget)
                 AdjustDanToTargetKokan(targetAgent, twoDans);
             else if (m_referenceTarget.name == LookTargets.AnaTarget)
@@ -451,10 +434,10 @@ namespace Core_BetterPenetration
             else if (m_referenceTarget.name == LookTargets.HeadTarget)
                 AdjustDanToTargetHead(targetAgent, twoDans);
             else
-                AdjustDanToTargetNull(targetAgent, twoDans);
+                AdjustDanToTargetNull(targetAgent);
         }
 
-        internal void AdjustDanToTargetNull(CollisionAgent targetAgent, bool twoDans)
+        internal void AdjustDanToTargetNull(CollisionAgent targetAgent)
         {
             Vector3 danStartPosition = m_danPoints.GetDanStartPosition();
             Vector3 danTarget = m_danPoints.GetDanEndPosition();
@@ -465,7 +448,7 @@ namespace Core_BetterPenetration
             List<Vector3> adjustedDanPoints = AdjustDanPointsToTargets(danTarget, danEndTarget, m_baseDanLength, danDistanceToTarget);
             m_danPoints.AimDanPoints(adjustedDanPoints, m_danOptions.rotateTamaWithShaft);
 
-            AdjustPullBones(targetAgent, danTargetVector, danDistanceToTarget, false, false, twoDans);
+            AdjustPullBones(targetAgent, danTargetVector, danDistanceToTarget, false, false, false);
         }
 
         internal void AdjustDanToTargetKokan(CollisionAgent targetAgent, bool twoDans)
@@ -662,44 +645,29 @@ namespace Core_BetterPenetration
             ClearTarget();
             ResetDanAdjustment();
             RemoveTamaColliders();
-            RemoveColliders(firstTarget);
+            RemoveDanColliders(firstTarget);
+
             if (secondTarget != null)
-                RemoveColliders(secondTarget);
+                RemoveDanColliders(secondTarget);
         }
 
-        internal void SetupNewDanTarget(Transform lookAtTransform, string currentMotion, bool topStick, CollisionAgent firstTarget, CollisionAgent secondTarget = null)
+        internal void SetupNewDanTarget(Transform lookAtTransform, string currentMotion, bool topStick, bool isInScene, CollisionAgent firstTarget, CollisionAgent secondTarget = null)
         {
             ClearDanTarget(firstTarget, secondTarget);
 
-            if (!m_danPointsFound)
+            if (!isInScene || !m_danPointsFound)
                 return;
+
+            if (lookAtTransform == null || lookAtTransform.name == LookTargets.KokanTarget)
+                AddDanColliders(firstTarget);
+            AddTamaColliders(firstTarget.m_collisionCharacter, false);
 
             if (secondTarget != null)
             {
                 if (lookAtTransform == null)
-                {
-                    AddDanColliders(firstTarget);
                     AddDanColliders(secondTarget);
-                }
-                else if (lookAtTransform.name == LookTargets.KokanTarget)
-                {
-                    AddDanColliders(firstTarget);
-                    if (m_danOptions.useFingerColliders)
-                        AddFingerColliders(secondTarget);
-                }
-            }
-            else
-            {
-                if (lookAtTransform == null || lookAtTransform.name == LookTargets.KokanTarget)
-                    AddDanColliders(firstTarget);
-
-                if (m_danOptions.useFingerColliders && lookAtTransform == null)
-                    AddFingerColliders(firstTarget);
-            }
-
-            AddTamaColliders(firstTarget.m_collisionCharacter, false);
-            if (secondTarget != null)
                 AddTamaColliders(secondTarget.m_collisionCharacter, false);
+            }
 
             if (currentMotion == string.Empty)
                 return;
@@ -740,34 +708,44 @@ namespace Core_BetterPenetration
                 }
             }
         }
-	
+
         internal void AddFingerColliders(CollisionAgent target)
         {
+            if (m_fingerColliders == null || m_fingerColliders.Count == 0)
+                return;
+
             foreach (DynamicBone dynamicBone in target.m_kokanDynamicBones)
             {
-                if (m_indexCollider != null && !dynamicBone.m_Colliders.Contains(m_indexCollider))
-                    dynamicBone.m_Colliders.Add(m_indexCollider);
-
-                if (m_middleCollider != null && !dynamicBone.m_Colliders.Contains(m_middleCollider))
-                    dynamicBone.m_Colliders.Add(m_middleCollider);
-
-                if (m_ringCollider != null && !dynamicBone.m_Colliders.Contains(m_ringCollider))
-                    dynamicBone.m_Colliders.Add(m_ringCollider);
+                foreach (var collider in m_fingerColliders)
+                {
+                    if (collider != null && !dynamicBone.m_Colliders.Contains(collider))
+                        dynamicBone.m_Colliders.Add(collider);
+                }
             }
+        }
+
+        internal void RemoveFingerColliders(CollisionAgent target, CollisionAgent secondTarget)
+        {
+            RemoveFingerColliders(target);
+
+            if (secondTarget == null)
+                return;
+
+            RemoveFingerColliders(secondTarget);
         }
 
         internal void RemoveFingerColliders(CollisionAgent target)
         {
+            if (m_fingerColliders == null || m_fingerColliders.Count == 0)
+                return;
+
             foreach (DynamicBone dynamicBone in target.m_kokanDynamicBones)
             {
-                if (m_indexCollider != null)
-                    dynamicBone.m_Colliders.Remove(m_indexCollider);
-
-                if (m_middleCollider != null)
-                    dynamicBone.m_Colliders.Remove(m_middleCollider);
-
-                if (m_ringCollider != null)
-                    dynamicBone.m_Colliders.Remove(m_ringCollider);
+                foreach (var collider in m_fingerColliders)
+                {
+                    if (collider != null)
+                        dynamicBone.m_Colliders.Remove(collider);
+                }
             }
         }
 
@@ -775,12 +753,6 @@ namespace Core_BetterPenetration
         {
             m_referenceTarget = null;
             m_danPenetration = false;
-        }
-
-        internal void RemoveColliders(CollisionAgent target)
-        {
-            RemoveDanColliders(target);
-            RemoveFingerColliders(target);
         }
 #endif
 
@@ -808,9 +780,14 @@ namespace Core_BetterPenetration
 
             ClearTarget();
 
-            UnityEngine.Object.Destroy(m_indexCollider);
-            UnityEngine.Object.Destroy(m_middleCollider);
-            UnityEngine.Object.Destroy(m_ringCollider);
+            if (m_fingerColliders == null || m_fingerColliders.Count == 0)
+                return;
+
+            foreach (var collider in m_fingerColliders)
+            {
+                if (collider != null)
+                    UnityEngine.Object.Destroy(collider);
+            }
 #endif
         }
     }
