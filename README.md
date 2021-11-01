@@ -14,6 +14,7 @@ Female uncensors will spread open when penetrated.  They also include individual
 Penis uncensors have additional bones which allows them to bend, so they can penetrate at the correct point and still not clip.<br>
 Ball uncensors have additional dynamic bones which are affected by gravity and will collide with the girl, drastically improving the way they look.<br>
 Adds a push/pull effect to the mouth (all games) and vagina (HS2/AIS).  This effect pushes the mouth/vagina inward during insertion and pulls it outward during extraction.<br>
+(HS2/AIS) Adds colliders to all characters fingers and other game objects so the vagina spreads correctly when using those objects.<br>
 
 # Installation
 Requires BepInEx<br>
