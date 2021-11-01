@@ -19,3 +19,6 @@ Adds a push/pull effect to the mouth (all games) and vagina (HS2/AIS).  This eff
 # Installation
 Requires BepInEx<br>
 Copy the dll to your install directory /BepInEx/plugins
+
+# For early releases and to offer support visit:
+https://www.patreon.com/Animal42069
