@@ -130,7 +130,7 @@ namespace Core_BetterPenetration
                     returnRate = (float)ReturnRate;
             }
 
-            danOptions = new DanOptions(colliderRadiusScale, colliderLengthScale, lengthSquish, girthSquish, squishThreshold);
+            danOptions = new DanOptions(colliderRadiusScale, colliderLengthScale, lengthSquish, girthSquish, squishThreshold, false, 2.0f);
             collisionOptions = new CollisionOptions(enablePushPull, maxPush, maxPull, pullRate, returnRate);
             controllerOptions = new ControllerOptions(autoTarget);
             cardReloaded = true;
@@ -290,7 +290,7 @@ namespace Core_BetterPenetration
                 controllerOptions = new ControllerOptions(DefaultDanAutoTarget);
 
             if (danOptions == null)
-                danOptions = new DanOptions(DefaultColliderRadiusScale, DefaultColliderLengthScale, DefaultLengthSquish, DefaultGirthSquish, DefaultSquishThreshold);
+                danOptions = new DanOptions(DefaultColliderRadiusScale, DefaultColliderLengthScale, DefaultLengthSquish, DefaultGirthSquish, DefaultSquishThreshold, false, 2.0);
 
             if (collisionOptions == null)
                 collisionOptions = new CollisionOptions(DefaultPushPUll, DefaultMaxPush, DefaultMaxPull, DefaultPullRate, DefaultReturnRate);

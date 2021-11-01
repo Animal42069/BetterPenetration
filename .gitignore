@@ -82,3 +82,10 @@ crashlytics-build.properties
 /KK_Studio_BetterPenetration/obj
 /KK_Studio_BetterPenetrationControls
 /KK_BetterPenetration/obj/Debug
+/KKS_BetterPenetration/obj/Debug
+/KKS_Studio_BetterPenetration/obj/Debug
+/KKS_Studio_BetterPenetrationControls
+/KKS_BetterPenetration/bin/Release
+/KKS_BetterPenetration/obj/Release
+/KKS_Studio_BetterPenetration/bin/Release
+/KKS_Studio_BetterPenetration/obj/Release

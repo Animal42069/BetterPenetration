@@ -13,9 +13,13 @@
         public bool squishOralGirth;
         public bool rotateTamaWithShaft;
 
+        public bool limitCorrection;
+        public float maxCorrection;
+
         public DanOptions(float danRadiusScale, float danLengthScale,
             float danLengthSquish, float danGirthSquish, float squishThreshold, bool squishOralGirth,
-            bool simplifyPenetration, bool simplifyOral, bool rotateTamaWithShaft)
+            bool simplifyPenetration, bool simplifyOral, bool rotateTamaWithShaft, 
+            bool limitCorrection, float maxCorrection)
         {
             this.danLengthSquish = danLengthSquish;
             this.danGirthSquish = danGirthSquish;
@@ -26,10 +30,13 @@
             this.rotateTamaWithShaft = rotateTamaWithShaft;
             this.danRadiusScale = danRadiusScale;
             this.danLengthScale = danLengthScale;
+            this.limitCorrection = limitCorrection;
+            this.maxCorrection = maxCorrection;
         }
 
         public DanOptions(float danRadiusScale, float danLengthScale,
-            float danLengthSquish, float danGirthSquish, float squishThreshold)
+            float danLengthSquish, float danGirthSquish, float squishThreshold,
+            bool limitCorrection, float maxCorrection)
         {
             this.danLengthSquish = danLengthSquish;
             this.danGirthSquish = danGirthSquish;
@@ -40,6 +47,8 @@
             simplifyOral = true;
             squishOralGirth = true;
             rotateTamaWithShaft = true;
+            this.limitCorrection = limitCorrection;
+            this.maxCorrection = maxCorrection;
         }
     }
 }

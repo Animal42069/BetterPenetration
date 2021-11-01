@@ -15,7 +15,7 @@ namespace AI_BetterPenetration
     [BepInProcess("AI-Syoujyo")]
     public class AI_BetterPenetration : BaseUnityPlugin
     {
-        internal const string VERSION = "4.4.0.0";
+        internal const string VERSION = "4.5.0.0";
         internal const int MaleLimit = 1;
         internal const int FemaleLimit = 2;
 
@@ -33,6 +33,8 @@ namespace AI_BetterPenetration
         internal static ConfigEntry<bool> _simplifyPenetration;
         internal static ConfigEntry<bool> _simplifyOral;
         internal static ConfigEntry<bool> _rotateTamaWithShaft;
+        internal static ConfigEntry<float> _maxCorrection;
+        internal static ConfigEntry<bool> _limitCorrection;
 
         internal static ConfigEntry<float> _clippingDepth;
         internal static ConfigEntry<float> _kokanOffset;
@@ -59,7 +61,6 @@ namespace AI_BetterPenetration
 
         internal static Harmony harmony;
         internal static HScene hScene;
-        internal static bool patched = false;
         internal static bool inHScene = false;
         internal static bool loadingCharacter = false;
         internal static bool changeAnimation = false;
@@ -83,6 +84,10 @@ namespace AI_BetterPenetration
             (_simplifyOral = Config.Bind("Male Options", "Simplify Oral Calculation", false, "Simplifys oral penetration calclation by always having it target the same internal point.  Only valid for BP penis uncensors.")).SettingChanged += (s, e) =>
             { UpdateDanOptions(); };
             (_rotateTamaWithShaft = Config.Bind("Male Options", "Rotate Balls with Shaft", true, "If enabled, the base of the balls will be locked to the base of the shaft")).SettingChanged += (s, e) =>
+            { UpdateDanOptions(); };
+            (_limitCorrection = Config.Bind("Male Options", "Limit Penis Movement", true, "Limit the penis from moving laterally too much from frame to frame.")).SettingChanged += (s, e) =>
+            { UpdateDanOptions(); };
+            (_maxCorrection = Config.Bind("Male Options", "Limit Penis Amount", 2.0f, "Amount of movement to limit the penis to.  Smaller values result in smoother animations, but can cause clipping.")).SettingChanged += (s, e) =>
             { UpdateDanOptions(); };
 
             (_clippingDepth = Config.Bind("Female Options", "Clipping Depth", 0.25f, "Set how close to body surface to limit penis for clipping purposes. Smaller values will result in more clipping through the body, larger values will make the shaft wander further away from the intended penetration point.")).SettingChanged += (s, e) =>
@@ -131,12 +136,23 @@ namespace AI_BetterPenetration
             { UpdateCollisionOptions(); };
 
             harmony = new Harmony("AI_BetterPenetration");
+            harmony.PatchAll(typeof(AI_BetterPenetration));
         }
 
-        [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "LoadCharaFbxDataAsync")]
-        internal static void ChaControl_LoadCharaFbxDataAsync(ChaControl __instance)
+        [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "UpdateAccessoryMoveFromInfo")]
+        internal static void ChaControl_UpdateAccessoryMoveFromInfo(ChaControl __instance)
         {
-            CoreGame.RemoveCollidersFromCoordinate(__instance);
+            Tools.RemoveCollidersFromCoordinate(__instance);
+        }
+
+        [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "UpdateSiru")]
+        internal static void ChaControl_UpdateSiru(ChaControl __instance, bool forceChange)
+        {
+
+            if (!forceChange)
+                return;
+
+            Tools.RemoveCollidersFromCoordinate(__instance);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(HScene), "SetStartVoice")]
@@ -257,7 +273,8 @@ namespace AI_BetterPenetration
                 return;
 
             CoreGame.UpdateDanOptions(0, _danLengthSquishFactor.Value, _danGirthSquishFactor.Value, _danSquishThreshold.Value, 
-				_danSquishOralGirth.Value, _simplifyPenetration.Value, _simplifyOral.Value, _rotateTamaWithShaft.Value);
+				_danSquishOralGirth.Value, _simplifyPenetration.Value, _simplifyOral.Value, _rotateTamaWithShaft.Value,
+				_limitCorrection.Value, _maxCorrection.Value);
         }
 
         internal static void UpdateCollisionOptions()
@@ -276,7 +293,8 @@ namespace AI_BetterPenetration
             {
                 new DanOptions(_danColliderRadiusScale.Value, _danColliderLengthScale.Value,
                  _danLengthSquishFactor.Value, _danGirthSquishFactor.Value, _danSquishThreshold.Value, _danSquishOralGirth.Value,
-                _simplifyPenetration.Value, _simplifyOral.Value, _rotateTamaWithShaft.Value)
+                _simplifyPenetration.Value, _simplifyOral.Value, _rotateTamaWithShaft.Value,
+                _limitCorrection.Value, _maxCorrection.Value)
             };
 
             return danOptions;
@@ -310,30 +328,14 @@ namespace AI_BetterPenetration
         {
             var isHScene = HSceneManager.isHScene;
             
-            if (isHScene && !patched)
-                HScene_sceneLoaded();
-            else if (!isHScene && patched)
+            if (!isHScene && inHScene)
                 HScene_sceneUnloaded();
-        }
-
-        internal static void HScene_sceneLoaded()
-        {
-            if (patched)
-                return;
-            
-            harmony.PatchAll(typeof(AI_BetterPenetration));
-            patched = true;
         }
 
         internal static void HScene_sceneUnloaded()
         {
-            if (!patched)
-                return;
-
             CoreGame.OnEndScene();
 
-            harmony.UnpatchAll(nameof(AI_BetterPenetration));
-            patched = false;
             inHScene = false;
             loadingCharacter = false;
 

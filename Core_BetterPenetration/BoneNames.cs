@@ -19,8 +19,10 @@ namespace Core_BetterPenetration
         internal const string KokanBone = "cf_J_Kokan";
         internal const string TamaTop = "cm_J_dan_f_top";
         internal const string BPBone = "cf_J_Vagina";
+        internal const string BellyBone = "cf_J_Belly";
         internal const string BPDanBone = "cm_J_dan";
         internal const string BPDanEnd = "cm_J_dan119_00";
+        internal const string BPBellyEnd = "cm_J_dan120_00";
         internal const string mouthPullBone = "cf_J_MouthMove";
 
         internal const string BPKokanTarget = "cf_J_Vagina_root";
@@ -61,7 +63,7 @@ namespace Core_BetterPenetration
     }
 #endif
 
-#if KK
+#if KK || KKS
     static class LookTargets
     {
         internal const string HeadTarget = "k_f_head_00";
@@ -77,8 +79,10 @@ namespace Core_BetterPenetration
         internal const string KokanBone = "cf_j_kokan";
         internal const string TamaTop = "cm_J_dan_f_top";
         internal const string BPBone = "cf_J_Vagina";
+        internal const string BellyBone = "cf_J_Belly";
         internal const string BPDanBone = "cm_J_dan";
         internal const string BPDanEnd = "cm_J_dan119_00";
+        internal const string BPBellyEnd = "cm_J_dan120_00";
         internal const string mouthPullBone = "cf_J_MouthMove";
 
         internal const string BPKokanTarget = "cf_J_Vagina_root";

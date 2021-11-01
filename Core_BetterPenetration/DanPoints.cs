@@ -8,18 +8,20 @@ namespace Core_BetterPenetration
         internal Transform danTop;
         internal List<DanPoint> danPoints;
         internal Transform danEnd;
+        internal Transform bellyEnd;
 
-        public DanPoints(List<Transform> danTransforms, Transform top, Transform end = null)
+        public DanPoints(List<Transform> danTransforms, Transform top, Transform end = null, Transform bellyEnd = null)
         {
             danTop = top;
             danEnd = end;
+            this.bellyEnd = bellyEnd;
             danPoints = new List<DanPoint>();
 
             foreach (var transform in danTransforms)
                 danPoints.Add(new DanPoint(transform));
         }
 
-        internal void AimDanPoints(List<Vector3> newDanPositions, bool aimTop)
+        internal void AimDanPoints(List<Vector3> newDanPositions, bool aimTop, Vector3 bellyEndPosition)
         {
             if (newDanPositions.Count != danPoints.Count)
                 return;
@@ -36,6 +38,9 @@ namespace Core_BetterPenetration
 
             if (danEnd != null)
                 danEnd.transform.SetPositionAndRotation(newDanPositions[danPoints.Count - 1], danQuaternion);
+
+            if (bellyEnd != null && bellyEndPosition != Vector3.zero)
+                bellyEnd.transform.SetPositionAndRotation(bellyEndPosition, danQuaternion);
 
             if (aimTop)
                 AimDanTop();

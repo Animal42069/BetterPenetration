@@ -19,7 +19,7 @@ namespace HS2_BetterPenetration
     [BepInProcess("HoneySelect2VR")]
     public class HS2_BetterPenetration : BaseUnityPlugin
     {
-        internal const string VERSION = "4.4.0.0";
+        internal const string VERSION = "4.5.0.0";
         internal const int MaleLimit = 2;
         internal const int FemaleLimit = 2;
 
@@ -37,6 +37,8 @@ namespace HS2_BetterPenetration
         internal static readonly ConfigEntry<bool>[] _simplifyPenetration = new ConfigEntry<bool>[MaleLimit];
         internal static readonly ConfigEntry<bool>[] _simplifyOral = new ConfigEntry<bool>[MaleLimit];
         internal static readonly ConfigEntry<bool>[] _rotateTamaWithShaft = new ConfigEntry<bool>[MaleLimit];
+        internal static readonly ConfigEntry<float>[] _maxCorrection = new ConfigEntry<float>[MaleLimit];
+        internal static readonly ConfigEntry<bool>[] _limitCorrection = new ConfigEntry<bool>[MaleLimit];
 
         internal static ConfigEntry<float> _clippingDepth;
         internal static ConfigEntry<float> _kokanOffset;
@@ -57,12 +59,12 @@ namespace HS2_BetterPenetration
         internal static ConfigEntry<float> _maxOralPull;
         internal static ConfigEntry<float> _oralPullRate;
         internal static ConfigEntry<float> _oralReturnRate;
+
         internal static readonly ConfigEntry<float>[] _frontCollisionOffset = new ConfigEntry<float>[frontOffsets.Count];
         internal static readonly ConfigEntry<float>[] _backCollisionOffset = new ConfigEntry<float>[backOffsets.Count];
 
         internal static Harmony harmony;
         internal static HScene hScene;
-        internal static bool patched = false;
         internal static bool inHScene = false;
         internal static bool loadingCharacter = false;
 		internal static bool isInScene;
@@ -90,6 +92,10 @@ namespace HS2_BetterPenetration
                 (_simplifyOral[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Simplify Oral Calculation", false, "Simplifys oral penetration calclation by always having it target the same internal point.  Only valid for BP penis uncensors.")).SettingChanged += (s, e) =>
                 { UpdateDanOptions(); };
                 (_rotateTamaWithShaft[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Rotate Balls with Shaft", true, "If enabled, the base of the balls will be locked to the base of the shaft")).SettingChanged += (s, e) =>
+                { UpdateDanOptions(); };
+                (_limitCorrection[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Limit Penis Movement", true, "Limit the penis from moving laterally too much from frame to frame.")).SettingChanged += (s, e) =>
+                { UpdateDanOptions(); };
+                (_maxCorrection[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Limit Penis Amount", 2.0f, "Amount of movement to limit the penis to.  Smaller values result in smoother animations, but can cause clipping.")).SettingChanged += (s, e) =>
                 { UpdateDanOptions(); };
             }
 
@@ -139,14 +145,45 @@ namespace HS2_BetterPenetration
             { UpdateCollisionOptions(); };
 
             harmony = new Harmony("HS2_BetterPenetration");
-            SceneManager.sceneLoaded += SceneManager_sceneLoaded;
+            harmony.PatchAll(typeof(HS2_BetterPenetration));
+            Chainloader.PluginInfos.TryGetValue("com.deathweasel.bepinex.uncensorselector", out PluginInfo pluginInfo);
+            if (pluginInfo == null || pluginInfo.Instance == null)
+                return;
+
+            Type nestedType = pluginInfo.Instance.GetType().GetNestedType("UncensorSelectorController", AccessTools.all);
+            if (nestedType == null)
+                return;
+
+            MethodInfo methodInfo = AccessTools.Method(nestedType, "ReloadCharacterBody", null, null);
+            if (methodInfo == null)
+                return;
+
+            harmony.Patch(methodInfo, prefix: new HarmonyMethod(typeof(HS2_BetterPenetration), "BeforeCharacterReload"), postfix: new HarmonyMethod(typeof(HS2_BetterPenetration), "AfterCharacterReload"));
+            UnityEngine.Debug.Log("HS2_BetterPenetration: patched UncensorSelector::ReloadCharacterBody correctly");
+
+            methodInfo = AccessTools.Method(nestedType, "ReloadCharacterPenis", null, null);
+            if (methodInfo == null)
+                return;
+
+            harmony.Patch(methodInfo, prefix: new HarmonyMethod(typeof(HS2_BetterPenetration), "BeforeDanCharacterReload"), postfix: new HarmonyMethod(typeof(HS2_BetterPenetration), "AfterDanCharacterReload"));
+            UnityEngine.Debug.Log("HS2_BetterPenetration: patched UncensorSelector::ReloadCharacterPenis patched");
+
             SceneManager.sceneUnloaded += SceneManager_sceneUnloaded;
         }
 
-        [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "LoadCharaFbxDataAsync")]
-        internal static void ChaControl_LoadCharaFbxDataAsync(ChaControl __instance)
+        [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "UpdateAccessoryMoveFromInfo")]
+        internal static void ChaControl_UpdateAccessoryMoveFromInfo(ChaControl __instance)
         {
-            CoreGame.RemoveCollidersFromCoordinate(__instance);
+            Tools.RemoveCollidersFromCoordinate(__instance);
+        }
+
+        [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "UpdateSiru")]
+        internal static void ChaControl_UpdateSiru(ChaControl __instance, bool forceChange)
+        {
+            if (!forceChange)
+                return;
+
+            Tools.RemoveCollidersFromCoordinate(__instance);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(HScene), "SetStartVoice")]
@@ -277,7 +314,8 @@ namespace HS2_BetterPenetration
             for (int maleNum = 0; maleNum < MaleLimit; maleNum++)
                 CoreGame.UpdateDanOptions(maleNum, _danLengthSquishFactor[maleNum].Value, _danGirthSquishFactor[maleNum].Value, 
                     _danSquishThreshold[maleNum].Value, _danSquishOralGirth[maleNum].Value, 
-                    _simplifyPenetration[maleNum].Value, _simplifyOral[maleNum].Value, _rotateTamaWithShaft[maleNum].Value);
+                    _simplifyPenetration[maleNum].Value, _simplifyOral[maleNum].Value, _rotateTamaWithShaft[maleNum].Value,
+                    _limitCorrection[maleNum].Value, _maxCorrection[maleNum].Value);
         }
 
         internal static void UpdateCollisionOptions()
@@ -298,7 +336,8 @@ namespace HS2_BetterPenetration
             {
                 danOptions.Add(new DanOptions(_danColliderRadiusScale[maleNum].Value, _danColliderLengthScale[maleNum].Value,
                     _danLengthSquishFactor[maleNum].Value, _danGirthSquishFactor[maleNum].Value, _danSquishThreshold[maleNum].Value, _danSquishOralGirth[maleNum].Value,
-                    _simplifyPenetration[maleNum].Value, _simplifyOral[maleNum].Value, _rotateTamaWithShaft[maleNum].Value));
+                    _simplifyPenetration[maleNum].Value, _simplifyOral[maleNum].Value, _rotateTamaWithShaft[maleNum].Value,
+                    _limitCorrection[maleNum].Value, _maxCorrection[maleNum].Value));
             }
 
             return danOptions;
@@ -402,60 +441,17 @@ namespace HS2_BetterPenetration
             loadingCharacter = false;
         }
 
-
-        internal static void SceneManager_sceneLoaded(Scene scene, LoadSceneMode lsm)
-        {
-            if (UnityEngine.Application.productName == "HoneySelect2VR")
-            {
-                if (scene.name == "Init" || scene.name == "VRTitle" || scene.name == "VRLogo" || scene.name == "VRSelect") // for the official HoneySelect2VR, the LoadSceneMode can be Multiple, and the scene name is equal to the map name, not "HScene"
-                    return;
-            }
-            else
-            {
-                if (lsm != LoadSceneMode.Single || patched || scene.name != "HScene")
-                    return;
-            }
-
-            harmony.PatchAll(typeof(HS2_BetterPenetration));
-            patched = true;
-
-            Chainloader.PluginInfos.TryGetValue("com.deathweasel.bepinex.uncensorselector", out PluginInfo pluginInfo);
-            if (pluginInfo == null || pluginInfo.Instance == null)
-                return;
-
-            Type nestedType = pluginInfo.Instance.GetType().GetNestedType("UncensorSelectorController", AccessTools.all);
-            if (nestedType == null)
-                return;
-
-            MethodInfo methodInfo = AccessTools.Method(nestedType, "ReloadCharacterBody", null, null);
-            if (methodInfo == null)
-                return;
-
-            harmony.Patch(methodInfo, prefix: new HarmonyMethod(typeof(HS2_BetterPenetration), "BeforeCharacterReload"), postfix: new HarmonyMethod(typeof(HS2_BetterPenetration), "AfterCharacterReload"));
-            UnityEngine.Debug.Log("HS2_BetterPenetration: patched UncensorSelector::ReloadCharacterBody correctly");
-
-            methodInfo = AccessTools.Method(nestedType, "ReloadCharacterPenis", null, null);
-            if (methodInfo == null)
-                return;
-
-            harmony.Patch(methodInfo, prefix: new HarmonyMethod(typeof(HS2_BetterPenetration), "BeforeDanCharacterReload"), postfix: new HarmonyMethod(typeof(HS2_BetterPenetration), "AfterDanCharacterReload"));
-            UnityEngine.Debug.Log("HS2_BetterPenetration: patched UncensorSelector::ReloadCharacterPenis patched");
-        }
-
         internal static void SceneManager_sceneUnloaded(Scene scene)
         {
             if(UnityEngine.Application.productName == "HoneySelect2VR") {
                 if (scene.name == "Init" || scene.name == "VRTitle" || scene.name == "VRLogo" || scene.name == "VRSelect")
                     return;
             } else {
-                if (!patched || scene.name != "HScene")
+                if (!inHScene || scene.name != "HScene")
                     return;
 			}
 
             CoreGame.OnEndScene();
-
-            harmony.UnpatchAll(nameof(HS2_BetterPenetration));
-            patched = false;
 
             inHScene = false;
             loadingCharacter = false;

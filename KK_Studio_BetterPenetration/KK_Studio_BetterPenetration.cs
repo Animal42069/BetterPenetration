@@ -213,30 +213,20 @@ namespace KK_Studio_BetterPenetration
             StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(returnRate);
         }
 
-        [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "LoadCharaFbxDataAsync")]
-        public static void ChaControl_LoadCharaFbxDataAsync(ChaControl __instance)
+        [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "SetHideHairAccessory")]
+        internal static void ChaControl_SetHideHairAccessory(ChaControl __instance)
         {
-            var dynamicBones = __instance.GetComponentsInChildren<DynamicBone>(true);
+            Tools.RemoveCollidersFromCoordinate(__instance);
+        }
 
-            if (dynamicBones == null)
+        [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "UpdateSiru")]
+        internal static void ChaControl_UpdateSiru(ChaControl __instance, bool forceChange)
+        {
+
+            if (!forceChange)
                 return;
 
-            foreach (var dynamicBone in dynamicBones)
-            {
-                if (dynamicBone == null ||
-                    dynamicBone.m_Colliders == null ||
-                    (dynamicBone.name != null && (dynamicBone.name.Contains("Vagina") || dynamicBone.name.Contains("cm_J_dan"))) ||
-                    __instance != dynamicBone.GetComponentInParent<ChaControl>())
-                    continue;
-
-                for (int collider = 0; collider < dynamicBone.m_Colliders.Count; collider++)
-                {
-                    if (dynamicBone.m_Colliders[collider] != null &&
-                        dynamicBone.m_Colliders[collider].name != null &&
-                        (dynamicBone.m_Colliders[collider].name.Contains("Vagina") || dynamicBone.m_Colliders[collider].name.Contains("cm_J_dan")))
-                        dynamicBone.m_Colliders.RemoveAt(collider);
-                }
-            }
+            Tools.RemoveCollidersFromCoordinate(__instance);
         }
 
         internal static void BeforeCharacterReload()

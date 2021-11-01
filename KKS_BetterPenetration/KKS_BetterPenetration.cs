@@ -8,21 +8,19 @@ using HarmonyLib;
 using Core_BetterPenetration;
 using UnityEngine;
 
-namespace KK_BetterPenetration
+namespace KKS_BetterPenetration
 {
-    [BepInPlugin("animal42069.KKbetterpenetration", "KK Better Penetration", VERSION)]
+    [BepInPlugin("animal42069.KKSbetterpenetration", "KKS Better Penetration", VERSION)]
     [BepInDependency("com.deathweasel.bepinex.uncensorselector", "3.11.1")]
     [BepInDependency("com.rclcircuit.bepinex.modboneimplantor", "1.1.1")]
-    [BepInProcess("Koikatu")]
-    [BepInProcess("KoikatuVR")]
-    [BepInProcess("Koikatsu Party")]
-    [BepInProcess("Koikatsu Party VR")]
+    [BepInProcess("KoikatsuSunshine")]
+    [BepInProcess("KoikatsuSunshineVR")]
 
-    public class KK_BetterPenetration : BaseUnityPlugin
+    public class KKS_BetterPenetration : BaseUnityPlugin
     {
-        public static KK_BetterPenetration instance;
+        public static KKS_BetterPenetration instance;
 
-        internal const string VERSION = "4.5.0.0";
+        internal const string VERSION = "4.4.0.0";
         internal const int MaleLimit = 2;
         internal const int FemaleLimit = 2;
 
@@ -60,7 +58,7 @@ namespace KK_BetterPenetration
         internal static Harmony harmony;
 		
         //In VR, type "VRHScene" is used instead of "HSceneProc". Use type "BaseLoader" as the type for "hSceneProc" since it's inherited by both "HSceneProc" and "VRHScene".
-        internal static BaseLoader hSceneProc;
+        internal static MonoBehaviour hSceneProc;
         internal static Traverse hSceneProcTraverse;
         internal static bool hSceneStarted = false;
         internal static bool inHScene = false;
@@ -94,10 +92,6 @@ namespace KK_BetterPenetration
                 { UpdateDanOptions(); };
                 (_rotateTamaWithShaft[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Rotate Balls with Shaft", true, "If enabled, the base of the balls will be locked to the base of the shaft")).SettingChanged += (s, e) =>
                 { UpdateDanOptions(); };
-                (_limitCorrection[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Limit Penis Movement", true, "Limit the penis from moving laterally too much from frame to frame.")).SettingChanged += (s, e) =>
-                { UpdateDanOptions(); };
-                (_maxCorrection[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Limit Penis Amount", 0.2f, "Amount of movement to limit the penis to.  Smaller values result in smoother animations, but can cause clipping.")).SettingChanged += (s, e) =>
-                { UpdateDanOptions(); };
             }
 
             (_clippingDepth = Config.Bind("Female Options", "Clipping Depth", 0.02f, "Set how close to body surface to limit penis for clipping purposes. Smaller values will result in more clipping through the body, larger values will make the shaft wander further away from the intended penetration point.")).SettingChanged += (s, e) =>
@@ -127,7 +121,7 @@ namespace KK_BetterPenetration
             (_oralReturnRate = Config.Bind("Female Options", "Oral Push/Pull: Return Rate", 0.03f, "How quickly the mouth returns to its original shape when there is no penetration")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
 
-            harmony = new Harmony("KK_BetterPenetration");
+            harmony = new Harmony("KKS_BetterPenetration");
             harmony.PatchAll(GetType());
 
             Type VRHSceneType = Type.GetType("VRHScene, Assembly-CSharp");
@@ -153,7 +147,9 @@ namespace KK_BetterPenetration
                 return;
             
             harmony.Patch(uncensorSelectorReloadCharacterBody, postfix: new HarmonyMethod(GetType(), nameof(UncensorSelector_ReloadCharacterBody_Postfix), new[] { typeof(object) }));
-            UnityEngine.Debug.Log("KK_BetterPenetration: UncensorSelector patched ReloadCharacterBody correctly");
+            UnityEngine.Debug.Log("KKS_BetterPenetration: UncensorSelector patched ReloadCharacterBody correctly");
+
+            QualitySettings.skinWeights = SkinWeights.Unlimited;
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "SetHideHairAccessory")]
@@ -173,7 +169,7 @@ namespace KK_BetterPenetration
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(HSceneProc), "Start")]
-        internal static void HScene_PostStart(BaseLoader __instance)
+        internal static void HScene_PostStart(MonoBehaviour __instance)
         {
             hSceneProc = __instance;
             hSceneProcTraverse = Traverse.Create(__instance);

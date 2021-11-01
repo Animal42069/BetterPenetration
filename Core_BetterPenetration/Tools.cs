@@ -106,6 +106,27 @@ namespace Core_BetterPenetration
             return colliderList;
         }
 
+        public static List<DynamicBoneCollider> GetCollidersOfChaControl(ChaControl chaControl, List<string> colliderNames)
+        {
+            List<DynamicBoneCollider> colliderList = new List<DynamicBoneCollider>();
+            if (chaControl == null)
+                return colliderList;
+
+            var colliders = chaControl.GetComponentsInChildren<DynamicBoneCollider>().Where(x => x.name != null && colliderNames.Contains(x.name));
+            if (colliders.Count() == 0)
+                return colliderList;
+
+            foreach (var collider in colliders)
+            {
+                if (chaControl != collider.GetComponentInParent<ChaControl>())
+                    continue;
+
+                colliderList.Add(collider);
+            }
+
+            return colliderList;
+        }
+
         internal static DynamicBoneCollider InitializeCollider(Transform parent, float radius, float length, Vector3 centerOffset,
                                                                DynamicBoneCollider.Direction direction = DynamicBoneCollider.Direction.X,
                                                                DynamicBoneCollider.Bound bound = DynamicBoneCollider.Bound.Outside)
@@ -147,6 +168,30 @@ namespace Core_BetterPenetration
                 return transform.lossyScale.y;
 
             return transform.lossyScale.z;
+        }
+
+        internal static void RemoveCollidersFromCoordinate(ChaControl character)
+        {
+            var dynamicBones = character.GetComponentsInChildren<DynamicBone>(true);
+
+            if (dynamicBones == null)
+                return;
+
+            foreach (var dynamicBone in dynamicBones)
+            {
+                if (dynamicBone == null ||
+                    dynamicBone.m_Colliders == null ||
+                    (dynamicBone.name != null && (dynamicBone.name.Contains("Vagina") || dynamicBone.name.Contains("cm_J_dan"))))
+                    continue;
+
+                for (int collider = dynamicBone.m_Colliders.Count - 1; collider >= 0; collider--)
+                {
+                    if (dynamicBone.m_Colliders[collider] != null &&
+                        dynamicBone.m_Colliders[collider].name != null &&
+                        (dynamicBone.m_Colliders[collider].name.Contains("Vagina") || dynamicBone.m_Colliders[collider].name.Contains("cm_J_dan")))
+                        dynamicBone.m_Colliders.RemoveAt(collider);
+                }
+            }
         }
     }
 }

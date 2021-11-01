@@ -23,13 +23,21 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_Studio_BetterPenetration
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_Studio_BetterPenetrationControls", "KK_Studio_BetterPenetrationControls\KK_Studio_BetterPenetrationControls.csproj", "{5EFDA20F-BBA2-4317-BCBB-8B8695DC4B34}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KKS_BetterPenetration", "KKS_BetterPenetration\KKS_BetterPenetration.csproj", "{0FF42A1B-86EB-4CEE-BD04-DA3BB249773F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KKS_Studio_BetterPenetration", "KKS_Studio_BetterPenetration\KKS_Studio_BetterPenetration.csproj", "{B2F3F19C-14D5-477B-ADF7-EFBE76E85AD7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KKS_Studio_BetterPenetrationControls", "KKS_Studio_BetterPenetrationControls\KKS_Studio_BetterPenetrationControls.csproj", "{1A1E2F75-64DA-4F9F-829B-746F9C2A5C8B}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		Core_BetterPenetration\Core_BetterPenetration.projitems*{052b343b-8793-481b-b053-0a99b09a0b52}*SharedItemsImports = 4
 		Core_BetterPenetration\Core_BetterPenetration.projitems*{06a2be07-7ab5-46cd-8a77-fde1bfde687c}*SharedItemsImports = 4
+		Core_BetterPenetration\Core_BetterPenetration.projitems*{0ff42a1b-86eb-4cee-bd04-da3bb249773f}*SharedItemsImports = 4
 		Core_BetterPenetration\Core_BetterPenetration.projitems*{13f643e0-45ca-483e-adfa-32634a22787e}*SharedItemsImports = 4
 		Core_BetterPenetration\Core_BetterPenetration.projitems*{7008d2e3-1c29-4786-a4f6-7cfd6d6d8ad9}*SharedItemsImports = 4
 		Core_BetterPenetration\Core_BetterPenetration.projitems*{a68beae5-21b9-4c45-9624-a377bb953238}*SharedItemsImports = 4
+		Core_BetterPenetration\Core_BetterPenetration.projitems*{b2f3f19c-14d5-477b-adf7-efbe76e85ad7}*SharedItemsImports = 4
 		Core_BetterPenetration\Core_BetterPenetration.projitems*{ccd25b62-1040-4727-a0b5-78335fcf9f01}*SharedItemsImports = 13
 		Core_BetterPenetration\Core_BetterPenetration.projitems*{f5e096bb-2509-4431-972e-148500210d06}*SharedItemsImports = 4
 	EndGlobalSection
@@ -74,6 +82,18 @@ Global
 		{5EFDA20F-BBA2-4317-BCBB-8B8695DC4B34}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5EFDA20F-BBA2-4317-BCBB-8B8695DC4B34}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5EFDA20F-BBA2-4317-BCBB-8B8695DC4B34}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0FF42A1B-86EB-4CEE-BD04-DA3BB249773F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0FF42A1B-86EB-4CEE-BD04-DA3BB249773F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0FF42A1B-86EB-4CEE-BD04-DA3BB249773F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0FF42A1B-86EB-4CEE-BD04-DA3BB249773F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B2F3F19C-14D5-477B-ADF7-EFBE76E85AD7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B2F3F19C-14D5-477B-ADF7-EFBE76E85AD7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B2F3F19C-14D5-477B-ADF7-EFBE76E85AD7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B2F3F19C-14D5-477B-ADF7-EFBE76E85AD7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1A1E2F75-64DA-4F9F-829B-746F9C2A5C8B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A1E2F75-64DA-4F9F-829B-746F9C2A5C8B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A1E2F75-64DA-4F9F-829B-746F9C2A5C8B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A1E2F75-64DA-4F9F-829B-746F9C2A5C8B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

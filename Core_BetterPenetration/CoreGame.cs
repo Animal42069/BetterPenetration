@@ -98,7 +98,12 @@ namespace Core_BetterPenetration
                 return;
 
             if (!twoDans && danAgents.Count > 1 && danAgents[1] != null)
+            {
                 danAgents[1].RemoveDanColliders(collisionAgents[femaleNum]);
+#if HS2 || AI
+                danAgents[1].RemoveMidsectionColliders(collisionAgents[femaleNum].m_collisionCharacter);
+#endif
+            }
 
             if (maleNum == 1 && !twoDans)
                 return;
@@ -134,7 +139,12 @@ namespace Core_BetterPenetration
                 return;
 
             if (!twoDans && danAgents.Count > 1 && danAgents[1] != null)
+            {
                 danAgents[1].RemoveDanColliders(collisionAgents[femaleNum]);
+#if HS2 || AI
+                danAgents[1].RemoveMidsectionColliders(collisionAgents[femaleNum].m_collisionCharacter);
+#endif
+            }
 
             if (maleNum == 1 && !twoDans)
                 return;
@@ -195,12 +205,12 @@ namespace Core_BetterPenetration
             danAgents[maleNum].UpdateDanColliders(danRadiusScale, danLengthScale);
         }
 
-        public static void UpdateDanOptions(int maleNum, float danLengthSquish, float danGirthSquish, float squishThreshold, bool squishOralGirth, bool simplifyPenetration, bool simplifyOral, bool rotateTamaWithShaft)
+        public static void UpdateDanOptions(int maleNum, float danLengthSquish, float danGirthSquish, float squishThreshold, bool squishOralGirth, bool simplifyPenetration, bool simplifyOral, bool rotateTamaWithShaft, bool limitCorrection, float maxCorrection)
         {
             if (maleNum >= danAgents.Count || danAgents[maleNum] == null)
                 return;
 
-            danAgents[maleNum].UpdateDanOptions(danLengthSquish, danGirthSquish, squishThreshold, squishOralGirth, simplifyPenetration, simplifyOral, rotateTamaWithShaft);
+            danAgents[maleNum].UpdateDanOptions(danLengthSquish, danGirthSquish, squishThreshold, squishOralGirth, simplifyPenetration, simplifyOral, rotateTamaWithShaft, limitCorrection, maxCorrection);
         }
 
         public static void UpdateCollisionOptions(int femaleNum, CollisionOptions options)
@@ -218,30 +228,6 @@ namespace Core_BetterPenetration
             danAgents = null;
             collisionAgents = null;
             danHasNewTarget = null;
-        }
-
-        public static void RemoveCollidersFromCoordinate(ChaControl character)
-        {
-            var dynamicBones = character.GetComponentsInChildren<DynamicBone>(true);
-
-            if (dynamicBones == null)
-                return;
-
-            foreach (var dynamicBone in dynamicBones)
-            {
-                if (dynamicBone == null ||
-                    dynamicBone.m_Colliders == null ||
-                    (dynamicBone.name != null && (dynamicBone.name.Contains("Vagina") || dynamicBone.name.Contains("cm_J_dan"))))
-                    continue;
-
-                for (int collider = dynamicBone.m_Colliders.Count - 1; collider >= 0; collider--)
-                {
-                    if (dynamicBone.m_Colliders[collider] != null &&
-                        dynamicBone.m_Colliders[collider].name != null &&
-                        (dynamicBone.m_Colliders[collider].name.Contains("Vagina") || dynamicBone.m_Colliders[collider].name.Contains("cm_J_dan")))
-                        dynamicBone.m_Colliders.RemoveAt(collider);
-                }
-            }
         }
 
         internal static void SetAgentsBPBoneWeights(float weight)
@@ -290,11 +276,11 @@ namespace Core_BetterPenetration
                 if (dynamicBone == null ||
                     dynamicBone.m_Root == null ||
                     dynamicBone.name == null ||
-                    !dynamicBone.name.Contains(BoneNames.BPBone) ||
                     character != dynamicBone.GetComponentInParent<ChaControl>())
                     continue;
 
-                dynamicBone.SetWeight(weight);
+                if (dynamicBone.name.Contains(BoneNames.BPBone) || dynamicBone.name.Contains(BoneNames.BellyBone))
+                    dynamicBone.SetWeight(weight);
             }
         }
 

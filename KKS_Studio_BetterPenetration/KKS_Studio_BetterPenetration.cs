@@ -9,26 +9,25 @@ using UniRx;
 using System;
 using System.Linq;
 using System.Reflection;
-using AIChara;
 using Core_BetterPenetration;
 
-namespace AI_Studio_BetterPenetration
+namespace KKS_Studio_BetterPenetration
 {
     [BepInPlugin(GUID, PluginName, VERSION)]
-    [BepInDependency("com.deathweasel.bepinex.uncensorselector", "3.10")]
+    [BepInDependency("com.deathweasel.bepinex.uncensorselector", "3.11.1")]
     [BepInDependency("com.rclcircuit.bepinex.modboneimplantor", "1.1.1")]
     [BepInDependency("com.joan6694.illusionplugins.nodesconstraints")]
-    [BepInProcess("StudioNEOV2")]
-    public class AI_Studio_BetterPenetration : BaseUnityPlugin
+    [BepInProcess("CharaStudio")]
+    public class KKS_Studio_BetterPenetration : BaseUnityPlugin
     {
-        internal const string GUID = "com.animal42069.studiobetterpenetration";
-        internal const string PluginName = "AI Studio Better Penetration";
-        internal const string VERSION = "4.5.0.0";
+        internal const string GUID = "com.animal42069.kksstudiobetterpenetration";
+        internal const string PluginName = "KKS Studio Better Penetration";
+        internal const string VERSION = "4.4.0.0";
         internal const string BEHAVIOR = "BetterPenetrationController";
         internal const string StudioCategoryName = "Better Penetration";
         internal static Harmony harmony;
         internal static BaseUnityPlugin nodeConstraintPlugin;
-		internal static bool reloadConstraints = false;
+        internal static bool reloadConstraints = false;
         internal static int updateCount = 0;
         internal static int resetDelay = 0;
 
@@ -36,7 +35,7 @@ namespace AI_Studio_BetterPenetration
         {
             CharacterApi.RegisterExtraBehaviour<BetterPenetrationController>(BEHAVIOR);
 
-            harmony = new Harmony("AI_Studio_BetterPenetration");
+            harmony = new Harmony("KKS_Studio_BetterPenetration");
             harmony.PatchAll(GetType());
 
             Chainloader.PluginInfos.TryGetValue("com.deathweasel.bepinex.uncensorselector", out PluginInfo pluginInfo);
@@ -181,7 +180,7 @@ namespace AI_Studio_BetterPenetration
             });
             StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(autoTargeter);
 
-            var maxPush = new CurrentStateCategorySlider("Max Push", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().MaxPush, 0f, 0.2f);
+            var maxPush = new CurrentStateCategorySlider("Max Push", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().MaxPush, 0f, 0.01f);
             maxPush.Value.Subscribe(value =>
             {
                 foreach (var controller in StudioAPI.GetSelectedControllers<BetterPenetrationController>())
@@ -189,7 +188,7 @@ namespace AI_Studio_BetterPenetration
             });
             StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(maxPush);
 
-            var maxPull = new CurrentStateCategorySlider("Max Pull", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().MaxPull, 0f, 0.2f);
+            var maxPull = new CurrentStateCategorySlider("Max Pull", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().MaxPull, 0f, 0.02f);
             maxPull.Value.Subscribe(value =>
             {
                 foreach (var controller in StudioAPI.GetSelectedControllers<BetterPenetrationController>())
@@ -205,7 +204,7 @@ namespace AI_Studio_BetterPenetration
             });
             StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(pullRate);
 
-            var returnRate = new CurrentStateCategorySlider("Return Rate", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().ReturnRate, 0f, 1f);
+            var returnRate = new CurrentStateCategorySlider("Return Rate", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().ReturnRate, 0f, 0.1f);
             returnRate.Value.Subscribe(value =>
             {
                 foreach (var controller in StudioAPI.GetSelectedControllers<BetterPenetrationController>())
@@ -214,8 +213,8 @@ namespace AI_Studio_BetterPenetration
             StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(returnRate);
         }
 
-        [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "UpdateAccessoryMoveFromInfo")]
-        internal static void ChaControl_UpdateAccessoryMoveFromInfo(ChaControl __instance)
+        [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "SetHideHairAccessory")]
+        internal static void ChaControl_SetHideHairAccessory(ChaControl __instance)
         {
             Tools.RemoveCollidersFromCoordinate(__instance);
         }
@@ -237,7 +236,7 @@ namespace AI_Studio_BetterPenetration
                 return;
 
             foreach (var controller in bpControllers)
-            { 
+            {
                 if (controller == null)
                     continue;
 
@@ -336,7 +335,7 @@ namespace AI_Studio_BetterPenetration
                     continue;
 
                 controller.CheckAutoTarget(nodeConstraintPlugin);
-            }           
+            }
         }
     }
 }

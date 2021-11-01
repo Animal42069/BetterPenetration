@@ -21,6 +21,7 @@ namespace Core_BetterPenetration
         internal Transform m_kokanBone;
         internal Transform m_oralPullBone;
         internal List<DynamicBone> m_kokanDynamicBones = new List<DynamicBone>();
+        internal DynamicBone m_bellyDynamicBone;
         internal List<DynamicBoneCollider> m_fingerColliders = new List<DynamicBoneCollider>();
         internal List<Transform> m_kokanPullBones = new List<Transform>();
 
@@ -95,12 +96,19 @@ namespace Core_BetterPenetration
                 if (dynamicBone == null || 
                     dynamicBone.m_Root == null || 
                     dynamicBone.name == null || 
-                    !dynamicBone.name.Contains(BoneNames.BPBone) || 
                     m_collisionCharacter != dynamicBone.GetComponentInParent<ChaControl>())
                     continue;
 
-                dynamicBone.m_Colliders.Clear();
-                m_kokanDynamicBones.Add(dynamicBone);
+                if (dynamicBone.name.Contains(BoneNames.BPBone))
+                {
+                    dynamicBone.m_Colliders.Clear();
+                    m_kokanDynamicBones.Add(dynamicBone);
+                }
+                else if (dynamicBone.name.Contains(BoneNames.BellyBone))
+                {
+                    dynamicBone.m_Colliders.Clear();
+                    m_bellyDynamicBone = dynamicBone;
+                }
             }
 
             m_kokanPullBones = new List<Transform>();
@@ -154,7 +162,8 @@ namespace Core_BetterPenetration
         {
             foreach (DynamicBone dynamicBone in m_collisionCharacter.GetComponentsInChildren<DynamicBone>())
             {
-                if (dynamicBone.name.Contains(BoneNames.BPBone) && m_collisionCharacter == dynamicBone.GetComponentInParent<ChaControl>())
+                if ((dynamicBone.name.Contains(BoneNames.BPBone) || dynamicBone.name.Contains(BoneNames.BellyBone)) && 
+                    m_collisionCharacter == dynamicBone.GetComponentInParent<ChaControl>())
                     dynamicBone.m_Colliders.Clear();
             }
         }
@@ -179,6 +188,22 @@ namespace Core_BetterPenetration
 
                 kokanBone.enabled = enable;
             }
+        }
+
+        internal void ResetBellyParticles()
+        {
+            if (m_bellyDynamicBone == null)
+                return;
+
+            m_bellyDynamicBone.ResetParticlesPosition();
+        }
+
+        internal void EnableBellyParticles(bool enable)
+        {
+            if (m_bellyDynamicBone == null)
+                return;
+
+            m_bellyDynamicBone.enabled = enable;
         }
 
         internal void PullKokanBones(float pullAmount, Vector3 danDirection)
@@ -311,13 +336,21 @@ namespace Core_BetterPenetration
             if (colliders == null || colliders.Count == 0)
                 return;
 
-            foreach (DynamicBone dynamicBone in m_kokanDynamicBones)
+            foreach (var collider in colliders)
             {
-                foreach (var collider in colliders)
+                if (collider == null)
+                    continue;
+
+                foreach (DynamicBone dynamicBone in m_kokanDynamicBones)
                 {
-                    if (collider != null && !dynamicBone.m_Colliders.Contains(collider))
+                    if (!dynamicBone.m_Colliders.Contains(collider))
                         dynamicBone.m_Colliders.Add(collider);
                 }
+
+                if (m_bellyDynamicBone == null)
+                    continue;
+
+                m_bellyDynamicBone.m_Colliders.Add(collider);
             }
         }
 
@@ -326,13 +359,18 @@ namespace Core_BetterPenetration
             if (colliders == null || colliders.Count == 0)
                 return;
 
-            foreach (DynamicBone dynamicBone in m_kokanDynamicBones)
+            foreach (var collider in colliders)
             {
-                foreach (var collider in colliders)
-                {
-                    if (collider != null)
+                if (collider == null)
+                    continue;
+
+                foreach (DynamicBone dynamicBone in m_kokanDynamicBones)
                         dynamicBone.m_Colliders.Remove(collider);
-                }
+
+                if (m_bellyDynamicBone == null)
+                    continue;
+
+                m_bellyDynamicBone.m_Colliders.Add(collider);
             }
         }
 
@@ -348,8 +386,12 @@ namespace Core_BetterPenetration
 
                 kokanBone.m_Colliders.Clear();
             }
-        }
 
+            if (m_bellyDynamicBone == null)
+                return;
+
+            m_bellyDynamicBone.m_Colliders.Clear();
+        }
     }
 }
 //#endif
