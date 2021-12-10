@@ -27,15 +27,16 @@ namespace HS2_BetterPenetration
         internal static readonly List<float> backOffsets = new List<float> { -0.05f, 0.05f };
         internal static readonly List<bool> frontPointsInward = new List<bool> { false, false };
         internal static readonly List<bool> backPointsInward = new List<bool> { false, true };
-        
+
         internal static readonly ConfigEntry<float>[] _danColliderLengthScale = new ConfigEntry<float>[MaleLimit];
         internal static readonly ConfigEntry<float>[] _danColliderRadiusScale = new ConfigEntry<float>[MaleLimit];
         internal static readonly ConfigEntry<float>[] _danLengthSquishFactor = new ConfigEntry<float>[MaleLimit];
         internal static readonly ConfigEntry<float>[] _danGirthSquishFactor = new ConfigEntry<float>[MaleLimit];
         internal static readonly ConfigEntry<float>[] _danSquishThreshold = new ConfigEntry<float>[MaleLimit];
         internal static readonly ConfigEntry<bool>[] _danSquishOralGirth = new ConfigEntry<bool>[MaleLimit];
-        internal static readonly ConfigEntry<bool>[] _simplifyPenetration = new ConfigEntry<bool>[MaleLimit];
+        internal static readonly ConfigEntry<bool>[] _simplifyVaginal = new ConfigEntry<bool>[MaleLimit];
         internal static readonly ConfigEntry<bool>[] _simplifyOral = new ConfigEntry<bool>[MaleLimit];
+        internal static readonly ConfigEntry<bool>[] _simplifyAnal = new ConfigEntry<bool>[MaleLimit];
         internal static readonly ConfigEntry<bool>[] _rotateTamaWithShaft = new ConfigEntry<bool>[MaleLimit];
         internal static readonly ConfigEntry<float>[] _maxCorrection = new ConfigEntry<float>[MaleLimit];
         internal static readonly ConfigEntry<bool>[] _limitCorrection = new ConfigEntry<bool>[MaleLimit];
@@ -59,7 +60,12 @@ namespace HS2_BetterPenetration
         internal static ConfigEntry<float> _maxOralPull;
         internal static ConfigEntry<float> _oralPullRate;
         internal static ConfigEntry<float> _oralReturnRate;
-
+/*        internal static ConfigEntry<bool> _enableAnaPushPull;
+        internal static ConfigEntry<float> _maxAnaPush;
+        internal static ConfigEntry<float> _maxAnaPull;
+        internal static ConfigEntry<float> _anaPullRate;
+        internal static ConfigEntry<float> _anaReturnRate;
+*/
         internal static readonly ConfigEntry<float>[] _frontCollisionOffset = new ConfigEntry<float>[frontOffsets.Count];
         internal static readonly ConfigEntry<float>[] _backCollisionOffset = new ConfigEntry<float>[backOffsets.Count];
 
@@ -87,10 +93,12 @@ namespace HS2_BetterPenetration
                 { UpdateDanOptions(); };
                 (_danSquishOralGirth[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis: Squish Oral Girth", false, "Allows the penis to squish (increase girth) during oral.")).SettingChanged += (s, e) =>
                 { UpdateDanOptions(); };
-                (_simplifyPenetration[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Simplify Penetration Calculation", false, "Simplifys penetration calclation by always having it target the same internal point.  Only valid for BP penis uncensors.")).SettingChanged += (s, e) =>
+                (_simplifyVaginal[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Simplify Penetration Calculation", false, "Simplifys penetration calclation by always having it target the same internal point.  Only valid for BP penis uncensors.")).SettingChanged += (s, e) =>
                 { UpdateDanOptions(); };
                 (_simplifyOral[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Simplify Oral Calculation", false, "Simplifys oral penetration calclation by always having it target the same internal point.  Only valid for BP penis uncensors.")).SettingChanged += (s, e) =>
                 { UpdateDanOptions(); };
+                (_simplifyAnal[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Simplify Anal Calculation", true, "Simplifys anal penetration calclation by always having it target the same internal point.  Only valid for BP penis uncensors.")).SettingChanged += (s, e) =>
+                { UpdateDanOptions(); };          
                 (_rotateTamaWithShaft[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Rotate Balls with Shaft", true, "If enabled, the base of the balls will be locked to the base of the shaft")).SettingChanged += (s, e) =>
                 { UpdateDanOptions(); };
                 (_limitCorrection[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Limit Penis Movement", true, "Limit the penis from moving laterally too much from frame to frame.")).SettingChanged += (s, e) =>
@@ -143,7 +151,17 @@ namespace HS2_BetterPenetration
             { UpdateCollisionOptions(); };
             (_oralReturnRate = Config.Bind("Female Options", "Oral Push/Pull: Return Rate", 0.3f, "How quickly the mouth returns to its original shape when there is no penetration")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-
+ /*           (_enableAnaPushPull = Config.Bind("Female Options", "Anal Push/Pull: Enable", true, "Enable anus push/pull during penetration")).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+            (_maxAnaPush = Config.Bind("Female Options", "Anal Push/Pull: Max Push", 0.08f, "Maximum amount to push the anus inwards during penetration")).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+            (_maxAnaPull = Config.Bind("Female Options", "Anal Push/Pull: Max Pull", 0.04f, "Maximum amount to pull the anus outwards during penetration")).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+            (_anaPullRate = Config.Bind("Female Options", "Anal Push/Pull: Push/Pull Rate", 24.0f, "How quickly to push or pull the anus during penetration")).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+            (_anaReturnRate = Config.Bind("Female Options", "Anal Push/Pull: Return Rate", 0.3f, "How quickly the anus returns to its original shape when there is no penetration")).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+ */
             harmony = new Harmony("HS2_BetterPenetration");
             harmony.PatchAll(typeof(HS2_BetterPenetration));
             Chainloader.PluginInfos.TryGetValue("com.deathweasel.bepinex.uncensorselector", out PluginInfo pluginInfo);
@@ -314,7 +332,7 @@ namespace HS2_BetterPenetration
             for (int maleNum = 0; maleNum < MaleLimit; maleNum++)
                 CoreGame.UpdateDanOptions(maleNum, _danLengthSquishFactor[maleNum].Value, _danGirthSquishFactor[maleNum].Value, 
                     _danSquishThreshold[maleNum].Value, _danSquishOralGirth[maleNum].Value, 
-                    _simplifyPenetration[maleNum].Value, _simplifyOral[maleNum].Value, _rotateTamaWithShaft[maleNum].Value,
+                    _simplifyVaginal[maleNum].Value, _simplifyOral[maleNum].Value, _rotateTamaWithShaft[maleNum].Value,
                     _limitCorrection[maleNum].Value, _maxCorrection[maleNum].Value);
         }
 
@@ -336,7 +354,7 @@ namespace HS2_BetterPenetration
             {
                 danOptions.Add(new DanOptions(_danColliderRadiusScale[maleNum].Value, _danColliderLengthScale[maleNum].Value,
                     _danLengthSquishFactor[maleNum].Value, _danGirthSquishFactor[maleNum].Value, _danSquishThreshold[maleNum].Value, _danSquishOralGirth[maleNum].Value,
-                    _simplifyPenetration[maleNum].Value, _simplifyOral[maleNum].Value, _rotateTamaWithShaft[maleNum].Value,
+                    _simplifyVaginal[maleNum].Value, _simplifyOral[maleNum].Value, _simplifyAnal[maleNum].Value, _rotateTamaWithShaft[maleNum].Value,
                     _limitCorrection[maleNum].Value, _maxCorrection[maleNum].Value));
             }
 
@@ -358,9 +376,11 @@ namespace HS2_BetterPenetration
             for (int femaleNum = 0; femaleNum < FemaleLimit; femaleNum++)
             {
                 collisionOptions.Add(new CollisionOptions(_kokanOffset.Value, _innerKokanOffset.Value, _mouthOffset.Value, _innerMouthOffset.Value, _useKokanFix.Value,
-                    _kokanFixPositionZ.Value, _kokanFixPositionY.Value, _kokanFixRotationX.Value, _clippingDepth.Value, frontInfo, backInfo, 
+                    _kokanFixPositionZ.Value, _kokanFixPositionY.Value, _kokanFixRotationX.Value, _clippingDepth.Value, frontInfo, backInfo,
                     _enableKokanPushPull.Value, _maxKokanPush.Value, _maxKokanPull.Value, _kokanPullRate.Value, _kokanReturnRate.Value,
-                    _enableOralPushPull.Value, _maxOralPush.Value, _maxOralPull.Value, _oralPullRate.Value, _oralReturnRate.Value));
+                    _enableOralPushPull.Value, _maxOralPush.Value, _maxOralPull.Value, _oralPullRate.Value, _oralReturnRate.Value,
+//                    _enableAnaPushPull.Value, _maxAnaPush.Value, _maxAnaPull.Value, _anaPullRate.Value, _anaReturnRate.Value));
+                    false, 0, 0, 0, 0));
             }
 
             return collisionOptions;

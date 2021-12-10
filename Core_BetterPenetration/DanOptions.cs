@@ -8,8 +8,9 @@
         public float danRadiusScale;
         public float danLengthScale;
 
-        public bool simplifyPenetration;
+        public bool simplifyVaginal;
         public bool simplifyOral;
+        public bool simplifyAnal;
         public bool squishOralGirth;
         public bool rotateTamaWithShaft;
 
@@ -18,14 +19,15 @@
 
         public DanOptions(float danRadiusScale, float danLengthScale,
             float danLengthSquish, float danGirthSquish, float squishThreshold, bool squishOralGirth,
-            bool simplifyPenetration, bool simplifyOral, bool rotateTamaWithShaft, 
+            bool simplifyVaginal, bool simplifyOral, bool simplifyAnal, bool rotateTamaWithShaft, 
             bool limitCorrection, float maxCorrection)
         {
             this.danLengthSquish = danLengthSquish;
             this.danGirthSquish = danGirthSquish;
             this.squishThreshold = squishThreshold;
-            this.simplifyPenetration = simplifyPenetration;
+            this.simplifyVaginal = simplifyVaginal;
             this.simplifyOral = simplifyOral;
+            this.simplifyAnal = simplifyAnal;
             this.squishOralGirth = squishOralGirth;
             this.rotateTamaWithShaft = rotateTamaWithShaft;
             this.danRadiusScale = danRadiusScale;
@@ -43,8 +45,9 @@
             this.squishThreshold = squishThreshold;
             this.danRadiusScale = danRadiusScale;
             this.danLengthScale = danLengthScale;
-            simplifyPenetration = true;
+            simplifyVaginal = true;
             simplifyOral = true;
+            simplifyAnal = true;
             squishOralGirth = true;
             rotateTamaWithShaft = true;
             this.limitCorrection = limitCorrection;

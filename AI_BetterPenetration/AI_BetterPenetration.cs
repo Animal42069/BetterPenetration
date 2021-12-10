@@ -30,8 +30,9 @@ namespace AI_BetterPenetration
         internal static ConfigEntry<float> _danGirthSquishFactor;
         internal static ConfigEntry<float> _danSquishThreshold;
         internal static ConfigEntry<bool> _danSquishOralGirth;
-        internal static ConfigEntry<bool> _simplifyPenetration;
+        internal static ConfigEntry<bool> _simplifyVaginal;
         internal static ConfigEntry<bool> _simplifyOral;
+        internal static ConfigEntry<bool> _simplifyAnal;
         internal static ConfigEntry<bool> _rotateTamaWithShaft;
         internal static ConfigEntry<float> _maxCorrection;
         internal static ConfigEntry<bool> _limitCorrection;
@@ -55,7 +56,12 @@ namespace AI_BetterPenetration
         internal static ConfigEntry<float> _maxOralPull;
         internal static ConfigEntry<float> _oralPullRate;
         internal static ConfigEntry<float> _oralReturnRate;
-
+/*        internal static ConfigEntry<bool> _enableAnaPushPull;
+        internal static ConfigEntry<float> _maxAnaPush;
+        internal static ConfigEntry<float> _maxAnaPull;
+        internal static ConfigEntry<float> _anaPullRate;
+        internal static ConfigEntry<float> _anaReturnRate;
+*/
         internal static readonly ConfigEntry<float>[] _frontCollisionOffset = new ConfigEntry<float>[frontOffsets.Count];
         internal static readonly ConfigEntry<float>[] _backCollisionOffset = new ConfigEntry<float>[backOffsets.Count];
 
@@ -79,10 +85,12 @@ namespace AI_BetterPenetration
             { UpdateDanOptions(); };
             (_danSquishOralGirth = Config.Bind("Male Options", "Penis: Squish Oral Girth", false, "Allows the penis to squish (increase girth) during oral.")).SettingChanged += (s, e) =>
             { UpdateDanOptions(); };
-            (_simplifyPenetration = Config.Bind("Male Options", "Simplify Penetration Calculation", false, "Simplifys penetration calclation by always having it target the same internal point.  Only valid for BP penis uncensors.")).SettingChanged += (s, e) =>
+            (_simplifyVaginal = Config.Bind("Male Options", "Simplify Penetration Calculation", false, "Simplifys penetration calclation by always having it target the same internal point.  Only valid for BP penis uncensors.")).SettingChanged += (s, e) =>
             { UpdateDanOptions(); };
             (_simplifyOral = Config.Bind("Male Options", "Simplify Oral Calculation", false, "Simplifys oral penetration calclation by always having it target the same internal point.  Only valid for BP penis uncensors.")).SettingChanged += (s, e) =>
             { UpdateDanOptions(); };
+            (_simplifyAnal = Config.Bind("Male Options", "Simplify Anal Calculation", true, "Simplifys anal penetration calclation by always having it target the same internal point.  Only valid for BP penis uncensors.")).SettingChanged += (s, e) =>
+            { UpdateDanOptions(); };    
             (_rotateTamaWithShaft = Config.Bind("Male Options", "Rotate Balls with Shaft", true, "If enabled, the base of the balls will be locked to the base of the shaft")).SettingChanged += (s, e) =>
             { UpdateDanOptions(); };
             (_limitCorrection = Config.Bind("Male Options", "Limit Penis Movement", true, "Limit the penis from moving laterally too much from frame to frame.")).SettingChanged += (s, e) =>
@@ -134,7 +142,17 @@ namespace AI_BetterPenetration
             { UpdateCollisionOptions(); };
             (_oralReturnRate = Config.Bind("Female Options", "Oral Push/Pull: Return Rate", 0.3f, "How quickly the mouth returns to its original shape when there is no penetration")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-
+ /*           (_enableAnaPushPull = Config.Bind("Female Options", "Anal Push/Pull: Enable", true, "Enable anus push/pull during penetration")).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+            (_maxAnaPush = Config.Bind("Female Options", "Anal Push/Pull: Max Push", 0.08f, "Maximum amount to push the anus inwards during penetration")).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+            (_maxAnaPull = Config.Bind("Female Options", "Anal Push/Pull: Max Pull", 0.04f, "Maximum amount to pull the anus outwards during penetration")).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+            (_anaPullRate = Config.Bind("Female Options", "Anal Push/Pull: Push/Pull Rate", 24.0f, "How quickly to push or pull the anus during penetration")).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+            (_anaReturnRate = Config.Bind("Female Options", "Anal Push/Pull: Return Rate", 0.3f, "How quickly the anus returns to its original shape when there is no penetration")).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+ */
             harmony = new Harmony("AI_BetterPenetration");
             harmony.PatchAll(typeof(AI_BetterPenetration));
         }
@@ -148,7 +166,6 @@ namespace AI_BetterPenetration
         [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "UpdateSiru")]
         internal static void ChaControl_UpdateSiru(ChaControl __instance, bool forceChange)
         {
-
             if (!forceChange)
                 return;
 
@@ -273,7 +290,7 @@ namespace AI_BetterPenetration
                 return;
 
             CoreGame.UpdateDanOptions(0, _danLengthSquishFactor.Value, _danGirthSquishFactor.Value, _danSquishThreshold.Value, 
-				_danSquishOralGirth.Value, _simplifyPenetration.Value, _simplifyOral.Value, _rotateTamaWithShaft.Value,
+				_danSquishOralGirth.Value, _simplifyVaginal.Value, _simplifyOral.Value, _rotateTamaWithShaft.Value,
 				_limitCorrection.Value, _maxCorrection.Value);
         }
 
@@ -293,7 +310,7 @@ namespace AI_BetterPenetration
             {
                 new DanOptions(_danColliderRadiusScale.Value, _danColliderLengthScale.Value,
                  _danLengthSquishFactor.Value, _danGirthSquishFactor.Value, _danSquishThreshold.Value, _danSquishOralGirth.Value,
-                _simplifyPenetration.Value, _simplifyOral.Value, _rotateTamaWithShaft.Value,
+                _simplifyVaginal.Value, _simplifyOral.Value, _simplifyAnal.Value, _rotateTamaWithShaft.Value,
                 _limitCorrection.Value, _maxCorrection.Value)
             };
 
@@ -315,9 +332,11 @@ namespace AI_BetterPenetration
             for (int femaleNum = 0; femaleNum < FemaleLimit; femaleNum++)
             {
                 collisionOptions.Add(new CollisionOptions(_kokanOffset.Value, _innerKokanOffset.Value, _mouthOffset.Value, _innerMouthOffset.Value, _useKokanFix.Value,
-                    _kokanFixPositionZ.Value, _kokanFixPositionY.Value, _kokanFixRotationX.Value, _clippingDepth.Value, frontInfo, backInfo, 
+                    _kokanFixPositionZ.Value, _kokanFixPositionY.Value, _kokanFixRotationX.Value, _clippingDepth.Value, frontInfo, backInfo,
                     _enableKokanPushPull.Value, _maxKokanPush.Value, _maxKokanPull.Value, _kokanPullRate.Value, _kokanReturnRate.Value,
-                    _enableOralPushPull.Value, _maxOralPush.Value, _maxOralPull.Value, _oralPullRate.Value, _oralReturnRate.Value));
+                    _enableOralPushPull.Value, _maxOralPush.Value, _maxOralPull.Value, _oralPullRate.Value, _oralReturnRate.Value,
+//                    _enableAnaPushPull.Value, _maxAnaPush.Value, _maxAnaPull.Value, _anaPullRate.Value, _anaReturnRate.Value));
+                    false, 0, 0, 0, 0));
             }
 
             return collisionOptions;

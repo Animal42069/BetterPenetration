@@ -272,7 +272,7 @@ namespace KK_Studio_BetterPenetration
             if (targetChaControl == null)
                 return;
 
-            controller.SetCollisionAgent(targetChaControl, parentTransform.name == BoneNames.BPKokanTarget);
+            controller.SetCollisionAgent(targetChaControl, parentTransform.name == BoneNames.BPKokanTarget, parentTransform.name == BoneNames.AnaTarget);
         }
 
         internal static void AfterApplyConstraints()

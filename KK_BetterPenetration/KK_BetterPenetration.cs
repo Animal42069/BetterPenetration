@@ -37,8 +37,9 @@ namespace KK_BetterPenetration
         internal static readonly ConfigEntry<float>[] _danGirthSquishFactor = new ConfigEntry<float>[MaleLimit];
         internal static readonly ConfigEntry<float>[] _danSquishThreshold = new ConfigEntry<float>[MaleLimit];
         internal static readonly ConfigEntry<bool>[] _danSquishOralGirth = new ConfigEntry<bool>[MaleLimit];
-        internal static readonly ConfigEntry<bool>[] _simplifyPenetration = new ConfigEntry<bool>[MaleLimit];
+        internal static readonly ConfigEntry<bool>[] _simplifyVaginal = new ConfigEntry<bool>[MaleLimit];
         internal static readonly ConfigEntry<bool>[] _simplifyOral = new ConfigEntry<bool>[MaleLimit];
+        internal static readonly ConfigEntry<bool>[] _simplifyAnal = new ConfigEntry<bool>[MaleLimit];
         internal static readonly ConfigEntry<bool>[] _rotateTamaWithShaft = new ConfigEntry<bool>[MaleLimit];
         internal static readonly ConfigEntry<float>[] _maxCorrection = new ConfigEntry<float>[MaleLimit];
         internal static readonly ConfigEntry<bool>[] _limitCorrection = new ConfigEntry<bool>[MaleLimit];
@@ -88,9 +89,11 @@ namespace KK_BetterPenetration
                 { UpdateDanOptions(); };
                 (_danSquishOralGirth[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Penis: Squish Oral Girth", false, "Allows the penis to squish (increase girth) during oral.")).SettingChanged += (s, e) =>
                 { UpdateDanOptions(); };
-                (_simplifyPenetration[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Simplify Penetration Calculation", false, "Simplifys penetration calclation by always having it target the same internal point.  Only valid for BP penis uncensors.")).SettingChanged += (s, e) =>
+                (_simplifyVaginal[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Simplify Penetration Calculation", false, "Simplifys penetration calclation by always having it target the same internal point.  Only valid for BP penis uncensors.")).SettingChanged += (s, e) =>
                 { UpdateDanOptions(); };
                 (_simplifyOral[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Simplify Oral Calculation", false, "Simplifys oral penetration calclation by always having it target the same internal point.  Only valid for BP penis uncensors.")).SettingChanged += (s, e) =>
+                { UpdateDanOptions(); };
+                (_simplifyAnal[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Simplify Anal Calculation", false, "Simplifys anal penetration calclation by always having it target the same internal point.  Only valid for BP penis uncensors.")).SettingChanged += (s, e) =>
                 { UpdateDanOptions(); };
                 (_rotateTamaWithShaft[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Rotate Balls with Shaft", true, "If enabled, the base of the balls will be locked to the base of the shaft")).SettingChanged += (s, e) =>
                 { UpdateDanOptions(); };
@@ -340,7 +343,7 @@ namespace KK_BetterPenetration
             for (int maleNum = 0; maleNum < MaleLimit; maleNum++)
                 CoreGame.UpdateDanOptions(maleNum, _danLengthSquishFactor[maleNum].Value, _danGirthSquishFactor[maleNum].Value, 
                     _danSquishThreshold[maleNum].Value, _danSquishOralGirth[maleNum].Value, 
-                    _simplifyPenetration[maleNum].Value, _simplifyOral[maleNum].Value, _rotateTamaWithShaft[maleNum].Value,
+                    _simplifyVaginal[maleNum].Value, _simplifyOral[maleNum].Value, _rotateTamaWithShaft[maleNum].Value,
                     _limitCorrection[maleNum].Value, _maxCorrection[maleNum].Value);
         }
 
@@ -362,7 +365,7 @@ namespace KK_BetterPenetration
             {
                 danOptions.Add(new DanOptions(_danColliderRadiusScale[maleNum].Value, _danColliderLengthScale[maleNum].Value,
                     _danLengthSquishFactor[maleNum].Value, _danGirthSquishFactor[maleNum].Value, _danSquishThreshold[maleNum].Value, _danSquishOralGirth[maleNum].Value,
-                    _simplifyPenetration[maleNum].Value, _simplifyOral[maleNum].Value, _rotateTamaWithShaft[maleNum].Value,
+                    _simplifyVaginal[maleNum].Value, _simplifyOral[maleNum].Value, _simplifyAnal[maleNum].Value, _rotateTamaWithShaft[maleNum].Value,
                     _limitCorrection[maleNum].Value, _maxCorrection[maleNum].Value));
             }
 
@@ -386,7 +389,8 @@ namespace KK_BetterPenetration
                 collisionOptions.Add(new CollisionOptions(_kokanOffset.Value, _innerKokanOffset.Value, _mouthOffset.Value, _innerMouthOffset.Value,
                     false, 0, 0, 0, _clippingDepth.Value, frontInfo, backInfo,
                     false, 0, 0, 0, 0,
-                    _enableOralPushPull.Value, _maxOralPush.Value, _maxOralPull.Value, _oralPullRate.Value, _oralReturnRate.Value));
+                    _enableOralPushPull.Value, _maxOralPush.Value, _maxOralPull.Value, _oralPullRate.Value, _oralReturnRate.Value,
+                    false, 0, 0, 0, 0));
             }
 
             return collisionOptions;

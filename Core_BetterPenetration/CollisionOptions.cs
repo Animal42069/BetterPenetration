@@ -28,6 +28,15 @@ namespace Core_BetterPenetration
         internal float maxOralPull = 0.10f;
         internal float oralPullRate = 18.0f;
         internal float oralReturnRate = 0.3f;
+#if HS2 || AI
+        internal bool enableAnaPush = true;
+#else
+        internal bool enableAnaPush = false;
+#endif
+        internal float maxAnaPush = 0.08f;
+        internal float maxAnaPull = 0.04f;
+        internal float anaPullRate = 18.0f;
+        internal float anaReturnRate = 0.3f;
 
         internal List<CollisionPointInfo> frontCollisionInfo;
         internal List<CollisionPointInfo> backCollisonInfo;
@@ -35,7 +44,8 @@ namespace Core_BetterPenetration
         public CollisionOptions(float kokanOffset, float innerKokanOffset, float mouthOffset, float innerMouthOffset, bool kokan_adjust,
         float kokan_adjust_position_z, float kokan_adjust_position_y, float kokan_adjust_rotation_x, float clippingDepth, List<CollisionPointInfo> frontInfo, List<CollisionPointInfo> backInfo,
         bool enableKokanPush, float maxKokanPush, float maxKokanPull, float kokanPullRate, float kokanReturnRate,
-        bool enableOralPush, float maxOralPush, float maxOralPull, float oralPullRate, float oralReturnRate)
+        bool enableOralPush, float maxOralPush, float maxOralPull, float oralPullRate, float oralReturnRate,
+        bool enableAnaPush, float maxAnaPush, float maxAnaPull, float anaPullRate, float anaReturnRate)
         {
             this.kokanOffset = kokanOffset;
             this.innerKokanOffset = innerKokanOffset;
@@ -62,6 +72,12 @@ namespace Core_BetterPenetration
             this.maxOralPull = maxOralPull;
             this.oralPullRate = oralPullRate;
             this.oralReturnRate = oralReturnRate;
+
+            this.enableAnaPush = enableAnaPush;
+            this.maxAnaPush = maxAnaPush;
+            this.maxAnaPull = maxAnaPull;
+            this.anaPullRate = anaPullRate;
+            this.anaReturnRate = anaReturnRate;
 
             frontCollisionInfo = frontInfo;
             backCollisonInfo = backInfo;
@@ -95,6 +111,16 @@ namespace Core_BetterPenetration
             maxOralPull = maxPull;
             oralPullRate = pullRate;
             oralReturnRate = returnRate;
+
+#if HS2 || AI
+            enableAnaPush = enablePush;
+#else
+            enableAnaPush = false;
+#endif
+            maxAnaPush = maxPush;
+            maxAnaPull = maxPull;
+            anaPullRate = pullRate;
+            anaReturnRate = returnRate;
 
             frontCollisionInfo = null;
             backCollisonInfo = null;
