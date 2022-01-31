@@ -614,8 +614,11 @@ namespace Core_BetterPenetration
             List<Vector3> adjustedDanPoints = AdjustDanPointsToTargets(danTarget, danEndTarget, adjustedDanLength, danDistanceToTarget, out Vector3 bellyEnd);
             m_danPoints.AimDanPoints(adjustedDanPoints, m_danOptions.rotateTamaWithShaft, bellyEnd);
 
-            lastDanEnd = m_danPoints.danEnd.position;
-            lastDanEndVector = m_danPoints.danEnd.forward;
+            if (m_danPoints.danEnd != null)
+            {
+                lastDanEnd = m_danPoints.danEnd.position;
+                lastDanEndVector = m_danPoints.danEnd.forward;
+            }
 
             AdjustPullBones(targetAgent, danTargetVector, danDistanceToTarget, true, false, false, twoDans);
         }

@@ -19,7 +19,7 @@ namespace HS2_BetterPenetration
     [BepInProcess("HoneySelect2VR")]
     public class HS2_BetterPenetration : BaseUnityPlugin
     {
-        internal const string VERSION = "4.5.0.0";
+        internal const string VERSION = "4.5.1.0";
         internal const int MaleLimit = 2;
         internal const int FemaleLimit = 2;
 

@@ -22,7 +22,7 @@ namespace KKS_Studio_BetterPenetration
     {
         internal const string GUID = "com.animal42069.kksstudiobetterpenetration";
         internal const string PluginName = "KKS Studio Better Penetration";
-        internal const string VERSION = "4.4.0.0";
+        internal const string VERSION = "4.5.1.0";
         internal const string BEHAVIOR = "BetterPenetrationController";
         internal const string StudioCategoryName = "Better Penetration";
         internal static Harmony harmony;
