@@ -22,12 +22,12 @@ namespace KKS_Studio_BetterPenetration
     {
         internal const string GUID = "com.animal42069.kksstudiobetterpenetration";
         internal const string PluginName = "KKS Studio Better Penetration";
-        internal const string VERSION = "4.5.1.0";
+        internal const string VERSION = "4.9.9.0";
         internal const string BEHAVIOR = "BetterPenetrationController";
         internal const string StudioCategoryName = "Better Penetration";
         internal static Harmony harmony;
         internal static BaseUnityPlugin nodeConstraintPlugin;
-        internal static bool reloadConstraints = false;
+		internal static bool reloadConstraints = false;
         internal static int updateCount = 0;
         internal static int resetDelay = 0;
 
@@ -98,14 +98,6 @@ namespace KKS_Studio_BetterPenetration
             if (!StudioAPI.InsideStudio)
                 return;
 
-            var enablePushPull = new CurrentStateCategorySwitch("Push/Pull Target", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().EnablePushPull);
-            enablePushPull.Value.Subscribe(value =>
-            {
-                foreach (var controller in StudioAPI.GetSelectedControllers<BetterPenetrationController>())
-                    controller.EnablePushPull = value;
-            });
-            StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(enablePushPull);
-
             var bpEnable = new CurrentStateCategorySwitch("Enable BP Controller", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().enabled);
             bpEnable.Value.Subscribe(value =>
             {
@@ -165,12 +157,6 @@ namespace KKS_Studio_BetterPenetration
                     controller.DanSquishThreshold = value;
             });
             StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(thresholdSlider);
-        }
-
-        public static void RegisterStudioControls()
-        {
-            if (!StudioAPI.InsideStudio)
-                return;
 
             var autoTargeter = new CurrentStateCategoryDropdown("Auto-Target", new string[] { "Off", "Vaginal", "Anal", "Oral" }, c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().DanAutoTarget);
             autoTargeter.Value.Subscribe(value =>
@@ -180,7 +166,7 @@ namespace KKS_Studio_BetterPenetration
             });
             StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(autoTargeter);
 
-            var maxPush = new CurrentStateCategorySlider("Max Push", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().MaxPush, 0f, 0.01f);
+            var maxPush = new CurrentStateCategorySlider("Max Push", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().MaxPush, 0f, 0.3f);
             maxPush.Value.Subscribe(value =>
             {
                 foreach (var controller in StudioAPI.GetSelectedControllers<BetterPenetrationController>())
@@ -188,7 +174,7 @@ namespace KKS_Studio_BetterPenetration
             });
             StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(maxPush);
 
-            var maxPull = new CurrentStateCategorySlider("Max Pull", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().MaxPull, 0f, 0.02f);
+            var maxPull = new CurrentStateCategorySlider("Max Pull", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().MaxPull, 0f, 0.3f);
             maxPull.Value.Subscribe(value =>
             {
                 foreach (var controller in StudioAPI.GetSelectedControllers<BetterPenetrationController>())
@@ -204,17 +190,40 @@ namespace KKS_Studio_BetterPenetration
             });
             StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(pullRate);
 
-            var returnRate = new CurrentStateCategorySlider("Return Rate", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().ReturnRate, 0f, 0.1f);
+            var returnRate = new CurrentStateCategorySlider("Return Rate", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().ReturnRate, 0f, 1f);
             returnRate.Value.Subscribe(value =>
             {
                 foreach (var controller in StudioAPI.GetSelectedControllers<BetterPenetrationController>())
                     controller.ReturnRate = value;
             });
             StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(returnRate);
+
+            var bellyBulgeEnable = new CurrentStateCategorySwitch("Enable Belly Bulge", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().EnableBellyBulge);
+            bellyBulgeEnable.Value.Subscribe(value =>
+            {
+                foreach (var controller in StudioAPI.GetSelectedControllers<BetterPenetrationController>())
+                    controller.EnableBellyBulge = value;
+            });
+            StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(bellyBulgeEnable);
+
+            var bellyBulgeScale = new CurrentStateCategorySlider("Belly Bulge Scale", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().BellyBulgeScale, 0.0f, 3.0f);
+            bellyBulgeScale.Value.Subscribe(value =>
+            {
+                foreach (var controller in StudioAPI.GetSelectedControllers<BetterPenetrationController>())
+                    controller.BellyBulgeScale = value;
+            });
+            StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(bellyBulgeScale);
+
         }
 
-        [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "SetHideHairAccessory")]
-        internal static void ChaControl_SetHideHairAccessory(ChaControl __instance)
+        public static void RegisterStudioControls()
+        {
+            if (!StudioAPI.InsideStudio)
+                return;
+        }
+
+        [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "UpdateAccessoryMoveFromInfo")]
+        internal static void ChaControl_UpdateAccessoryMoveFromInfo(ChaControl __instance)
         {
             Tools.RemoveCollidersFromCoordinate(__instance);
         }
@@ -236,7 +245,7 @@ namespace KKS_Studio_BetterPenetration
                 return;
 
             foreach (var controller in bpControllers)
-            {
+            { 
                 if (controller == null)
                     continue;
 
@@ -272,7 +281,7 @@ namespace KKS_Studio_BetterPenetration
             if (targetChaControl == null)
                 return;
 
-            controller.SetCollisionAgent(targetChaControl, parentTransform.name == BoneNames.BPKokanTarget, parentTransform.name == BoneNames.AnaTarget);
+            controller.SetCollisionAgent(targetChaControl, parentTransform.name == BoneNames.BPKokanTarget, parentTransform.name == BoneNames.AnaTarget, parentTransform.name == BoneNames.HeadTarget);
         }
 
         internal static void AfterApplyConstraints()
@@ -335,7 +344,7 @@ namespace KKS_Studio_BetterPenetration
                     continue;
 
                 controller.CheckAutoTarget(nodeConstraintPlugin);
-            }
+            }           
         }
     }
 }

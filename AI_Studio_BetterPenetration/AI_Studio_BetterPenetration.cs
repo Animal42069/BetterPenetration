@@ -23,7 +23,7 @@ namespace AI_Studio_BetterPenetration
     {
         internal const string GUID = "com.animal42069.studiobetterpenetration";
         internal const string PluginName = "AI Studio Better Penetration";
-        internal const string VERSION = "4.5.1.0";
+        internal const string VERSION = "5.0.0.0";
         internal const string BEHAVIOR = "BetterPenetrationController";
         internal const string StudioCategoryName = "Better Penetration";
         internal static Harmony harmony;
@@ -99,14 +99,6 @@ namespace AI_Studio_BetterPenetration
             if (!StudioAPI.InsideStudio)
                 return;
 
-            var enablePushPull = new CurrentStateCategorySwitch("Push/Pull Target", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().EnablePushPull);
-            enablePushPull.Value.Subscribe(value =>
-            {
-                foreach (var controller in StudioAPI.GetSelectedControllers<BetterPenetrationController>())
-                    controller.EnablePushPull = value;
-            });
-            StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(enablePushPull);
-
             var bpEnable = new CurrentStateCategorySwitch("Enable BP Controller", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().enabled);
             bpEnable.Value.Subscribe(value =>
             {
@@ -166,12 +158,6 @@ namespace AI_Studio_BetterPenetration
                     controller.DanSquishThreshold = value;
             });
             StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(thresholdSlider);
-        }
-
-        public static void RegisterStudioControls()
-        {
-            if (!StudioAPI.InsideStudio)
-                return;
 
             var autoTargeter = new CurrentStateCategoryDropdown("Auto-Target", new string[] { "Off", "Vaginal", "Anal", "Oral" }, c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().DanAutoTarget);
             autoTargeter.Value.Subscribe(value =>
@@ -181,7 +167,7 @@ namespace AI_Studio_BetterPenetration
             });
             StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(autoTargeter);
 
-            var maxPush = new CurrentStateCategorySlider("Max Push", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().MaxPush, 0f, 0.2f);
+            var maxPush = new CurrentStateCategorySlider("Max Push", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().MaxPush, 0f, 0.3f);
             maxPush.Value.Subscribe(value =>
             {
                 foreach (var controller in StudioAPI.GetSelectedControllers<BetterPenetrationController>())
@@ -189,7 +175,7 @@ namespace AI_Studio_BetterPenetration
             });
             StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(maxPush);
 
-            var maxPull = new CurrentStateCategorySlider("Max Pull", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().MaxPull, 0f, 0.2f);
+            var maxPull = new CurrentStateCategorySlider("Max Pull", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().MaxPull, 0f, 0.3f);
             maxPull.Value.Subscribe(value =>
             {
                 foreach (var controller in StudioAPI.GetSelectedControllers<BetterPenetrationController>())
@@ -212,6 +198,29 @@ namespace AI_Studio_BetterPenetration
                     controller.ReturnRate = value;
             });
             StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(returnRate);
+
+            var bellyBulgeEnable = new CurrentStateCategorySwitch("Enable Belly Bulge", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().EnableBellyBulge);
+            bellyBulgeEnable.Value.Subscribe(value =>
+            {
+                foreach (var controller in StudioAPI.GetSelectedControllers<BetterPenetrationController>())
+                    controller.EnableBellyBulge = value;
+            });
+            StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(bellyBulgeEnable);
+
+            var bellyBulgeScale = new CurrentStateCategorySlider("Belly Bulge Scale", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().BellyBulgeScale, 0.0f, 3.0f);
+            bellyBulgeScale.Value.Subscribe(value =>
+            {
+                foreach (var controller in StudioAPI.GetSelectedControllers<BetterPenetrationController>())
+                    controller.BellyBulgeScale = value;
+            });
+            StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(bellyBulgeScale);
+
+        }
+
+        public static void RegisterStudioControls()
+        {
+            if (!StudioAPI.InsideStudio)
+                return;
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "UpdateAccessoryMoveFromInfo")]
@@ -273,7 +282,7 @@ namespace AI_Studio_BetterPenetration
             if (targetChaControl == null)
                 return;
 
-            controller.SetCollisionAgent(targetChaControl, parentTransform.name == BoneNames.BPKokanTarget, parentTransform.name == BoneNames.AnaTarget);
+            controller.SetCollisionAgent(targetChaControl, parentTransform.name == BoneNames.BPKokanTarget, parentTransform.name == BoneNames.AnaTarget, parentTransform.name == BoneNames.HeadTarget);
         }
 
         internal static void AfterApplyConstraints()

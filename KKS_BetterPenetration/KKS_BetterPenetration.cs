@@ -20,7 +20,7 @@ namespace KKS_BetterPenetration
     {
         public static KKS_BetterPenetration instance;
 
-        internal const string VERSION = "4.5.1.0";
+        internal const string VERSION = "4.5.0.0";
         internal const int MaleLimit = 2;
         internal const int FemaleLimit = 2;
 
@@ -94,6 +94,10 @@ namespace KKS_BetterPenetration
                 (_simplifyAnal[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Simplify Anal Calculation", false, "Simplifys anal penetration calclation by always having it target the same internal point.  Only valid for BP penis uncensors.")).SettingChanged += (s, e) =>
                 { UpdateDanOptions(); };
                 (_rotateTamaWithShaft[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Rotate Balls with Shaft", true, "If enabled, the base of the balls will be locked to the base of the shaft")).SettingChanged += (s, e) =>
+                { UpdateDanOptions(); };
+                (_limitCorrection[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Limit Penis Movement", false, "Limit the penis from moving laterally too much from frame to frame.")).SettingChanged += (s, e) =>
+                { UpdateDanOptions(); };
+                (_maxCorrection[maleNum] = Config.Bind("Male " + (maleNum + 1) + " Options", "Limit Penis Amount", 0.2f, "Amount of movement to limit the penis to.  Smaller values result in smoother animations, but can cause clipping.")).SettingChanged += (s, e) =>
                 { UpdateDanOptions(); };
             }
 
@@ -383,7 +387,9 @@ namespace KKS_BetterPenetration
             for (int femaleNum = 0; femaleNum < FemaleLimit; femaleNum++)
             {
                 collisionOptions.Add(new CollisionOptions(_kokanOffset.Value, _innerKokanOffset.Value, _mouthOffset.Value, _innerMouthOffset.Value,
-                    false, 0, 0, 0, _clippingDepth.Value, frontInfo, backInfo,
+                    false, 0, 0, 0,
+                    false, Vector3.zero, Vector3.zero, 
+                    _clippingDepth.Value, frontInfo, backInfo,
                     false, 0, 0, 0, 0,
                     _enableOralPushPull.Value, _maxOralPush.Value, _maxOralPull.Value, _oralPullRate.Value, _oralReturnRate.Value,
                     false, 0, 0, 0, 0));

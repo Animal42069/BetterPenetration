@@ -22,9 +22,11 @@ namespace Core_BetterPenetration
         internal const string BPBone = "cf_J_Vagina";
         internal const string BellyBone = "cf_J_Belly";
         internal const string BPDanBone = "cm_J_dan";
+        internal const string virtualBPDanBone = "cm_J_vdan";
         internal const string BPDanEnd = "cm_J_dan119_00";
-        internal const string BPBellyEnd = "cm_J_dan120_00";
         internal const string MouthPullBone = "cf_J_MouthMove";
+        internal const string ButtBoneL = "cf_J_Siri_s_L";
+        internal const string ButtBoneR = "cf_J_Siri_s_R";
 
         internal const string BPKokanTarget = "cf_J_Vagina_root";
         internal const string AnaTarget = "cf_J_Ana";
@@ -34,11 +36,14 @@ namespace Core_BetterPenetration
         internal const string BPDanEntryTarget = "k_f_dan_entry";
         internal const string BPDanEndTarget = "k_f_dan_end";
 
-        internal static readonly List<string> KokanPullBones = new List<string> { "cf_J_Vagina_L.011", "cf_J_Vagina_R.011", "cf_J_Vagina_L.012", "cf_J_Vagina_R.012", "cf_J_Vagina_L.013", "cf_J_Vagina_R.013",
-                                                                                  "cf_J_Vagina_L.014", "cf_J_Vagina_L.015", "cf_J_Vagina_R.014", "cf_J_Vagina_R.015", "cf_J_Vagina_B.010" };
-        internal static readonly List<string> AnaPullBones = new List<string> { "cf_J_Ana_F.010", "cf_J_Ana_B.010", "cf_J_Ana_L.010", "cf_J_Ana_R.010",
-                                                                                "cf_J_Ana_F_L.010", "cf_J_Ana_F_R.010", "cf_J_Ana_B_L.010", "cf_J_Ana_B_R.010"};
+        internal static readonly List<string> KokanPullBones = new List<string> { "cf_J_Vagina_s_F", "cf_J_Vagina_s_F_L", "cf_J_Vagina_s_F_R", "cf_J_Vagina_s_M_F_L", "cf_J_Vagina_s_M_F_R", "cf_J_Vagina_s_M_L", "cf_J_Vagina_s_M_R", "cf_J_Vagina_s_M_B_L", "cf_J_Vagina_s_M_B_R", "cf_J_Vagina_s_B_L", "cf_J_Vagina_s_B_R", "cf_J_Vagina_s_B",
+                                                                                  "cf_J_Vagina_Outer_s_F", "cf_J_Vagina_Inner_s_F", "cf_J_Vagina_Inner_s_F_L", "cf_J_Vagina_Inner_s_F_R", "cf_J_Vagina_Inner_s_L", "cf_J_Vagina_Inner_s_R", "cf_J_Vagina_Inner_s_B_L", "cf_J_Vagina_Inner_s_B_R", "cf_J_Vagina_Inner_s_B"};
+        internal static readonly List<float> KokanPullWeights = new List<float> { 0.2f, 0.3f, 0.3f, 0.4f, 0.4f, 0.4f, 0.4f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f,
+                                                                                  0.7f, 0.8f, 0.9f, 0.9f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+        internal static readonly List<string> AnaPullBones = new List<string> { "cf_J_Ana_s_F", "cf_J_Ana_s_B", "cf_J_Ana_s_L", "cf_J_Ana_s_R", "cf_J_Ana_s_F_L", "cf_J_Ana_s_F_R", "cf_J_Ana_s_B_L", "cf_J_Ana_s_B_R" };
+        internal static readonly List<float> AnaPullWeights = new List<float> { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f };
         internal static readonly List<string> DanBones = new List<string> { "cm_J_dan101_00", "cm_J_dan102_00", "cm_J_dan103_00", "cm_J_dan104_00", "cm_J_dan105_00", "cm_J_dan106_00", "cm_J_dan107_00", "cm_J_dan108_00", "cm_J_dan109_00" };
+        internal static readonly List<string> VirtualDanBones = new List<string> { "cm_J_vdan102_00", "cm_J_vdan104_00", "cm_J_vdan106_00", "cm_J_vdan108_00"};
         internal static readonly List<string> TamaBones = new List<string> { "cm_J_dan_Pivot_f_top", "cm_J_dan_Pivot_f_L", "cm_J_dan_Pivot_f_R"};
         internal static readonly List<string> FingerColliders = new List<string> { "cf_J_Hand_Index02_R", "cf_J_Hand_Index03_R", "cf_J_Hand_Middle02_R", "cf_J_Hand_Middle03_R", "cf_J_Hand_Ring02_R", "cf_J_Hand_Ring03_R" };
         internal static readonly List<string> MidSectionColliders = new List<string> { "cf_hit_Kosi02_s", "cf_hit_LegUp01_s_L", "cf_hit_LegUp01_s_R"};
@@ -88,9 +93,11 @@ namespace Core_BetterPenetration
         internal const string BPBone = "cf_J_Vagina";
         internal const string BellyBone = "cf_J_Belly";
         internal const string BPDanBone = "cm_J_dan";
+        internal const string virtualBPDanBone = "cm_J_vdan";
         internal const string BPDanEnd = "cm_J_dan119_00";
-        internal const string BPBellyEnd = "cm_J_dan120_00";
         internal const string MouthPullBone = "cf_J_MouthMove";
+        internal const string ButtBoneL = "cf_J_Siri_s_L";
+        internal const string ButtBoneR = "cf_J_Siri_s_R";
 
         internal const string BPKokanTarget = "cf_J_Vagina_root";
         internal const string AnaTarget = "cf_j_ana";
@@ -102,10 +109,14 @@ namespace Core_BetterPenetration
 
         internal static readonly List<string> KokanPullBones = new List<string> { "cf_J_Vagina_L.011", "cf_J_Vagina_R.011", "cf_J_Vagina_L.012", "cf_J_Vagina_R.012", "cf_J_Vagina_L.013", "cf_J_Vagina_R.013",
                                                                                   "cf_J_Vagina_L.014", "cf_J_Vagina_L.015", "cf_J_Vagina_R.014", "cf_J_Vagina_R.015", "cf_J_Vagina_B.010" };
-        internal static readonly List<string> AnaPullBones = new List<string> { "cf_J_Ana_F.010", "cf_J_Ana_B.010", "cf_J_Ana_L.010", "cf_J_Ana_R.010",
-                                                                                "cf_J_Ana_F_L.010", "cf_J_Ana_F_R.010", "cf_J_Ana_B_L.010", "cf_J_Ana_B_R.010"};
+        internal static readonly List<float> KokanPullWeights = new List<float> { 0.1f, 0.25f, 0.25f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f,
+                                                                                  0.4f, 0.7f, 0.7f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+
+        internal static readonly List<string> AnaPullBones = new List<string> { "cf_J_Ana_s_F", "cf_J_Ana_s_B", "cf_J_Ana_s_L", "cf_J_Ana_s_R", "cf_J_Ana_s_F_L", "cf_J_Ana_s_F_R", "cf_J_Ana_s_B_L", "cf_J_Ana_s_B_R" };
+        internal static readonly List<float> AnaPullWeights = new List<float> { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f };
         internal static readonly List<string> AnaBones = new List<string> { "cf_J_Ana_Pivot", "cf_J_Vagina_Pivot_B", "cf_J_Vagina_Pivot_L.005", "cf_J_Vagina_Pivot_R.005" };
         internal static readonly List<string> DanBones = new List<string> { "cm_J_dan101_00", "cm_J_dan102_00", "cm_J_dan103_00", "cm_J_dan104_00", "cm_J_dan105_00", "cm_J_dan106_00", "cm_J_dan107_00", "cm_J_dan108_00", "cm_J_dan109_00" };
+        internal static readonly List<string> VirtualDanBones = new List<string> { "cm_J_vdan102_00", "cm_J_vdan104_00", "cm_J_vdan106_00", "cm_J_vdan108_00"};
         internal static readonly List<string> TamaBones = new List<string> { "cm_J_dan_Pivot_f_L", "cm_J_dan_Pivot_f_R" };
         internal static readonly List<string> FingerColliders = new List<string> { "cf_j_index02_R", "cf_j_index03_R", "cf_j_middle02_R", "cf_j_middle03_R", "cf_j_ring02_R", "cf_j_ring03_R" };
         internal static readonly List<string> MidSectionColliders = new List<string> { "cm_J_dan101_00", "cm_J_dan103_00", "cf_hit_waist02", "cf_hit_LegLow02_s_L", "cf_hit_LegLow02_s_R" };

@@ -40,16 +40,26 @@ namespace Core_BetterPenetration
         public const float DefaultSquishThreshold = 0.2f;
         public const float DefaultColliderLengthScale = 1f;
         public const float DefaultColliderRadiusScale = 1f;
-        public const bool DefaultPushPUll = false;
+
 #if HS2 || AI
-        public const float DefaultMaxPush = 0.04f;
-        public const float DefaultMaxPull = 0.06f;
-        public const float DefaultPullRate = 18.0f;
+        public const float DefaultMaxKokanPush = 0.075f;
+        public const float DefaultMaxKokanPull = 0.15f;
+        public const float DefaultMaxAnaPush = 0.0f;
+        public const float DefaultMaxAnaPull = 0.2f;
+        public const float DefaultMaxOralPush = 0.02f;
+        public const float DefaultMaxOralPull = 0.1f;
+        public const float DefaultPullRate = 36.0f;
+        public const float DefaultOralPullRate = 18.0f;
         public const float DefaultReturnRate = 0.3f;
 #else
-        public const float DefaultMaxPush = 0.002f;
-        public const float DefaultMaxPull = 0.006f;
-        public const float DefaultPullRate = 18.0f;
+        public const float DefaultMaxKokanPush = 0.0075f;
+        public const float DefaultMaxKokanPull = 0.015f;
+        public const float DefaultMaxAnaPush = 0.00f;
+        public const float DefaultMaxAnaPull = 0.02f;
+        public const float DefaultMaxOralPush = 0.002f;
+        public const float DefaultMaxOralPull = 0.01f;
+        public const float DefaultPullRate = 3.60f;
+        public const float DefaultOralPullRate = 1.80f;
         public const float DefaultReturnRate = 0.03f;
 #endif
 
@@ -65,11 +75,12 @@ namespace Core_BetterPenetration
             data.data.Add("ColliderRadiusScale", danOptions.danRadiusScale);
             data.data.Add("ColliderLengthScale", danOptions.danLengthScale);
             data.data.Add("DanAutoTarget", controllerOptions.danAutoTarget);
-            data.data.Add("EnablePushPull", collisionOptions.enableOralPush);
-            data.data.Add("MaxPush", collisionOptions.maxKokanPush);
-            data.data.Add("MaxPull", collisionOptions.maxKokanPull);
-            data.data.Add("PullRate", collisionOptions.kokanPullRate);
-            data.data.Add("ReturnRate", collisionOptions.kokanReturnRate);
+            data.data.Add("MaxPush", collisionOptions.maxOralPush);
+            data.data.Add("MaxPull", collisionOptions.maxOralPull);
+            data.data.Add("PullRate", collisionOptions.oralPullRate);
+            data.data.Add("ReturnRate", collisionOptions.oralReturnRate);
+            data.data.Add("EnableBellyBulge", collisionOptions.enableBellyBulge);
+            data.data.Add("BellyBulgeScale", collisionOptions.bellyBulgeScale);
 
             SetExtendedData(data);
         }
@@ -85,12 +96,12 @@ namespace Core_BetterPenetration
             float colliderRadiusScale = DefaultColliderRadiusScale;
             float colliderLengthScale = DefaultColliderLengthScale;
             ControllerOptions.AutoTarget autoTarget = DefaultDanAutoTarget;
-            bool enablePushPull = DefaultPushPUll;
-            float maxPush = DefaultMaxPush;
-            float maxPull = DefaultMaxPull;
-            float pullRate = DefaultPullRate;
+            float maxPush = DefaultMaxOralPush;
+            float maxPull = DefaultMaxOralPull; 
+            float pullRate = DefaultOralPullRate;
             float returnRate = DefaultReturnRate;
-
+            bool enableBellyBulge = false;
+            float bellyBulgeScale = 1.0f;
 
             if (data != null)
             {
@@ -115,9 +126,6 @@ namespace Core_BetterPenetration
                 if (data.data.TryGetValue("DanAutoTarget", out var DanAutoTarget))
                     autoTarget = (ControllerOptions.AutoTarget)DanAutoTarget;
 
-                if (data.data.TryGetValue("EnablePushPull", out var EnablePushPull))
-                    enablePushPull = (bool)EnablePushPull;
-
                 if (data.data.TryGetValue("MaxPush", out var MaxPush))
                     maxPush = (float)MaxPush;
 
@@ -129,10 +137,16 @@ namespace Core_BetterPenetration
 
                 if (data.data.TryGetValue("ReturnRate", out var ReturnRate))
                     returnRate = (float)ReturnRate;
+
+                if (data.data.TryGetValue("EnableBellyBulge", out var EnableBellyBulge))
+                    enableBellyBulge = (bool)EnableBellyBulge;
+
+                if (data.data.TryGetValue("BellyBulgeScale", out var BellyBulgeScale))
+                    bellyBulgeScale = (float)BellyBulgeScale;
             }
 
-            danOptions = new DanOptions(colliderRadiusScale, colliderLengthScale, lengthSquish, girthSquish, squishThreshold, false, 2.0f);
-            collisionOptions = new CollisionOptions(enablePushPull, maxPush, maxPull, pullRate, returnRate);
+            danOptions = new DanOptions(colliderRadiusScale, colliderLengthScale, lengthSquish, girthSquish, squishThreshold, false, 10.0f);
+            collisionOptions = new CollisionOptions(maxPush, maxPull, pullRate, returnRate, enableBellyBulge, bellyBulgeScale);
             controllerOptions = new ControllerOptions(autoTarget);
             cardReloaded = true;
 
@@ -206,7 +220,7 @@ namespace Core_BetterPenetration
             }
 
             RemoveDanConstraints(plugin);
-            RemoveCollisionAgent();
+            RemoveCollisionAgent(isKokan, isAna);
 
             Transform danEntryParent = autoTarget;
             danEntryParentName = autoTarget.name;
@@ -214,7 +228,7 @@ namespace Core_BetterPenetration
             isAna = danEntryParentName.Contains("Ana");
             isOral = danEntryParentName.Contains("Mouth");
 
-            SetCollisionAgent(collisionAgent, isKokan, isAna);
+            SetCollisionAgent(collisionAgent, isKokan, isAna, isOral);
 
 #if AI || HS2
             Vector3 headOffset = new Vector3(0f, -0.05f, 0.02f);
@@ -295,7 +309,7 @@ namespace Core_BetterPenetration
                 danOptions = new DanOptions(DefaultColliderRadiusScale, DefaultColliderLengthScale, DefaultLengthSquish, DefaultGirthSquish, DefaultSquishThreshold, false, 2.0f);
 
             if (collisionOptions == null)
-                collisionOptions = new CollisionOptions(DefaultPushPUll, DefaultMaxPush, DefaultMaxPull, DefaultPullRate, DefaultReturnRate);
+                collisionOptions = new CollisionOptions(DefaultMaxOralPush, DefaultMaxOralPull, DefaultOralPullRate, DefaultReturnRate, false, 1.0f);
 
             danAgent = new DanAgent(ChaControl, danOptions);
             danTargetsValid = true;
@@ -324,34 +338,49 @@ namespace Core_BetterPenetration
             danAgent.AddTamaColliders(collisionAgent.m_collisionCharacter);
         }
 
-        public void SetCollisionAgent(ChaControl target, bool kokanTarget, bool anaTarget)
+        public void SetCollisionAgent(ChaControl target, bool kokanTarget, bool anaTarget, bool oralTarget)
         {
             if (danAgent == null || controllerOptions == null || !danTargetsValid)
                 return;
 
             if (collisionAgent != null && collisionAgent.m_collisionCharacter != null)
             {
-                danAgent.RemoveDanCollidersFromTarget(collisionAgent.m_collisionCharacter);
+                danAgent.RemoveDanCollidersFromTarget(collisionAgent.m_collisionCharacter, isKokan, isAna);
                 danAgent.RemoveTamaColliders();
             }
 
             collisionAgent = new CollisionAgent(target, collisionOptions);
 
-            if (kokanTarget)
-                danAgent.AddDanCollidersToKokan(collisionAgent.m_collisionCharacter);
+            isKokan = kokanTarget;
+            isAna = anaTarget;
+            isOral = oralTarget;
 
-            if (anaTarget)
-                danAgent.AddDanCollidersToAna(collisionAgent.m_collisionCharacter);
+            if (isKokan)
+                danAgent.AddDanCollidersToTargetKokan(collisionAgent.m_collisionCharacter, collisionOptions.enableBellyBulge);
+
+            if (isAna)
+                danAgent.AddDanCollidersToTargetAna(collisionAgent.m_collisionCharacter);
 
             danAgent.AddTamaColliders(collisionAgent.m_collisionCharacter, false);
         }
         
-        public void RemoveCollisionAgent()
+        public void SetBellyColliders(bool enable)
+        {
+            if (!isKokan || collisionAgent == null || collisionAgent.m_collisionCharacter == null)
+                return;
+
+            if (enable)
+                danAgent.AddDanCollidersToTargeBelly(collisionAgent.m_collisionCharacter);
+            else
+                danAgent.RemoveDanCollidersFromTargetBelly(collisionAgent.m_collisionCharacter);
+        }
+
+        public void RemoveCollisionAgent(bool wasKokan, bool wasAna)
         {
             if (danAgent == null || controllerOptions == null || !danTargetsValid || collisionAgent == null || collisionAgent.m_collisionCharacter == null)
                 return;
 
-            danAgent.RemoveDanCollidersFromTarget(collisionAgent.m_collisionCharacter);
+            danAgent.RemoveDanCollidersFromTarget(collisionAgent.m_collisionCharacter, wasKokan, wasAna);
             danAgent.RemoveTamaColliders();
 
             collisionAgent = null;
@@ -365,6 +394,7 @@ namespace Core_BetterPenetration
                 danEntryParentName = constraintParams.GetValue(1) as string;
 
                 isKokan = danEntryParentName.Contains("Vagina");
+                isAna = danEntryParentName.Contains("Ana");
                 isOral = danEntryParentName.Contains("Mouth");
             }
             else
@@ -420,6 +450,7 @@ namespace Core_BetterPenetration
             danEntryParentName = null;
             danEndParentName = null;
             isKokan = false;
+            isAna = false;
             isOral = false;
 
             var pluginTraverse = Traverse.Create(plugin);
@@ -579,42 +610,20 @@ namespace Core_BetterPenetration
             }
         }
 
-        public bool EnablePushPull
-        {
-            get
-            {
-                if (danAgent == null || controllerOptions == null || !danTargetsValid)
-                    return DefaultPushPUll;
-
-                return collisionOptions.enableOralPush;
-            }
-            set
-            {
-                if (danAgent == null || !danTargetsValid)
-                    return;
-
-#if HS2 || AI
-                collisionOptions.enableKokanPush = value;
-#endif
-                collisionOptions.enableOralPush = value;
-            }
-        }
-
         public float MaxPull
         {
             get
             {
                 if (danAgent == null || controllerOptions == null || !danTargetsValid)
-                    return DefaultMaxPull;
+                    return DefaultMaxOralPull;
 
-                return collisionOptions.maxKokanPull;
+                return collisionOptions.maxOralPull;
             }
             set
             {
                 if (danAgent == null || !danTargetsValid)
                     return;
 
-                collisionOptions.maxKokanPull = value;
                 collisionOptions.maxOralPull = value;
             }
         }
@@ -624,9 +633,9 @@ namespace Core_BetterPenetration
             get
             {
                 if (danAgent == null || controllerOptions == null || !danTargetsValid)
-                    return DefaultMaxPush;
+                    return DefaultMaxOralPush;
 
-                return collisionOptions.maxKokanPush;
+                return collisionOptions.maxOralPush;
             }
             set
             {
@@ -634,6 +643,7 @@ namespace Core_BetterPenetration
                     return;
 
                 collisionOptions.maxKokanPush = value;
+                collisionOptions.maxAnaPush = value;
                 collisionOptions.maxOralPush = value;
             }
         }
@@ -645,7 +655,7 @@ namespace Core_BetterPenetration
                 if (danAgent == null || controllerOptions == null || !danTargetsValid)
                     return DefaultPullRate;
 
-                return collisionOptions.kokanPullRate;
+                return collisionOptions.oralPullRate;
             }
             set
             {
@@ -653,6 +663,7 @@ namespace Core_BetterPenetration
                     return;
 
                 collisionOptions.kokanPullRate = value;
+				collisionOptions.anaPullRate = value;
                 collisionOptions.oralPullRate = value;
             }
         }
@@ -664,7 +675,7 @@ namespace Core_BetterPenetration
                 if (danAgent == null || controllerOptions == null || !danTargetsValid)
                     return DefaultReturnRate;
 
-                return collisionOptions.kokanReturnRate;
+                return collisionOptions.oralReturnRate;
             }
             set
             {
@@ -672,9 +683,49 @@ namespace Core_BetterPenetration
                     return;
 
                 collisionOptions.kokanReturnRate = value;
+				collisionOptions.anaReturnRate = value;
                 collisionOptions.oralReturnRate = value;
             }
         }
+
+        public bool EnableBellyBulge
+        {
+            get
+            {
+                if (danAgent == null || controllerOptions == null || !danTargetsValid)
+                    return false;
+
+                return collisionOptions.enableBellyBulge;
+            }
+            set
+            {
+                if (danAgent == null || !danTargetsValid)
+                    return;
+
+                collisionOptions.enableBellyBulge = value;
+                SetBellyColliders(collisionOptions.enableBellyBulge);
+            }
+        }
+
+        public float BellyBulgeScale
+        {
+            get
+            {
+                if (danAgent == null || controllerOptions == null || !danTargetsValid)
+                    return 1.0f;
+
+                return collisionOptions.bellyBulgeScale;
+            }
+            set
+            {
+                if (danAgent == null || !danTargetsValid || collisionAgent == null)
+                    return;
+
+                collisionOptions.bellyBulgeScale = value;
+                collisionAgent.UpdateBellyBones(collisionOptions.bellyBulgeScale);
+            }
+        }
+
     }
 }
 #endif

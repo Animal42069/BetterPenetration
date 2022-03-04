@@ -86,7 +86,12 @@ namespace Core_BetterPenetration
                 return;
 
             if (!changingAnimation)
+            {
                 collisionAgents[femaleNum].AdjustMissionaryAnimation();
+
+                if (topStick && lookAtTransform != null && (lookAtTransform.name == LookTargets.AnaTarget || lookAtTransform.name == LookTargets.BPAnaTarget))
+                    collisionAgents[femaleNum].AdjustAnalAnimation();
+            }
 
             if (danHasNewTarget[maleNum] && !changingAnimation)
                 LookAtDanSetup(lookAtTransform, currentMotion, topStick, maleNum, femaleNum, twoDans, isInScene);
@@ -497,6 +502,15 @@ namespace Core_BetterPenetration
                 new ItemColliderInfo(BoneNames.tentacleAnimationNames, BoneNames.tentacleBones, DynamicBoneColliderBase.Direction.X, 0.115f, 0.625f)
 #endif
             };
+        }
+
+        internal static void ToggleMaleColliders()
+        {
+            if (danAgents == null)
+                return;
+
+            foreach (var agent in danAgents)
+                agent.ToggleMaleColliders();
         }
 
 #endif

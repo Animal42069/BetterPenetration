@@ -8,20 +8,20 @@ namespace Core_BetterPenetration
         internal Transform danTop;
         internal List<DanPoint> danPoints;
         internal Transform danEnd;
-        internal Transform bellyEnd;
+        internal List<Transform> virtualDanPoints;
 
-        public DanPoints(List<Transform> danTransforms, Transform top, Transform end = null, Transform bellyEnd = null)
+        public DanPoints(List<Transform> danTransforms, Transform top, Transform end = null, List<Transform> virtualDanTransforms = null)
         {
             danTop = top;
             danEnd = end;
-            this.bellyEnd = bellyEnd;
+            virtualDanPoints = virtualDanTransforms;
             danPoints = new List<DanPoint>();
 
             foreach (var transform in danTransforms)
                 danPoints.Add(new DanPoint(transform));
         }
 
-        internal void AimDanPoints(List<Vector3> newDanPositions, bool aimTop, Vector3 bellyEndPosition)
+        internal void AimDanPoints(List<Vector3> newDanPositions, bool aimTop, List<Vector3> virtualDanPositions)
         {
             if (newDanPositions.Count != danPoints.Count)
                 return;
@@ -39,11 +39,20 @@ namespace Core_BetterPenetration
             if (danEnd != null)
                 danEnd.transform.SetPositionAndRotation(newDanPositions[danPoints.Count - 1], danQuaternion);
 
-            if (bellyEnd != null && bellyEndPosition != Vector3.zero)
-                bellyEnd.transform.SetPositionAndRotation(bellyEndPosition, danQuaternion);
-
             if (aimTop)
                 AimDanTop();
+
+            if (virtualDanPositions == null || virtualDanPoints == null || virtualDanPoints.Count == 0)
+                return;
+
+            for (int point = 0; point < virtualDanPoints.Count - 1; point++)
+            {
+                Vector3 forwardVector = Vector3.Normalize(virtualDanPositions[point + 1] - virtualDanPositions[point]);
+                danQuaternion = Quaternion.LookRotation(forwardVector, Vector3.Cross(forwardVector, danTop.right));
+                virtualDanPoints[point].SetPositionAndRotation(virtualDanPositions[point], danQuaternion);
+            }
+
+            virtualDanPoints[virtualDanPoints.Count - 1].SetPositionAndRotation(virtualDanPositions[virtualDanPoints.Count - 1], danQuaternion);
         }
 
         internal void AimDanTop()

@@ -15,11 +15,11 @@ namespace AI_BetterPenetration
     [BepInProcess("AI-Syoujyo")]
     public class AI_BetterPenetration : BaseUnityPlugin
     {
-        internal const string VERSION = "4.5.1.0";
+        internal const string VERSION = "5.0.0.0";
         internal const int MaleLimit = 1;
         internal const int FemaleLimit = 2;
 
-        internal static readonly List<float> frontOffsets = new List<float> { -0.35f, 0f };
+        internal static readonly List<float> frontOffsets = new List<float> { -0.35f, 0.2f };
         internal static readonly List<float> backOffsets = new List<float> { -0.05f, 0.05f };
         internal static readonly List<bool> frontPointsInward = new List<bool> { false, false };
         internal static readonly List<bool> backPointsInward = new List<bool> { false, true };
@@ -37,6 +37,7 @@ namespace AI_BetterPenetration
         internal static ConfigEntry<float> _maxCorrection;
         internal static ConfigEntry<bool> _limitCorrection;
 
+        internal static ConfigEntry<KeyboardShortcut> _toggleMaleCollidersKey;
         internal static ConfigEntry<float> _clippingDepth;
         internal static ConfigEntry<float> _kokanOffset;
         internal static ConfigEntry<float> _innerKokanOffset;
@@ -56,12 +57,19 @@ namespace AI_BetterPenetration
         internal static ConfigEntry<float> _maxOralPull;
         internal static ConfigEntry<float> _oralPullRate;
         internal static ConfigEntry<float> _oralReturnRate;
-/*        internal static ConfigEntry<bool> _enableAnaPushPull;
+        internal static ConfigEntry<bool> _useAnaAdjustment;
+        internal static ConfigEntry<Vector3> _anaAdjustPosition;
+        internal static ConfigEntry<Vector3> _anaAdjustRotation;
+        internal static ConfigEntry<bool> _enableAnaPushPull;
         internal static ConfigEntry<float> _maxAnaPush;
         internal static ConfigEntry<float> _maxAnaPull;
         internal static ConfigEntry<float> _anaPullRate;
         internal static ConfigEntry<float> _anaReturnRate;
-*/
+        internal static ConfigEntry<CollisionOptions.TargetType> _outerTarget;
+        internal static ConfigEntry<CollisionOptions.TargetType> _innerTarget;
+        internal static ConfigEntry<float> _bellyBulgeScale;
+        internal static ConfigEntry<bool> _bellyBulgeEnable;
+
         internal static readonly ConfigEntry<float>[] _frontCollisionOffset = new ConfigEntry<float>[frontOffsets.Count];
         internal static readonly ConfigEntry<float>[] _backCollisionOffset = new ConfigEntry<float>[backOffsets.Count];
 
@@ -95,64 +103,82 @@ namespace AI_BetterPenetration
             { UpdateDanOptions(); };
             (_limitCorrection = Config.Bind("Male Options", "Limit Penis Movement", true, "Limit the penis from moving laterally too much from frame to frame.")).SettingChanged += (s, e) =>
             { UpdateDanOptions(); };
-            (_maxCorrection = Config.Bind("Male Options", "Limit Penis Amount", 2.0f, "Amount of movement to limit the penis to.  Smaller values result in smoother animations, but can cause clipping.")).SettingChanged += (s, e) =>
+            (_maxCorrection = Config.Bind("Male Options", "Limit Penis Amount", 10.0f, "Amount of movement to limit the penis to.  Smaller values result in smoother animations, but can cause clipping.")).SettingChanged += (s, e) =>
             { UpdateDanOptions(); };
 
-            (_clippingDepth = Config.Bind("Female Options", "Clipping Depth", 0.25f, "Set how close to body surface to limit penis for clipping purposes. Smaller values will result in more clipping through the body, larger values will make the shaft wander further away from the intended penetration point.")).SettingChanged += (s, e) =>
+            (_clippingDepth = Config.Bind("Advanced", "Clipping Depth", 0.25f, "Set how close to body surface to limit penis for clipping purposes. Smaller values will result in more clipping through the body, larger values will make the shaft wander further away from the intended penetration point.")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
             for (int offset = 0; offset < frontOffsets.Count; offset++)
-                (_frontCollisionOffset[offset] = Config.Bind("Female Options", "Clipping Offset: Front Collision " + offset, frontOffsets[offset], "Individual offset on colision point, to improve clipping")).SettingChanged += (s, e) =>
+                (_frontCollisionOffset[offset] = Config.Bind("Advanced", "Clipping Offset: Front Collision " + offset, frontOffsets[offset], "Individual offset on colision point, to improve clipping")).SettingChanged += (s, e) =>
                 { UpdateCollisionOptions(); };
             for (int offset = 0; offset < backOffsets.Count; offset++)
-                (_backCollisionOffset[offset] = Config.Bind("Female Options", "Clipping Offset: Back Collision " + offset, backOffsets[offset], "Individual offset on colision point, to improve clipping")).SettingChanged += (s, e) =>
+                (_backCollisionOffset[offset] = Config.Bind("Advanced", "Clipping Offset: Back Collision " + offset, backOffsets[offset], "Individual offset on colision point, to improve clipping")).SettingChanged += (s, e) =>
                 { UpdateCollisionOptions(); };
-            (_kokanOffset = Config.Bind("Female Options", "Target Offset: Vagina Target", 0.0f, "Offset of the vagina target")).SettingChanged += (s, e) =>
+            (_kokanOffset = Config.Bind("Advanced", "Vagina Offset: Outer Target", 0.0f, "Vertical offset of the vagina target")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_innerKokanOffset = Config.Bind("Female Options", "Target Offset: Inner Vagina Target", 0.0f, "Offset of the simplified inner vagina target")).SettingChanged += (s, e) =>
+            (_innerKokanOffset = Config.Bind("Advanced", "Vagina Offset: Inner Target", 0.0f, "Vertical offset of the simplified inner vagina target")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_mouthOffset = Config.Bind("Female Options", "Target Offset: Mouth Target", 0.025f, "Offset of the mouth target")).SettingChanged += (s, e) =>
+            (_mouthOffset = Config.Bind("Advanced", "Mouth Offset: Outer Target", 0.025f, "Vertical offset of the mouth target")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_innerMouthOffset = Config.Bind("Female Options", "Target Offset: Inner Mouth Target", 0.0f, "Offset of the simplified inner mouth target")).SettingChanged += (s, e) =>
+            (_innerMouthOffset = Config.Bind("Advanced", "Mouth Offset: Inner Target", 0.0f, "Vertical offset of the simplified inner mouth target")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_useKokanFix = Config.Bind("Female Options", "Joint Adjustment: Missionary Correction", false, "NOTE: There is an Illusion bug that causes the vagina to appear sunken in certain missionary positions.  It is best to use Advanced Bonemod and adjust your female character's cf_J_Kokan Offset Y to 0.001.  If you don't do that, enabling this option will attempt to fix the problem by guessing where the bone should be")).SettingChanged += (s, e) =>
+            (_useKokanFix = Config.Bind("Joint Adjustment", "Missionary Correction", false, "NOTE: There is an Illusion bug that causes the vagina to appear sunken in certain missionary positions.  It is best to use Advanced Bonemod and adjust your female character's cf_J_Kokan Offset Y to 0.001.  If you don't do that, enabling this option will attempt to fix the problem by guessing where the bone should be")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_kokanFixPositionY = Config.Bind("Female Options", "Joint Adjustment: Missionary Position Y", -0.075f, "Amount to adjust the Vagina bone position Y for certain Missionary positions to correct its appearance")).SettingChanged += (s, e) =>
+            (_kokanFixPositionY = Config.Bind("Joint Adjustment", "Missionary Position Y", -0.1f, "Amount to adjust the Vagina bone position Y for certain Missionary positions to correct its appearance")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_kokanFixPositionZ = Config.Bind("Female Options", "Joint Adjustment: Missionary Position Z", 0.0625f, "Amount to adjust the Vagina bone position Z for certain Missionary positions to correct its appearance")).SettingChanged += (s, e) =>
+            (_kokanFixPositionZ = Config.Bind("Joint Adjustment", "Missionary Position Z", 0.1f, "Amount to adjust the Vagina bone position Z for certain Missionary positions to correct its appearance")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_kokanFixRotationX = Config.Bind("Female Options", "Joint Adjustment: Missionary Rotation X", 10.0f, "Amount to adjust the Vagina bone rotation X for certain Missionary positions to correct its appearance")).SettingChanged += (s, e) =>
+            (_kokanFixRotationX = Config.Bind("Joint Adjustment", "Missionary Rotation X", 15.0f, "Amount to adjust the Vagina bone rotation X for certain Missionary positions to correct its appearance")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_enableKokanPushPull = Config.Bind("Female Options", "Vaginal Push/Pull: Enable", true, "Enable vaginal push/pull during penetration")).SettingChanged += (s, e) =>
+            (_useAnaAdjustment = Config.Bind("Joint Adjustment", "Anal Correction", true, "Enable adjustment of butt bones during Anal positions.")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_maxKokanPush = Config.Bind("Female Options", "Vaginal Push/Pull: Max Push", 0.08f, "Maximum amount to push the vagina inwards during penetration")).SettingChanged += (s, e) =>
+            (_anaAdjustPosition = Config.Bind("Joint Adjustment", "Anal Position", new Vector3(0.3f, 0f, 0f), "Amount to adjust the butt bones position for Anal positions")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_maxKokanPull = Config.Bind("Female Options", "Vaginal Push/Pull: Max Pull", 0.04f, "Maximum amount to pull the vagina outwards during penetration")).SettingChanged += (s, e) =>
+            (_anaAdjustRotation = Config.Bind("Joint Adjustment", "Anal Rotation", new Vector3(0f, 10f, 20f), "Amount to adjust the butt bones rotation for Anal positions")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_kokanPullRate = Config.Bind("Female Options", "Vaginal Push/Pull: Push/Pull Rate", 24.0f, "How quickly to push or pull the vagina during penetration")).SettingChanged += (s, e) =>
+            (_enableKokanPushPull = Config.Bind("Push/Pull", "Vaginal Enable", true, "Enable vaginal push/pull during penetration")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_kokanReturnRate = Config.Bind("Female Options", "Vaginal Push/Pull: Return Rate", 0.3f, "How quickly the vagina returns to its original shape when there is no penetration")).SettingChanged += (s, e) =>
+            (_maxKokanPush = Config.Bind("Push/Pull", "Vaginal Max Push", 0.075f, "Maximum amount to push the vagina inwards during penetration")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_enableOralPushPull = Config.Bind("Female Options", "Oral Push/Pull: Enable", true, "Enable mouth push/pull during penetration")).SettingChanged += (s, e) =>
+            (_maxKokanPull = Config.Bind("Push/Pull", "Vaginal Max Pull", 0.15f, "Maximum amount to pull the vagina outwards during penetration")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_maxOralPush = Config.Bind("Female Options", "Oral Push/Pull: Max Push", 0.02f, "Maximum amount to push the mouth inwards during penetration")).SettingChanged += (s, e) =>
+            (_kokanPullRate = Config.Bind("Push/Pull", "Vaginal Push/Pull Rate", 36.0f, "How quickly to push or pull the vagina during penetration")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_maxOralPull = Config.Bind("Female Options", "Oral Push/Pull: Max Pull", 0.1f, "Maximum amount to pull the mouth outwards during penetration")).SettingChanged += (s, e) =>
+            (_kokanReturnRate = Config.Bind("Push/Pull", "Vaginal Return Rate", 0.3f, "How quickly the vagina returns to its original shape when there is no penetration")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_oralPullRate = Config.Bind("Female Options", "Oral Push/Pull: Push/Pull Rate", 18.0f, "How quickly to push or pull the mouth during penetration")).SettingChanged += (s, e) =>
+            (_enableOralPushPull = Config.Bind("Push/Pull", "Oral Enable", true, "Enable mouth push/pull during penetration")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_oralReturnRate = Config.Bind("Female Options", "Oral Push/Pull: Return Rate", 0.3f, "How quickly the mouth returns to its original shape when there is no penetration")).SettingChanged += (s, e) =>
+            (_maxOralPush = Config.Bind("Push/Pull", "Oral Max Push", 0.02f, "Maximum amount to push the mouth inwards during penetration")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
- /*           (_enableAnaPushPull = Config.Bind("Female Options", "Anal Push/Pull: Enable", true, "Enable anus push/pull during penetration")).SettingChanged += (s, e) =>
+            (_maxOralPull = Config.Bind("Push/Pull", "Oral Max Pull", 0.1f, "Maximum amount to pull the mouth outwards during penetration")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_maxAnaPush = Config.Bind("Female Options", "Anal Push/Pull: Max Push", 0.08f, "Maximum amount to push the anus inwards during penetration")).SettingChanged += (s, e) =>
+            (_oralPullRate = Config.Bind("Push/Pull", "Oral Push/Pull Rate", 18.0f, "How quickly to push or pull the mouth during penetration")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_maxAnaPull = Config.Bind("Female Options", "Anal Push/Pull: Max Pull", 0.04f, "Maximum amount to pull the anus outwards during penetration")).SettingChanged += (s, e) =>
+            (_oralReturnRate = Config.Bind("Push/Pull", "Oral Return Rate", 0.3f, "How quickly the mouth returns to its original shape when there is no penetration")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_anaPullRate = Config.Bind("Female Options", "Anal Push/Pull: Push/Pull Rate", 24.0f, "How quickly to push or pull the anus during penetration")).SettingChanged += (s, e) =>
+            (_enableAnaPushPull = Config.Bind("Push/Pull", "Anal Enable", true, "Enable anus push/pull during penetration")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
-            (_anaReturnRate = Config.Bind("Female Options", "Anal Push/Pull: Return Rate", 0.3f, "How quickly the anus returns to its original shape when there is no penetration")).SettingChanged += (s, e) =>
+            (_maxAnaPush = Config.Bind("Push/Pull", "Anal Max Push", 0.0f, "Maximum amount to push the anus inwards during penetration")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
- */
+            (_maxAnaPull = Config.Bind("Push/Pull", "Anal Max Pull", 0.2f, "Maximum amount to pull the anus outwards during penetration")).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+            (_anaPullRate = Config.Bind("Push/Pull", "Anal Push/Pull Rate", 36.0f, "How quickly to push or pull the anus during penetration")).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+            (_anaReturnRate = Config.Bind("Push/Pull", "Anal Return Rate", 0.3f, "How quickly the anus returns to its original shape when there is no penetration")).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+
+            _toggleMaleCollidersKey = Config.Bind("Advanced", "Toggle Male Colliders", new KeyboardShortcut(KeyCode.P, KeyCode.LeftAlt), "Shortcut key to turn male colliders on or off");
+
+            (_outerTarget = Config.Bind("Advanced", "Outer Target", CollisionOptions.TargetType.Average)).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+            (_innerTarget = Config.Bind("Advanced", "Inner Target", CollisionOptions.TargetType.Inside)).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+
+
+            (_bellyBulgeScale = Config.Bind("Belly Bulge", "Scale", 1.0f, new ConfigDescription("How much to scale belly colliders", new AcceptableValueRange<float>(0.1f, 3.0f)))).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
+            (_bellyBulgeEnable = Config.Bind("Belly Bulge", "Enable", true, "Allows the belly to deform during certain vaginal positions.")).SettingChanged += (s, e) =>
+            { UpdateCollisionOptions(); };
             harmony = new Harmony("AI_BetterPenetration");
             harmony.PatchAll(typeof(AI_BetterPenetration));
         }
@@ -261,6 +287,9 @@ namespace AI_BetterPenetration
                 changeAnimation = false;
             }
 
+            if (_toggleMaleCollidersKey.Value.IsDown())
+                CoreGame.ToggleMaleColliders();
+
             CoreGame.LookAtDanUpdate(__instance.transLookAtNull, __instance.strPlayMotion, __instance.bTopStick, hScene.NowChangeAnim, 0, 0, false, true);
         }
 
@@ -289,8 +318,9 @@ namespace AI_BetterPenetration
             if (!inHScene)
                 return;
 
-            CoreGame.UpdateDanOptions(0, _danLengthSquishFactor.Value, _danGirthSquishFactor.Value, _danSquishThreshold.Value, 
-				_danSquishOralGirth.Value, _simplifyVaginal.Value, _simplifyOral.Value, _rotateTamaWithShaft.Value,
+            CoreGame.UpdateDanOptions(0, _danLengthSquishFactor.Value, _danGirthSquishFactor.Value, 
+				_danSquishThreshold.Value, _danSquishOralGirth.Value, 
+				_simplifyVaginal.Value, _simplifyOral.Value, _rotateTamaWithShaft.Value,
 				_limitCorrection.Value, _maxCorrection.Value);
         }
 
@@ -331,12 +361,14 @@ namespace AI_BetterPenetration
 
             for (int femaleNum = 0; femaleNum < FemaleLimit; femaleNum++)
             {
-                collisionOptions.Add(new CollisionOptions(_kokanOffset.Value, _innerKokanOffset.Value, _mouthOffset.Value, _innerMouthOffset.Value, _useKokanFix.Value,
-                    _kokanFixPositionZ.Value, _kokanFixPositionY.Value, _kokanFixRotationX.Value, _clippingDepth.Value, frontInfo, backInfo,
+                collisionOptions.Add(new CollisionOptions(_kokanOffset.Value, _innerKokanOffset.Value, _mouthOffset.Value, _innerMouthOffset.Value, 
+                    _useKokanFix.Value, _kokanFixPositionZ.Value, _kokanFixPositionY.Value, _kokanFixRotationX.Value,
+                    _useAnaAdjustment.Value, _anaAdjustPosition.Value, _anaAdjustRotation.Value,
+                    _clippingDepth.Value, frontInfo, backInfo,
                     _enableKokanPushPull.Value, _maxKokanPush.Value, _maxKokanPull.Value, _kokanPullRate.Value, _kokanReturnRate.Value,
                     _enableOralPushPull.Value, _maxOralPush.Value, _maxOralPull.Value, _oralPullRate.Value, _oralReturnRate.Value,
-//                    _enableAnaPushPull.Value, _maxAnaPush.Value, _maxAnaPull.Value, _anaPullRate.Value, _anaReturnRate.Value));
-                    false, 0, 0, 0, 0));
+                    _enableAnaPushPull.Value, _maxAnaPush.Value, _maxAnaPull.Value, _anaPullRate.Value, _anaReturnRate.Value, _outerTarget.Value, _innerTarget.Value,
+                    _bellyBulgeEnable.Value, _bellyBulgeScale.Value));
             }
 
             return collisionOptions;

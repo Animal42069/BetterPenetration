@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace Core_BetterPenetration
 {
@@ -14,6 +15,9 @@ namespace Core_BetterPenetration
         internal float kokan_adjust_position_y = 0;
         internal float kokan_adjust_rotation_x = 0;
         internal float clippingDepth = 0;
+        internal bool ana_adjust = false;
+        internal Vector3 ana_adjust_position = Vector3.zero;
+        internal Vector3 ana_adjust_rotation = Vector3.zero;
 #if HS2 || AI
         internal bool enableKokanPush = true;
 #else
@@ -38,14 +42,30 @@ namespace Core_BetterPenetration
         internal float anaPullRate = 18.0f;
         internal float anaReturnRate = 0.3f;
 
+        internal TargetType outer = TargetType.Average;
+        internal TargetType inner = TargetType.Average;
+
         internal List<CollisionPointInfo> frontCollisionInfo;
         internal List<CollisionPointInfo> backCollisonInfo;
 
-        public CollisionOptions(float kokanOffset, float innerKokanOffset, float mouthOffset, float innerMouthOffset, bool kokan_adjust,
-        float kokan_adjust_position_z, float kokan_adjust_position_y, float kokan_adjust_rotation_x, float clippingDepth, List<CollisionPointInfo> frontInfo, List<CollisionPointInfo> backInfo,
-        bool enableKokanPush, float maxKokanPush, float maxKokanPull, float kokanPullRate, float kokanReturnRate,
-        bool enableOralPush, float maxOralPush, float maxOralPull, float oralPullRate, float oralReturnRate,
-        bool enableAnaPush, float maxAnaPush, float maxAnaPull, float anaPullRate, float anaReturnRate)
+        internal bool enableBellyBulge = true;
+        internal float bellyBulgeScale = 1.0f;
+
+        public enum TargetType
+        {
+            Outer = 0,
+            Average = 1,
+            Inside = 2
+        }
+
+        public CollisionOptions(float kokanOffset, float innerKokanOffset, float mouthOffset, float innerMouthOffset, 
+            bool kokan_adjust, float kokan_adjust_position_z, float kokan_adjust_position_y, float kokan_adjust_rotation_x,
+            bool ana_adjust, Vector3 ana_adjust_position, Vector3 ana_adjust_rotation,
+            float clippingDepth, List<CollisionPointInfo> frontInfo, List<CollisionPointInfo> backInfo,
+            bool enableKokanPush, float maxKokanPush, float maxKokanPull, float kokanPullRate, float kokanReturnRate,
+            bool enableOralPush, float maxOralPush, float maxOralPull, float oralPullRate, float oralReturnRate,
+            bool enableAnaPush, float maxAnaPush, float maxAnaPull, float anaPullRate, float anaReturnRate, TargetType outer = TargetType.Average, TargetType inner = TargetType.Inside,
+            bool enableBellyBulge = true, float bellyBulgeScale = 1.0f)
         {
             this.kokanOffset = kokanOffset;
             this.innerKokanOffset = innerKokanOffset;
@@ -57,6 +77,11 @@ namespace Core_BetterPenetration
             this.kokan_adjust_position_y = kokan_adjust_position_y;
             this.kokan_adjust_rotation_x = kokan_adjust_rotation_x;
             this.clippingDepth = clippingDepth;
+
+            this.ana_adjust = ana_adjust;
+            this.ana_adjust_position = ana_adjust_position;
+            this.ana_adjust_rotation = ana_adjust_rotation;
+
 #if HS2 || AI
             this.enableKokanPush = enableKokanPush;
 #else
@@ -81,9 +106,16 @@ namespace Core_BetterPenetration
 
             frontCollisionInfo = frontInfo;
             backCollisonInfo = backInfo;
+
+            this.outer = outer;
+            this.inner = inner;
+
+            this.enableBellyBulge = enableBellyBulge;
+            this.bellyBulgeScale = bellyBulgeScale;
         }
 
-        public CollisionOptions(bool enablePush, float maxPush, float maxPull, float pullRate, float returnRate)
+#if STUDIO
+        public CollisionOptions(float maxPush, float maxPull, float pullRate, float returnRate, bool enableBellyBulge = true, float bellyBulgeScale = 1.0f)
         {
             kokanOffset = 0.0f;
             innerKokanOffset = 0.0f;
@@ -95,28 +127,29 @@ namespace Core_BetterPenetration
             kokan_adjust_position_y = 0;
             kokan_adjust_rotation_x = 0;
             clippingDepth = 0;
+            ana_adjust = false;
+            ana_adjust_position = Vector3.zero;
+            ana_adjust_rotation = Vector3.zero;
 
 #if HS2 || AI
-            enableKokanPush = enablePush;
+            enableKokanPush = true;
+            enableOralPush = true;
+            enableAnaPush = true;
 #else
             enableKokanPush = false;
+            enableOralPush = true;
+            enableAnaPush = false;
 #endif
             maxKokanPush = maxPush;
             maxKokanPull = maxPull;
             kokanPullRate = pullRate;
             kokanReturnRate = returnRate;
 
-            enableOralPush = enablePush;
             maxOralPush = maxPush;
             maxOralPull = maxPull;
             oralPullRate = pullRate;
             oralReturnRate = returnRate;
 
-#if HS2 || AI
-            enableAnaPush = enablePush;
-#else
-            enableAnaPush = false;
-#endif
             maxAnaPush = maxPush;
             maxAnaPull = maxPull;
             anaPullRate = pullRate;
@@ -124,6 +157,10 @@ namespace Core_BetterPenetration
 
             frontCollisionInfo = null;
             backCollisonInfo = null;
+
+            this.enableBellyBulge = enableBellyBulge;
+            this.bellyBulgeScale = bellyBulgeScale;
         }
+#endif
     }
 }
