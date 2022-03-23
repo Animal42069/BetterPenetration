@@ -40,6 +40,12 @@ namespace Core_BetterPenetration
                                                                                   "cf_J_Vagina_Outer_s_F", "cf_J_Vagina_Inner_s_F", "cf_J_Vagina_Inner_s_F_L", "cf_J_Vagina_Inner_s_F_R", "cf_J_Vagina_Inner_s_L", "cf_J_Vagina_Inner_s_R", "cf_J_Vagina_Inner_s_B_L", "cf_J_Vagina_Inner_s_B_R", "cf_J_Vagina_Inner_s_B"};
         internal static readonly List<float> KokanPullWeights = new List<float> { 0.2f, 0.3f, 0.3f, 0.4f, 0.4f, 0.4f, 0.4f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f,
                                                                                   0.7f, 0.8f, 0.9f, 0.9f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+
+ /*       internal static readonly List<string> KokanPullBones = new List<string> { "cf_J_Vagina_s_F", "cf_J_Vagina_s_F_L", "cf_J_Vagina_s_F_R", "cf_J_Vagina_s_M_F_L", "cf_J_Vagina_s_M_F_R", "cf_J_Vagina_s_M_L", "cf_J_Vagina_s_M_R", "cf_J_Vagina_s_M_B_L", "cf_J_Vagina_s_M_B_R", "cf_J_Vagina_s_B_L", "cf_J_Vagina_s_B_R", "cf_J_Vagina_s_B",
+                                                                                  "cf_J_Vagina_Outer_s_F", "cf_J_Vagina_Inner_s_F", "cf_J_Vagina_Inner_s_F_L", "cf_J_Vagina_Inner_s_F_R", "cf_J_Vagina_Inner_s_M_F_L", "cf_J_Vagina_Inner_s_M_F_R", "cf_J_Vagina_Inner_s_M_L", "cf_J_Vagina_Inner_s_M_R", "cf_J_Vagina_Inner_s_B_L", "cf_J_Vagina_Inner_s_M_B_R", "cf_J_Vagina_Inner_s_M_B_L", "cf_J_Vagina_Inner_s_B_R", "cf_J_Vagina_Inner_s_B"};
+        internal static readonly List<float> KokanPullWeights = new List<float> { 0.2f, 0.3f, 0.3f, 0.4f, 0.4f, 0.4f, 0.4f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f,
+                                                                                  0.7f, 0.8f, 0.9f, 0.9f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+ */
         internal static readonly List<string> AnaPullBones = new List<string> { "cf_J_Ana_s_F", "cf_J_Ana_s_B", "cf_J_Ana_s_L", "cf_J_Ana_s_R", "cf_J_Ana_s_F_L", "cf_J_Ana_s_F_R", "cf_J_Ana_s_B_L", "cf_J_Ana_s_B_R" };
         internal static readonly List<float> AnaPullWeights = new List<float> { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f };
         internal static readonly List<string> DanBones = new List<string> { "cm_J_dan101_00", "cm_J_dan102_00", "cm_J_dan103_00", "cm_J_dan104_00", "cm_J_dan105_00", "cm_J_dan106_00", "cm_J_dan107_00", "cm_J_dan108_00", "cm_J_dan109_00" };
