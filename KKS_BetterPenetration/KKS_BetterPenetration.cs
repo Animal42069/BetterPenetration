@@ -20,7 +20,7 @@ namespace KKS_BetterPenetration
     {
         public static KKS_BetterPenetration instance;
 
-        internal const string VERSION = "4.5.0.0";
+        internal const string VERSION = "4.5.2.0";
         internal const int MaleLimit = 2;
         internal const int FemaleLimit = 2;
 
