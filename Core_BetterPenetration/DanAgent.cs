@@ -190,7 +190,7 @@ namespace Core_BetterPenetration
 
         internal void UpdateDanColliders(float radiusScale, float lengthScale)
         {
-            if (!m_danPointsFound || m_danColliders.Count < 1 || m_danColliders.Count >= m_danPoints.danPoints.Count)
+            if (!m_danPointsFound || m_danColliders == null || m_danColliders.Count < 1 || m_danColliders.Count >= m_danPoints.danPoints.Count)
                 return;
 
             m_danOptions.danRadiusScale = radiusScale;
@@ -202,7 +202,7 @@ namespace Core_BetterPenetration
                 m_danColliders[collider].m_Height = m_danColliderLength[collider] * m_danOptions.danLengthScale;
             }
 
-            if (m_virtualDanColliders.Count == 0 || m_virtualDanColliders.Count > m_danColliders.Count)
+            if (m_virtualDanColliders == null || m_virtualDanColliders.Count < 1 || m_virtualDanColliders.Count > m_danColliders.Count)
                 return;
 
             for (var collider = 0; collider < m_virtualDanColliders.Count; collider++)

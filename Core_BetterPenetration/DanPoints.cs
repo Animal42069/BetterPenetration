@@ -23,7 +23,7 @@ namespace Core_BetterPenetration
 
         internal void AimDanPoints(List<Vector3> newDanPositions, bool aimTop, List<Vector3> virtualDanPositions)
         {
-            if (newDanPositions.Count != danPoints.Count)
+            if (newDanPositions == null || danPoints == null || newDanPositions.Count == 0 || danPoints.Count == 0 || newDanPositions.Count != danPoints.Count)
                 return;
 
             Quaternion danQuaternion = Quaternion.identity;
@@ -42,7 +42,7 @@ namespace Core_BetterPenetration
             if (aimTop)
                 AimDanTop();
 
-            if (virtualDanPositions == null || virtualDanPoints == null || virtualDanPoints.Count == 0)
+            if (virtualDanPositions == null || virtualDanPoints == null || virtualDanPositions.Count == 0 || virtualDanPoints.Count == 0 || virtualDanPositions.Count != virtualDanPoints.Count)
                 return;
 
             for (int point = 0; point < virtualDanPoints.Count - 1; point++)
