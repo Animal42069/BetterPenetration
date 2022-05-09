@@ -295,7 +295,11 @@ namespace Core_BetterPenetration
 
         internal static void SetupFingerColliders(string animation)
         {
-            DanAgent danAgent = danAgents[0];
+            DanAgent danAgent = null;
+
+            if (danAgents != null && danAgents.Count > 0)
+                danAgent = danAgents[0];
+
             CollisionAgent firstAgent = collisionAgents[0];
             CollisionAgent secondAgent = null;
             if (collisionAgents.Count > 1 && collisionAgents[1].m_collisionCharacter.visibleAll && collisionAgents[1].m_collisionCharacter.objTop != null)
@@ -307,7 +311,11 @@ namespace Core_BetterPenetration
 
         internal static void ClearFingerColliders()
         {
-            DanAgent danAgent = danAgents[0];
+            DanAgent danAgent = null;
+
+            if (danAgents != null && danAgents.Count > 0)
+                danAgent = danAgents[0];
+
             CollisionAgent firstAgent = collisionAgents[0];
             CollisionAgent secondAgent = null;
             if (collisionAgents.Count > 1)
@@ -338,10 +346,10 @@ namespace Core_BetterPenetration
 
         internal static void AddFingerColliders(string animation, DanAgent danAgent, CollisionAgent firstAgent, CollisionAgent secondAgent = null)
         {
-            if (animation == null || danAgent == null || firstAgent == null)
+            if (animation == null || firstAgent == null)
                 return;
 
-            if (BoneNames.maleFingerAnimationNames.Contains(animation))
+            if (danAgent != null && BoneNames.maleFingerAnimationNames.Contains(animation))
             {
                 danAgent.AddFingerColliders(firstAgent);
 
@@ -378,7 +386,7 @@ namespace Core_BetterPenetration
 
         internal static void AddItemColliders(string animation)
         {
-            if (danAgents == null || danAgents[0] == null || collisionAgents == null || collisionAgents[0] == null)
+            if (danAgents == null || danAgents.Count <= 0 || danAgents[0] == null || collisionAgents == null || collisionAgents[0] == null)
                 return;
 
             m_itemColliders = new List<DynamicBoneCollider>();

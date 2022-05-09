@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30204.135
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.32328.378
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HS2_BetterPenetration", "HS2_BetterPenetration\HS2_BetterPenetration.csproj", "{F5E096BB-2509-4431-972E-148500210D06}"
 EndProject
@@ -13,21 +13,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_BetterPenetration", "KK_
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HS2_Studio_BetterPenetration", "HS2_Studio_BetterPenetration\HS2_Studio_BetterPenetration.csproj", "{06A2BE07-7AB5-46CD-8A77-FDE1BFDE687C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AI_Studio_BetterPenetrationControls", "AI_Studio_BetterPenetrationControls\AI_Studio_BetterPenetrationControls.csproj", "{A895A98D-20D6-4CD9-AB43-3542947D71B7}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HS2_Studio_BetterPenetrationControls", "HS2_Studio_BetterPenetrationControls\HS2_Studio_BetterPenetrationControls.csproj", "{A3511273-E8FA-44E5-8890-BB1920707F5F}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AI_Studio_BetterPenetration", "AI_Studio_BetterPenetration\AI_Studio_BetterPenetration.csproj", "{7008D2E3-1C29-4786-A4F6-7CFD6D6D8AD9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_Studio_BetterPenetration", "KK_Studio_BetterPenetration\KK_Studio_BetterPenetration.csproj", "{A68BEAE5-21B9-4C45-9624-A377BB953238}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_Studio_BetterPenetrationControls", "KK_Studio_BetterPenetrationControls\KK_Studio_BetterPenetrationControls.csproj", "{5EFDA20F-BBA2-4317-BCBB-8B8695DC4B34}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KKS_BetterPenetration", "KKS_BetterPenetration\KKS_BetterPenetration.csproj", "{0FF42A1B-86EB-4CEE-BD04-DA3BB249773F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KKS_Studio_BetterPenetration", "KKS_Studio_BetterPenetration\KKS_Studio_BetterPenetration.csproj", "{B2F3F19C-14D5-477B-ADF7-EFBE76E85AD7}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KKS_Studio_BetterPenetrationControls", "KKS_Studio_BetterPenetrationControls\KKS_Studio_BetterPenetrationControls.csproj", "{1A1E2F75-64DA-4F9F-829B-746F9C2A5C8B}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
@@ -62,14 +54,6 @@ Global
 		{06A2BE07-7AB5-46CD-8A77-FDE1BFDE687C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{06A2BE07-7AB5-46CD-8A77-FDE1BFDE687C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{06A2BE07-7AB5-46CD-8A77-FDE1BFDE687C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A895A98D-20D6-4CD9-AB43-3542947D71B7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A895A98D-20D6-4CD9-AB43-3542947D71B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A895A98D-20D6-4CD9-AB43-3542947D71B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A895A98D-20D6-4CD9-AB43-3542947D71B7}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A3511273-E8FA-44E5-8890-BB1920707F5F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A3511273-E8FA-44E5-8890-BB1920707F5F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A3511273-E8FA-44E5-8890-BB1920707F5F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A3511273-E8FA-44E5-8890-BB1920707F5F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{7008D2E3-1C29-4786-A4F6-7CFD6D6D8AD9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7008D2E3-1C29-4786-A4F6-7CFD6D6D8AD9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7008D2E3-1C29-4786-A4F6-7CFD6D6D8AD9}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -78,10 +62,6 @@ Global
 		{A68BEAE5-21B9-4C45-9624-A377BB953238}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A68BEAE5-21B9-4C45-9624-A377BB953238}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A68BEAE5-21B9-4C45-9624-A377BB953238}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5EFDA20F-BBA2-4317-BCBB-8B8695DC4B34}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5EFDA20F-BBA2-4317-BCBB-8B8695DC4B34}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5EFDA20F-BBA2-4317-BCBB-8B8695DC4B34}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5EFDA20F-BBA2-4317-BCBB-8B8695DC4B34}.Release|Any CPU.Build.0 = Release|Any CPU
 		{0FF42A1B-86EB-4CEE-BD04-DA3BB249773F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{0FF42A1B-86EB-4CEE-BD04-DA3BB249773F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0FF42A1B-86EB-4CEE-BD04-DA3BB249773F}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -90,10 +70,6 @@ Global
 		{B2F3F19C-14D5-477B-ADF7-EFBE76E85AD7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B2F3F19C-14D5-477B-ADF7-EFBE76E85AD7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B2F3F19C-14D5-477B-ADF7-EFBE76E85AD7}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1A1E2F75-64DA-4F9F-829B-746F9C2A5C8B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1A1E2F75-64DA-4F9F-829B-746F9C2A5C8B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1A1E2F75-64DA-4F9F-829B-746F9C2A5C8B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1A1E2F75-64DA-4F9F-829B-746F9C2A5C8B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

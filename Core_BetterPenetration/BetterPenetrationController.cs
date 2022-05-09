@@ -246,7 +246,7 @@ namespace Core_BetterPenetration
                 Quaternion.identity,
                 false, 
                 Vector3.zero, 
-                $"{danAgent.m_danCharacter.fileParam.fullname}'s Penis First Target" };
+                $"{danAgent.m_danCharacter.fileParam.fullname} Penis First Target" };
 
             Transform danEndParent;
             if (danEntryParentName == BoneNames.HeadTarget)
@@ -266,7 +266,7 @@ namespace Core_BetterPenetration
                 Quaternion.identity, 
                 false, 
                 Vector3.zero, 
-                $"{danAgent.m_danCharacter.fileParam.fullname}'s Penis Second Target" };
+                $"{danAgent.m_danCharacter.fileParam.fullname} Penis Second Target" };
 
             AddDanConstraints(plugin, danEntryParent, danEndParent);
         }
