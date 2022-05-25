@@ -567,7 +567,7 @@ namespace Core_BetterPenetration
                 foreach (DynamicBone dynamicBone in m_kokanDynamicBones)
                         dynamicBone.m_Colliders.Remove(collider);
 
-                if (m_bellyDynamicBone == null)
+                if (!m_collisionOptions.enableBellyBulge || m_bellyDynamicBone == null)
                     continue;
 
                 m_bellyDynamicBone.m_Colliders.Remove(collider);

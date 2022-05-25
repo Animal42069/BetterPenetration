@@ -190,7 +190,7 @@ namespace Core_BetterPenetration
 
         internal void UpdateDanColliders(float radiusScale, float lengthScale)
         {
-            if (!m_danPointsFound || m_danColliders == null || m_danColliders.Count < 1 || m_danColliders.Count >= m_danPoints.danPoints.Count)
+            if (!m_danPointsFound || m_danPoints == null || m_danColliders == null || m_danOptions  == null || m_danColliderRadius == null || m_danColliderLength == null || m_danColliders.Count < 1 || m_danColliders.Count >= m_danPoints.danPoints.Count)
                 return;
 
             m_danOptions.danRadiusScale = radiusScale;
