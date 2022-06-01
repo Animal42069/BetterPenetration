@@ -332,36 +332,7 @@ namespace Core_BetterPenetration
             {
                 m_kokanPullBones[kokanBone].localPosition = BoneNames.KokanPullWeights[kokanBone] * currentKokanPull * m_kokanPullBones[kokanBone].InverseTransformDirection(currentKokanDanDirection);
             }
-/*
-
-            var bone = Tools.GetTransformOfChaControl(m_collisionCharacter, "cf_J_Vagina_F");
-            if (bone != null)
-                Console.WriteLine($"{bone.name}: {bone.localPosition.x}, {bone.localPosition.y}, {bone.localPosition.z}: {bone.localRotation.x}, {bone.localRotation.y}, {bone.localRotation.z}, {bone.localRotation.w}");
-
-            bone = Tools.GetTransformOfChaControl(m_collisionCharacter, "cf_J_Vagina_F_L");
-            if (bone != null)
-                Console.WriteLine($"{bone.name}: {bone.localPosition.x}, {bone.localPosition.y}, {bone.localPosition.z}: {bone.localRotation.x}, {bone.localRotation.y}, {bone.localRotation.z}, {bone.localRotation.w}");
-            bone = Tools.GetTransformOfChaControl(m_collisionCharacter, "cf_J_Vagina_M_F_L");
-            if (bone != null)
-                Console.WriteLine($"{bone.name}: {bone.localPosition.x}, {bone.localPosition.y}, {bone.localPosition.z}: {bone.localRotation.x}, {bone.localRotation.y}, {bone.localRotation.z}, {bone.localRotation.w}");
-            bone = Tools.GetTransformOfChaControl(m_collisionCharacter, "cf_J_Vagina_M_L");
-            if (bone != null)
-                Console.WriteLine($"{bone.name}: {bone.localPosition.x}, {bone.localPosition.y}, {bone.localPosition.z}: {bone.localRotation.x}, {bone.localRotation.y}, {bone.localRotation.z}, {bone.localRotation.w}");
-            bone = Tools.GetTransformOfChaControl(m_collisionCharacter, "cf_J_Vagina_M_B_L");
-            if (bone != null)
-                Console.WriteLine($"{bone.name}: {bone.localPosition.x}, {bone.localPosition.y}, {bone.localPosition.z}: {bone.localRotation.x}, {bone.localRotation.y}, {bone.localRotation.z}, {bone.localRotation.w}");
-            bone = Tools.GetTransformOfChaControl(m_collisionCharacter, "cf_J_Vagina_B_L");
-            if (bone != null)
-                Console.WriteLine($"{bone.name}: {bone.localPosition.x}, {bone.localPosition.y}, {bone.localPosition.z}: {bone.localRotation.x}, {bone.localRotation.y}, {bone.localRotation.z}, {bone.localRotation.w}");
-
-            bone = Tools.GetTransformOfChaControl(m_collisionCharacter, "cf_J_Vagina_B");
-            if (bone != null)
-                Console.WriteLine($"{bone.name}: {bone.localPosition.x}, {bone.localPosition.y}, {bone.localPosition.z}: {bone.localRotation.x}, {bone.localRotation.y}, {bone.localRotation.z}, {bone.localRotation.w}");
-
-            bone = Tools.GetTransformOfChaControl(m_collisionCharacter, "cf_J_Vagina_Inner_F");
-            if (bone != null)
-                Console.WriteLine($"{bone.name}: {bone.localPosition.x}, {bone.localPosition.y}, {bone.localPosition.z}: {bone.localRotation.x}, {bone.localRotation.y}, {bone.localRotation.z}, {bone.localRotation.w}");
-*/        }
+       }
 
         internal void ReturnKokanBones()
         {

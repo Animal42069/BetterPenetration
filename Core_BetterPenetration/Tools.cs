@@ -179,17 +179,20 @@ namespace Core_BetterPenetration
 
             foreach (var dynamicBone in dynamicBones)
             {
-                if (dynamicBone == null ||
-                    dynamicBone.m_Colliders == null ||
-                    (dynamicBone.name != null && (dynamicBone.name.Contains("Vagina") || dynamicBone.name.Contains("cm_J_dan"))))
+                if (dynamicBone == null || dynamicBone.name == null || dynamicBone.m_Colliders == null)
                     continue;
 
+                bool bpBone = dynamicBone.name.Contains("Vagina") || dynamicBone.name.Contains("Belly") || dynamicBone.name.Contains("Ana");
                 for (int collider = dynamicBone.m_Colliders.Count - 1; collider >= 0; collider--)
                 {
-                    if (dynamicBone.m_Colliders[collider] != null &&
-                        dynamicBone.m_Colliders[collider].name != null &&
-                        (dynamicBone.m_Colliders[collider].name.Contains("Vagina") || dynamicBone.m_Colliders[collider].name.Contains("cm_J_dan")))
-                        dynamicBone.m_Colliders.RemoveAt(collider);
+                    if (dynamicBone.m_Colliders[collider] == null || dynamicBone.m_Colliders[collider].name == null)
+                        continue;
+
+                    bool bpCollider = dynamicBone.m_Colliders[collider].name.Contains("cm_J_vdan") || dynamicBone.m_Colliders[collider].name.Contains("cm_J_dan");
+                    if (bpBone == bpCollider)
+                        continue;
+
+                    dynamicBone.m_Colliders.RemoveAt(collider);
                 }
             }
         }

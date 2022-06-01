@@ -19,7 +19,7 @@ namespace HS2_BetterPenetration
     [BepInProcess("HoneySelect2VR")]
     public class HS2_BetterPenetration : BaseUnityPlugin
     {
-        internal const string VERSION = "5.0.0.5";
+        internal const string VERSION = "5.0.1.0";
         internal const int MaleLimit = 2;
         internal const int FemaleLimit = 2;
 
@@ -191,26 +191,27 @@ namespace HS2_BetterPenetration
 
             harmony = new Harmony("HS2_BetterPenetration");
             harmony.PatchAll(typeof(HS2_BetterPenetration));
+			
             Chainloader.PluginInfos.TryGetValue("com.deathweasel.bepinex.uncensorselector", out PluginInfo pluginInfo);
             if (pluginInfo == null || pluginInfo.Instance == null)
                 return;
 
-            Type nestedType = pluginInfo.Instance.GetType().GetNestedType("UncensorSelectorController", AccessTools.all);
-            if (nestedType == null)
+            Type uncensorSelectorControllerType = pluginInfo.Instance.GetType().GetNestedType("UncensorSelectorController", AccessTools.all);
+            if (uncensorSelectorControllerType == null)
                 return;
 
-            MethodInfo methodInfo = AccessTools.Method(nestedType, "ReloadCharacterBody", null, null);
-            if (methodInfo == null)
+            MethodInfo uncensorSelectorReloadCharacterBody = AccessTools.Method(uncensorSelectorControllerType, "ReloadCharacterBody");
+            if (uncensorSelectorReloadCharacterBody == null)
                 return;
 
-            harmony.Patch(methodInfo, prefix: new HarmonyMethod(typeof(HS2_BetterPenetration), "BeforeCharacterReload"), postfix: new HarmonyMethod(typeof(HS2_BetterPenetration), "AfterCharacterReload"));
+            harmony.Patch(uncensorSelectorReloadCharacterBody, prefix: new HarmonyMethod(GetType(), "BeforeCharacterReload"), postfix: new HarmonyMethod(GetType(), "AfterCharacterReload"));
             UnityEngine.Debug.Log("HS2_BetterPenetration: patched UncensorSelector::ReloadCharacterBody correctly");
 
-            methodInfo = AccessTools.Method(nestedType, "ReloadCharacterPenis", null, null);
-            if (methodInfo == null)
+            MethodInfo uncensorSelectorReloadCharacterPenis = AccessTools.Method(uncensorSelectorControllerType, "ReloadCharacterPenis");
+            if (uncensorSelectorReloadCharacterPenis == null)
                 return;
 
-            harmony.Patch(methodInfo, prefix: new HarmonyMethod(typeof(HS2_BetterPenetration), "BeforeDanCharacterReload"), postfix: new HarmonyMethod(typeof(HS2_BetterPenetration), "AfterDanCharacterReload"));
+            harmony.Patch(uncensorSelectorReloadCharacterPenis, prefix: new HarmonyMethod(typeof(HS2_BetterPenetration), "BeforeDanCharacterReload"), postfix: new HarmonyMethod(typeof(HS2_BetterPenetration), "AfterDanCharacterReload"));
             UnityEngine.Debug.Log("HS2_BetterPenetration: patched UncensorSelector::ReloadCharacterPenis patched");
 
             SceneManager.sceneUnloaded += SceneManager_sceneUnloaded;

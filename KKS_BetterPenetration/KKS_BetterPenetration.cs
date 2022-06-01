@@ -20,7 +20,7 @@ namespace KKS_BetterPenetration
     {
         public static KKS_BetterPenetration instance;
 
-        internal const string VERSION = "4.5.2.0";
+        internal const string VERSION = "4.5.5.0";
         internal const int MaleLimit = 2;
         internal const int FemaleLimit = 2;
 
@@ -64,7 +64,6 @@ namespace KKS_BetterPenetration
         internal static bool hSceneStarted = false;
         internal static bool inHScene = false;
         internal static bool loadingCharacter = false;
-        internal static Type _uncensorSelectorType;
         internal static bool changeAnimationStep1 = false;
         internal static bool changeAnimationStep2 = false;
         internal static int changeAnimationCount = 0;
@@ -140,22 +139,28 @@ namespace KKS_BetterPenetration
                 harmony.Patch(VRHSceneType.GetMethod("ChangeAnimator", AccessTools.all), prefix: new HarmonyMethod(GetType().GetMethod(nameof(HSceneProc_PreChangeAnimator), AccessTools.all)));
             }
 
-            Chainloader.PluginInfos.TryGetValue("com.deathweasel.bepinex.uncensorselector", out PluginInfo info);
-            if (info == null || info.Instance == null)
+            Chainloader.PluginInfos.TryGetValue("com.deathweasel.bepinex.uncensorselector", out PluginInfo pluginInfo);
+            if (pluginInfo == null || pluginInfo.Instance == null)
                 return;
 
-            _uncensorSelectorType = info.Instance.GetType();
-            Type uncensorSelectorControllerType = _uncensorSelectorType.GetNestedType("UncensorSelectorController", AccessTools.all);
+            Type uncensorSelectorControllerType = pluginInfo.Instance.GetType().GetNestedType("UncensorSelectorController", AccessTools.all);
             if (uncensorSelectorControllerType == null)
                 return;
 
             MethodInfo uncensorSelectorReloadCharacterBody = AccessTools.Method(uncensorSelectorControllerType, "ReloadCharacterBody");
             if (uncensorSelectorReloadCharacterBody == null)
                 return;
-            
-            harmony.Patch(uncensorSelectorReloadCharacterBody, postfix: new HarmonyMethod(GetType(), nameof(UncensorSelector_ReloadCharacterBody_Postfix), new[] { typeof(object) }));
-            UnityEngine.Debug.Log("KKS_BetterPenetration: UncensorSelector patched ReloadCharacterBody correctly");
 
+            harmony.Patch(uncensorSelectorReloadCharacterBody, prefix: new HarmonyMethod(GetType(), "BeforeCharacterReload"), postfix: new HarmonyMethod(GetType(), "AfterCharacterReload"));
+            UnityEngine.Debug.Log("KK_BetterPenetration: patched UncensorSelector::ReloadCharacterBody correctly");
+
+            MethodInfo uncensorSelectorReloadCharacterPenis = AccessTools.Method(uncensorSelectorControllerType, "ReloadCharacterPenis");
+            if (uncensorSelectorReloadCharacterPenis == null)
+                return;
+
+            harmony.Patch(uncensorSelectorReloadCharacterPenis, prefix: new HarmonyMethod(GetType(), "BeforeDanCharacterReload"), postfix: new HarmonyMethod(GetType(), "AfterDanCharacterReload"));
+            UnityEngine.Debug.Log("KK_BetterPenetration: patched UncensorSelector::ReloadCharacterPenis patched");
+			
             QualitySettings.skinWeights = SkinWeights.Unlimited;
         }
 
@@ -168,7 +173,6 @@ namespace KKS_BetterPenetration
         [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "UpdateSiru")]
         internal static void ChaControl_UpdateSiru(ChaControl __instance, bool forceChange)
         {
-
             if (!forceChange)
                 return;
 
@@ -388,7 +392,7 @@ namespace KKS_BetterPenetration
             {
                 collisionOptions.Add(new CollisionOptions(_kokanOffset.Value, _innerKokanOffset.Value, _mouthOffset.Value, _innerMouthOffset.Value,
                     false, 0, 0, 0,
-                    false, Vector3.zero, Vector3.zero, 
+                    false, Vector3.zero, Vector3.zero,
                     _clippingDepth.Value, frontInfo, backInfo,
                     false, 0, 0, 0, 0,
                     _enableOralPushPull.Value, _maxOralPush.Value, _maxOralPull.Value, _oralPullRate.Value, _oralReturnRate.Value,
@@ -398,12 +402,82 @@ namespace KKS_BetterPenetration
             return collisionOptions;
         }
 
-        internal static void UncensorSelector_ReloadCharacterBody_Postfix(object __instance)
+        internal static void BeforeCharacterReload(object __instance)
+        { 
+            if (!inHScene)
+                return;
+
+            ChaControl chaControl = (ChaControl)__instance.GetPrivateProperty("ChaControl");
+            if (chaControl == null || chaControl.sex == 0)
+                return;
+
+            loadingCharacter = true;
+            CoreGame.SetDansHaveNewTarget(true);
+        }
+
+        internal static void AfterCharacterReload(object __instance)
         {
             ChaControl chaControl = (ChaControl)__instance.GetPrivateProperty("ChaControl");
             if (chaControl == null)
                 return;
+				
             CoreGame.SetBPBoneWeights(chaControl, inHScene ? 1f : 0f);
+
+            if (chaControl.sex == 0 || !inHScene || hSceneProc == null || hSceneProcTraverse == null)
+                return;
+
+            var lstFemale = hSceneProcTraverse.Field("lstFemale").GetValue<List<ChaControl>>();
+            if (lstFemale == null || lstFemale.Count == 0)
+                return;
+
+            List<ChaControl> femaleList = new List<ChaControl>();
+            foreach (var female in lstFemale)
+                if (female != null)
+                    femaleList.Add(female);
+
+            List<CollisionOptions> collisionOptions = PopulateCollisionOptionsList();
+            CoreGame.InitializeCollisionAgents(femaleList, collisionOptions);
+            loadingCharacter = false;
+        }
+
+        internal static void BeforeDanCharacterReload(object __instance)
+        {
+            if (!inHScene)
+                return;
+
+            ChaControl chaControl = (ChaControl)__instance.GetPrivateProperty("ChaControl");
+            if (chaControl == null || chaControl.sex != 0)
+                return;
+
+            loadingCharacter = true;
+            CoreGame.SetDansHaveNewTarget(true);
+            CoreGame.ClearDanAgents();
+        }
+
+        internal static void AfterDanCharacterReload(object __instance)
+        {
+            if (!inHScene || hSceneProc == null)
+                return;
+
+            ChaControl chaControl = (ChaControl)__instance.GetPrivateProperty("ChaControl");
+            if (chaControl == null || chaControl.sex != 0)
+                return;
+
+            List<DanOptions> danOptions = PopulateDanOptionsList();
+            List<ChaControl> maleList = new List<ChaControl>();
+            var male = hSceneProcTraverse.Field("male").GetValue<ChaControl>();
+            if (male != null)
+                maleList.Add(male);
+
+            var male1 = hSceneProcTraverse.Field("male1").GetValue<ChaControl>();
+            if (male1 != null)
+                maleList.Add(male1);
+
+            if (maleList.IsNullOrEmpty())
+                return;
+
+            CoreGame.InitializeDanAgents(maleList, danOptions);
+            loadingCharacter = false;
         }
 
     }

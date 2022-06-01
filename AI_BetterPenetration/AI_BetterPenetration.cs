@@ -1,11 +1,15 @@
 ﻿using BepInEx;
 using BepInEx.Configuration;
+using BepInEx.Bootstrap;
 using HarmonyLib;
+using System;
 using System.Collections.Generic;
-using Manager;
+using UnityEngine.SceneManagement;
+using System.Reflection;
 using AIChara;
-using UnityEngine;
 using Core_BetterPenetration;
+using UnityEngine;
+using Manager;
 
 namespace AI_BetterPenetration
 {
@@ -15,7 +19,7 @@ namespace AI_BetterPenetration
     [BepInProcess("AI-Syoujyo")]
     public class AI_BetterPenetration : BaseUnityPlugin
     {
-        internal const string VERSION = "5.0.0.5";
+        internal const string VERSION = "5.0.1.0";
         internal const int MaleLimit = 1;
         internal const int FemaleLimit = 2;
 
@@ -179,8 +183,31 @@ namespace AI_BetterPenetration
             { UpdateCollisionOptions(); };
             (_bellyBulgeEnable = Config.Bind("Belly Bulge", "Enable", true, "Allows the belly to deform during certain vaginal positions.")).SettingChanged += (s, e) =>
             { UpdateCollisionOptions(); };
+
             harmony = new Harmony("AI_BetterPenetration");
             harmony.PatchAll(typeof(AI_BetterPenetration));
+			
+            Chainloader.PluginInfos.TryGetValue("com.deathweasel.bepinex.uncensorselector", out PluginInfo pluginInfo);
+            if (pluginInfo == null || pluginInfo.Instance == null)
+                return;
+
+            Type nestedType = pluginInfo.Instance.GetType().GetNestedType("UncensorSelectorController", AccessTools.all);
+            if (nestedType == null)
+                return;
+
+            MethodInfo methodInfo = AccessTools.Method(nestedType, "ReloadCharacterBody", null, null);
+            if (methodInfo == null)
+                return;
+
+            harmony.Patch(methodInfo, prefix: new HarmonyMethod(GetType(), "BeforeCharacterReload"), postfix: new HarmonyMethod(GetType(), "AfterCharacterReload"));
+            Debug.Log("HS2_BetterPenetration: patched UncensorSelector::ReloadCharacterBody correctly");
+
+            methodInfo = AccessTools.Method(nestedType, "ReloadCharacterPenis", null, null);
+            if (methodInfo == null)
+                return;
+
+            harmony.Patch(methodInfo, prefix: new HarmonyMethod(GetType(), "BeforeDanCharacterReload"), postfix: new HarmonyMethod(GetType(), "AfterDanCharacterReload"));
+            Debug.Log("HS2_BetterPenetration: patched UncensorSelector::ReloadCharacterPenis patched");
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "UpdateAccessoryMoveFromInfo")]
@@ -374,7 +401,80 @@ namespace AI_BetterPenetration
             return collisionOptions;
         }
 
+        internal static void BeforeCharacterReload(object __instance)
+        { 
+            if (!inHScene)
+                return;
 
+            ChaControl chaControl = (ChaControl)__instance.GetPrivateProperty("ChaControl");
+            if (chaControl == null || chaControl.sex == 0)
+                return;
+
+            loadingCharacter = true;
+            CoreGame.SetDansHaveNewTarget(true);
+        }
+
+        internal static void AfterCharacterReload(object __instance)
+        {
+            if (!inHScene || hScene == null)
+                return;
+
+            ChaControl chaControl = (ChaControl)__instance.GetPrivateProperty("ChaControl");
+            if (chaControl == null || chaControl.sex == 0)
+                return;
+
+            ChaControl[] femaleArray = hScene.GetFemales();
+            List<ChaControl> femaleList = new List<ChaControl>();
+
+            foreach (var character in femaleArray)
+            {
+                if (character == null)
+                    continue;
+                femaleList.Add(character);
+            }
+
+            List<CollisionOptions> collisionOptions = PopulateCollisionOptionsList();
+            CoreGame.InitializeCollisionAgents(femaleList, collisionOptions);
+            loadingCharacter = false;
+        }
+
+        internal static void BeforeDanCharacterReload(object __instance)
+        {
+            if (!inHScene)
+                return;
+
+            ChaControl chaControl = (ChaControl)__instance.GetPrivateProperty("ChaControl");
+            if (chaControl == null || (chaControl.sex != 0 && !chaControl.fileParam.futanari))
+                return;
+
+            loadingCharacter = true;
+            CoreGame.SetDansHaveNewTarget(true);
+            CoreGame.ClearDanAgents();
+        }
+
+        internal static void AfterDanCharacterReload(object __instance)
+        {
+            if (!inHScene || hScene == null)
+                return;
+
+            ChaControl chaControl = (ChaControl)__instance.GetPrivateProperty("ChaControl");
+            if (chaControl == null || (chaControl.sex != 0 && !chaControl.fileParam.futanari))
+                return;
+
+            List<DanOptions> danOptions = PopulateDanOptionsList();
+
+            ChaControl[] maleArray = hScene.GetMales();
+            List<ChaControl> maleList = new List<ChaControl>();
+            foreach (var character in maleArray)
+            {
+                if (character == null)
+                    continue;
+                maleList.Add(character);
+            }
+
+            CoreGame.InitializeDanAgents(maleList, danOptions);
+            loadingCharacter = false;
+        }
         internal void Update()
         {
             var isHScene = HSceneManager.isHScene;

@@ -22,7 +22,7 @@ namespace KKS_Studio_BetterPenetration
     {
         internal const string GUID = "com.animal42069.kksstudiobetterpenetration";
         internal const string PluginName = "KKS Studio Better Penetration";
-        internal const string VERSION = "4.9.9.0";
+        internal const string VERSION = "4.5.5.0";
         internal const string BEHAVIOR = "BetterPenetrationController";
         internal const string StudioCategoryName = "Better Penetration";
         internal static Harmony harmony;
@@ -197,7 +197,7 @@ namespace KKS_Studio_BetterPenetration
                     controller.ReturnRate = value;
             });
             StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(returnRate);
-
+/*
             var bellyBulgeEnable = new CurrentStateCategorySwitch("Enable Belly Bulge", c => StudioAPI.GetSelectedControllers<BetterPenetrationController>().First().EnableBellyBulge);
             bellyBulgeEnable.Value.Subscribe(value =>
             {
@@ -212,8 +212,7 @@ namespace KKS_Studio_BetterPenetration
                 foreach (var controller in StudioAPI.GetSelectedControllers<BetterPenetrationController>())
                     controller.BellyBulgeScale = value;
             });
-            StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(bellyBulgeScale);
-
+            StudioAPI.GetOrCreateCurrentStateCategory(StudioCategoryName).AddControl(bellyBulgeScale);*/
         }
 
         public static void RegisterStudioControls()
