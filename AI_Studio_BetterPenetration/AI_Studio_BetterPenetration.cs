@@ -70,7 +70,8 @@ namespace AI_Studio_BetterPenetration
             if (nodeConstraintType == null)
                 return;
 
-            methodInfo = AccessTools.Method(nodeConstraintType, "AddConstraint", null, null);
+            // Find the most specific AddConstraint method since it's the one that always runs
+            methodInfo = AccessTools.GetDeclaredMethods(nodeConstraintType).Where(x => x.Name == "AddConstraint").OrderByDescending(x => x.GetParameters().Length).FirstOrDefault();
             if (methodInfo == null)
                 return;
 

@@ -421,7 +421,9 @@ namespace Core_BetterPenetration
                 {
                     danEntryConstraint.SetValue(parentTransform, 1);
                     danEntryConstraint.SetValue(danEntryChild, 2);
-                    plugin.GetType().GetMethod("AddConstraint", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(plugin, danEntryConstraint);
+                    Traverse.Create(plugin)
+                            .Method("AddConstraint", new Type[] { typeof(bool), typeof(Transform), typeof(Transform), typeof(bool), typeof(Vector3), typeof(bool), typeof(Quaternion), typeof(bool), typeof(Vector3), typeof(string) })
+                            .GetValue(danEntryConstraint);
                 }
             }
 
@@ -437,7 +439,9 @@ namespace Core_BetterPenetration
                 {
                     danEndConstraint.SetValue(parentTransform, 1);
                     danEndConstraint.SetValue(danEndChild, 2);
-                    plugin.GetType().GetMethod("AddConstraint", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(plugin, danEndConstraint);
+                    Traverse.Create(plugin)
+                            .Method("AddConstraint", new Type[] { typeof(bool), typeof(Transform), typeof(Transform), typeof(bool), typeof(Vector3), typeof(bool), typeof(Quaternion), typeof(bool), typeof(Vector3), typeof(string) })
+                            .GetValue(danEndConstraint);
                 }
             }
         }
